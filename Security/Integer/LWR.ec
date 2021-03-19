@@ -8,7 +8,7 @@ pragma Goals:printall.
 -----------------------------------
 *)
 require import AllCore Distr DBool ZModP IntDiv StdOrder.
-require (*--*) Matrix PKE ROM.
+require (*--*) Poly Matrix PKE ROM.
 
 (*
 --------------------------------
@@ -30,13 +30,21 @@ const n: int = 2^en.
 const l: int.
 
 (* -- Assumptions/Properties -- *)
-axiom exp_relation: 0 < et + 1 < ep < eq.
-axiom sec_assumption: eq - ep <= ep - et -1. (* q %/ p <= p %/ 2*t. *)
+(* -- Assumptions/Properties -- *)
+(*axiom exp_relation: 0 < et + 1 < ep < eq.*)
+axiom gt0_et1: 0 < et + 1.
+axiom gtet_ep: et + 1 < ep.
+axiom gtep_eq: ep < eq.
+axiom sec_assumption: eq - ep <= ep - et - 1. (* q %/ p <= p %/ 2*t. *)
 axiom module_dimension_ge1: 1 <= l.
 
 lemma et_ge0: 0 <= et by smt.
 lemma ep_ge2: 2 <= ep by smt.
 lemma eq_ge3: 3 <= eq by smt.
+
+lemma t_div_p: t %| p by rewrite dvdzP /t /p; exists (2^(ep - et)); rewrite -exprD_nneg; smt.
+lemma p_div_q: p %| q by rewrite dvdzP /p /q; exists (2^(eq - ep)); rewrite -exprD_nneg; smt.
+lemma t_div_q: t %| q by apply /(dvdz_trans p t q) /p_div_q /t_div_p.
 
 (* --- Types, Operators and Distributions --- *)
 (* -- Zq = Z/qZ -- *)
@@ -705,7 +713,7 @@ proof.
    proc; inline *. 
    swap {1} 7 -6.
    call (_ : true); auto; call (_: true); auto.
-   progress; smt.
+   progress; admit.
   by rewrite eq_games.
 qed.
 
