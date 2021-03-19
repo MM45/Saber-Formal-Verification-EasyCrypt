@@ -32,18 +32,42 @@ const l: int.
 (* -- Assumptions/Properties -- *)
 (* -- Assumptions/Properties -- *)
 (*axiom exp_relation: 0 < et + 1 < ep < eq.*)
-axiom gt0_et1: 0 < et + 1.
-axiom gtet_ep: et + 1 < ep.
-axiom gtep_eq: ep < eq.
+axiom ge1_et1: 1 <= et + 1.
+axiom geet2_ep: et + 2 <= ep.
+axiom geep1_eq: ep + 1 <= eq.
 axiom sec_assumption: eq - ep <= ep - et - 1. (* q %/ p <= p %/ 2*t. *)
-axiom module_dimension_ge1: 1 <= l.
+axiom ge1_l: 1 <= l.
 
-lemma et_ge0: 0 <= et by smt.
-lemma ep_ge2: 2 <= ep by smt.
-lemma eq_ge3: 3 <= eq by smt.
+lemma ge0_et: 0 <= et by move: ge1_et1; rewrite (IntOrder.ler_add2l (-1) 1 (et + 1)).
 
-lemma t_div_p: t %| p by rewrite dvdzP /t /p; exists (2^(ep - et)); rewrite -exprD_nneg; smt.
-lemma p_div_q: p %| q by rewrite dvdzP /p /q; exists (2^(eq - ep)); rewrite -exprD_nneg; smt.
+lemma ge2_ep: 2 <= ep. 
+proof. 
+   move: (IntOrder.ler_sub (et + 2) (ep) et et); rewrite geet2_ep IntOrder.lerr_eq //= -addrC addrA //= => geepet_2.
+   by move: (IntOrder.ler_add 2 (ep - et) 0 et); rewrite geepet_2 ge0_et //= //= -addrA subrr //=.
+qed.
+
+lemma ge3_eq: 3 <= eq. 
+proof. 
+  move: (IntOrder.ler_add2r 1 2 ep) (IntOrder.ler_trans (ep + 1) 3 eq).
+  by rewrite ge2_ep //= => ge3_ep1; rewrite ge3_ep1 geep1_eq //=.
+qed.
+
+lemma ge1_t: 1 <= t by rewrite IntOrder.exprn_ege1; [apply ge0_et |].
+(*lemma ge2_2t: 2 <= 2 * t by *)
+lemma ge4_p: 4 <= p by move: (IntOrder.ler_weexpn2l 2) => /= mn; move: (mn 2 ep) => /=; rewrite ge2_ep /= expr2. 
+lemma ge8_q: 8 <= q by move:(IntOrder.ler_weexpn2l 2) => /= mn; move: (mn 3 eq) => /=; rewrite ge3_eq /= (exprS 2 2) // expr2.
+
+lemma t_div_p: t %| p.
+proof. 
+  by rewrite dvdzP /t /p; exists (2^(ep - et)); rewrite -exprD_nneg; [ smt | apply ge0_et | congr; rewrite subrK ]. 
+qed.
+
+lemma p_div_q: p %| q.
+proof. 
+  by rewrite dvdzP /p /q; exists (2^(eq - ep)); rewrite -exprD_nneg; 
+             [ smt | apply /(IntOrder.ler_trans 2 0 ep) /ge2_ep | congr; rewrite subrK ].
+qed.
+
 lemma t_div_q: t %| q by apply /(dvdz_trans p t q) /p_div_q /t_div_p.
 
 (* --- Types, Operators and Distributions --- *)
@@ -53,7 +77,7 @@ type Zq.
 clone import ZModRing as Zq with
     op p <- q,
     type zmod <- Zq
-  proof ge2_p by smt.
+  proof ge2_p by apply /(IntOrder.ler_trans 8 2 q) /ge8_q.
 
 clone import MFinite as DZq with
     type t <- Zq,
@@ -64,7 +88,7 @@ op dZq : Zq distr = DZq.dunifin.
 clone Matrix as Mat_Zq with
     type R <- Zq,
     op size <- l
-  proof ge0_size by smt.
+  proof ge0_size by apply /(IntOrder.ler_trans 1 0 l) /ge1_l.
 
 type Zq_vec = Mat_Zq.vector.
 type Zq_mat = Mat_Zq.Matrix.matrix.
@@ -81,7 +105,7 @@ type Zp.
 clone import ZModRing as Zp with
     op p <- p,
     type zmod <- Zp
-  proof ge2_p by smt.
+  proof ge2_p by apply /(IntOrder.ler_trans 4 2 p) /ge4_p.
 
 clone import MFinite as DZp with
     type t <- Zp,
@@ -92,7 +116,7 @@ op dZp : Zp distr = DZp.dunifin.
 clone Matrix as Mat_Zp with
     type R <- Zp,
     op size <- l
-  proof ge0_size by smt.
+  proof ge0_size by apply /(IntOrder.ler_trans 1 0 l) /ge1_l.
 
 type Zp_vec = Mat_Zp.vector.
 
