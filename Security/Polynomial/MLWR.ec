@@ -1,5 +1,3 @@
-prover ["Alt-Ergo"].
-
 pragma Goals:printall.
 
 (*
@@ -7,284 +5,32 @@ pragma Goals:printall.
  Require/Import EasyCrypt Theories
 -----------------------------------
 *)
-require import AllCore Distr DBool ZModP IntDiv.
-require (*--*) Poly Matrix PKE ROM.
+(* --- Built-in --- *)
+require import AllCore Distr DBool ZModP IntDiv StdOrder.
+require (*--*) Poly Matrix PKE.
 
 clone import Poly as Polynomial.
 
+(* --- Local --- *)
+require import SaberRqPreliminaries.
+(*---*) import Zq Zp Zppq Z2t Z2.
+(*---*) import Rq Rp Rppq R2t R2.
+(*---*) import Mat_Rq Mat_Rp. 
+
 (*
---------------------------------
- Preliminaries
---------------------------------
+----------------------------------
+ Saber PKE Scheme
+----------------------------------
 *)
-(* --- Constants --- *)
-(* -- Exponents -- *)
-const eq: int.
-const ep: int.
-const et: int.
-const en: int.
-
-(* -- Parameters -- *)
-const q: int = 2^eq. 
-const p: int = 2^ep.
-const t: int = 2^et.
-const n: int = 2^en.
-const l: int.
-
-(* -- Assumptions/Properties -- *)
-axiom exp_relation: 0 < et + 1 < ep < eq.
-axiom sec_assumption: q %/ p <= p %/ 2 * t. (* eq - ep <= ep - et - 1. *) (* q %/ p <= p %/ 2*t. *)
-axiom module_dimension_ge1: 1 <= l.
-
-lemma et_ge0: 0 <= et by smt.
-lemma ep_ge2: 2 <= ep by smt.
-lemma eq_ge3: 3 <= eq by smt.
-
-lemma t_div_p: t %| p by rewrite dvdzP /t /p; exists (2^(ep - et)); rewrite -exprD_nneg; smt.
-lemma p_div_q: p %| q by rewrite dvdzP /p /q; exists (2^(eq - ep)); rewrite -exprD_nneg; smt.
-lemma t_div_q: t %| q by apply /(dvdz_trans p t q) /p_div_q /t_div_p.
-
-lemma sec_assumption_rewr: eq - ep <= ep - et - 1 by admit.
-
-(* --- Types, Operators and Distributions --- *)
-(* -- Rq = Z/qZ[X] / (X^n + 1) -- *)
-type Zq.
-type Rq.
-
-clone import ZModRing as Zq with
-    op p <- q,
-    type zmod <- Zq
-  proof ge2_p by smt.
-
-clone import Poly as Rq with
-    type coeff <- Zq,
-    type poly <- Rq.
-
-clone Matrix as Mat_Rq with
-    type R <- Rq,
-    op size <- l
-  proof ge0_size by smt.    
-
-type Rq_vec = Mat_Rq.vector.
-type Rq_mat = Mat_Rq.Matrix.matrix.
-
-op [lossless full uniform] dRq : Rq distr.
-op [lossless] dsmallRq : Rq distr.
-
-op dRq_vec : Rq_vec distr = Mat_Rq.Matrix.dvector dRq.
-op dRq_mat : Rq_mat distr = Mat_Rq.Matrix.dmatrix dRq.
-op dsmallRq_vec : Rq_vec distr = Mat_Rq.Matrix.dvector dsmallRq.
-
-(* -- Rp = Z/pZ[X] / (X^n + 1) -- *)
-type Zp.
-type Rp.
-
-clone import ZModRing as Zp with
-    op p <- p,
-    type zmod <- Zp
-  proof ge2_p by smt.
-
-clone import Poly as Rp with
-    type coeff <- Zp,
-    type poly <- Rp.
-
-clone Matrix as Mat_Rp with
-    type R <- Rp,
-    op size <- l
-  proof ge0_size by smt.    
-
-type Rp_vec = Mat_Rp.vector.
-
-op [lossless full uniform] dRp : Rp distr. 
-op dRp_vec : Rp_vec distr = Mat_Rp.Matrix.dvector dRp.
-
-(* -- Zppq = Z/ppqZ -- *)
-type Zppq.
-type Rppq.
-
-clone import ZModRing as Zppq with
-    op p <- p * p %/ q,
-    type zmod <- Zppq.
-
-clone import Poly as Rppq with 
-    type coeff <- Zppq,
-    type poly <- Rppq.
-
-(* -- Z2t = Z/2tZ  -- *)
-type Z2t.
-type R2t.
-
-clone import ZModRing as Z2t with
-    op p <- 2 * t,
-    type zmod <- Z2t
-    proof ge2_p by smt.
-
-clone import Poly as R2t with 
-    type coeff <- Z2t,
-    type poly <- R2t.
-
-(* -- Z2 = Z/2Z -- *)
-type Z2.
-type R2.
-
-clone import ZModRing as Z2 with
-    op p <- 2,
-    type zmod <- Z2
-    proof ge2_p by smt.
-
-clone import Poly as R2 with 
-    type coeff <- Z2,
-    type poly <- R2.
-
-(* - Properties - *)
-(* Vector distribution has same properties as the distribution of the vector's elements *)
-lemma dRq_vec_ll: is_lossless dRq_vec.
-proof. by apply Mat_Rq.Matrix.dvector_ll; rewrite /dRq; apply /dRq_ll. qed.
-
-lemma dRq_vec_fu: is_full dRq_vec.
-proof. by apply /Mat_Rq.Matrix.dvector_fu; rewrite /dRq; apply /dRq_fu. qed.
-
-lemma dRq_vec_uni: is_uniform dRq_vec.
-proof. by apply /Mat_Rq.Matrix.dvector_uni; rewrite /dRq; apply /dRq_uni. qed.
-
-lemma dRp_vec_ll: is_lossless dRp_vec.
-proof. by apply /Mat_Rp.Matrix.dvector_ll; rewrite /dRp; apply /dRp_ll. qed.
-
-lemma dRp_vec_fu: is_full dRp_vec.
-proof. by apply /Mat_Rp.Matrix.dvector_fu; rewrite /dRp; apply /dRp_fu. qed.
-
-lemma dRp_vec_uni: is_uniform dRp_vec.
-proof. by apply /Mat_Rp.Matrix.dvector_uni; rewrite /dRp; apply /dRp_uni. qed.
-
-lemma dsmallRq_vec_ll: is_lossless dsmallRq_vec.
-proof. by apply /Mat_Rq.Matrix.dvector_ll /dsmallRq_ll. qed.
-
-(* Matrix Distribution has same properties as the distribution of the matrix's elements *)
-lemma dRq_mat_ll: is_lossless dRq_mat.
-proof. apply /Mat_Rq.Matrix.dmatrix_ll; rewrite /dRq; apply /dRq_ll. qed.
-
-lemma dRq_mat_fu: is_full dRq_mat.
-proof. apply /Mat_Rq.Matrix.dmatrix_fu; rewrite /dRq; apply /dRq_fu. qed.
-
-lemma dRq_mat_uni: is_uniform dRq_mat.
-proof. apply /Mat_Rq.Matrix.dmatrix_uni; rewrite /dRq; apply /dRq_uni. qed.
-
-(* - Imports - *)
-import Mat_Rq.
-import Mat_Rp.
-
-(* - Constants - *)
-print Rq.
-const h1 : Rq = to_polyd (fun _ => Zq.inzmod (2^(eq - ep - 1))).
-const h2 : Rq = to_polyd (fun _ => Zq.inzmod (2^(ep - 2) - 2^(ep - et - 2))).
-const h : Rq_vec = vectc h1.
- 
-(* -- Cryptographic Types and Distributions  -- *)
-type seed.
-type pkey.
-type skey.
-type plaintext.
-type ciphertext.
-
-op [lossless full uniform] dseed : seed distr.
-
-(* -- Operations -- *)
-op scale (x : int, ea : int, eb : int) : int = if eb < ea then x %/ (2^(ea - eb)) else x * 2^(eb - ea).
-
-op scale_Zq_Zp (x : Zq) : Zp = Zp.inzmod (scale (Zq.asint x) eq ep).
-op scale_Zp_Z2t (x : Zp) : Z2t = Z2t.inzmod (scale (Zp.asint x) ep (et + 1)).
-op scale_Zp_Z2 (x : Zp) : Z2 = Z2.inzmod (scale (Zp.asint x) ep 1).
-op scale_Zp_Zppq (x : Zp) : Zppq = Zppq.inzmod (scale (Zp.asint x) ep (2 * ep - eq)).
-op scale_Zp_Zp (x : Zp) : Zp = Zp.inzmod (scale (Zp.asint x) ep ep).
-op scale_Zppq_Z2t (x : Zppq) : Z2t = Z2t.inzmod (scale (Zppq.asint x) (2 * ep - eq) (et + 1)).
-
-op scale_Rq_Rp (x : Rq) : Rp = to_polyd (fun i => scale_Zq_Zp x.[i]).
-op scale_Rp_R2t (x : Rp) : R2t = to_polyd (fun i => scale_Zp_Z2t x.[i]).
-op scale_Rp_R2 (x : Rp) : R2 = to_polyd (fun i => scale_Zp_Z2 x.[i]).
-op scale_Rp_Rppq (x : Rp) : Rppq = to_polyd (fun i => scale_Zp_Zppq x.[i]).
-op scale_Rp_Rp (x : Rp) : Rp = to_polyd (fun i => scale_Zp_Zp x.[i]).
-op scale_Rppq_R2t (x : Rppq) : R2t = to_polyd (fun i => scale_Zppq_Z2t x.[i]).
-
-op scale_vec_Rq_ZR (v : Rq_vec) : Rp_vec = offunv (fun i => scale_Rq_Rp v.[i]).
-
-op mod_p_Rq (x : Rq) : Rp = to_polyd (fun i => Zp.inzmod (Zq.asint x.[i])). 
-op mod_p_Rq_vec (v : Rq_vec) : Rp_vec = offunv (fun i => mod_p_Rq v.[i]).
-
-op pk_encode ['a] : 'a -> pkey.
-op pk_decode ['a] : pkey -> 'a.
-
-op sk_encode ['a] : 'a -> skey.
-op sk_decode ['a] : skey -> 'a.
-
-op m_encode ['a] : 'a -> plaintext.
-op m_decode ['a] : plaintext -> 'a.
-
-op c_encode ['a] : 'a -> ciphertext.
-op c_decode ['a] : ciphertext -> 'a.
-
-(* - Properties  - *)
-axiom pk_enc_dec_inv ['a] (x : 'a) : pk_decode (pk_encode x) = x. 
-axiom sk_enc_dec_inv ['a] (x : 'a) : sk_decode (sk_encode x) = x. 
-axiom m_enc_dec_inv ['a] (x : 'a) : m_decode (m_encode x) = x. 
-axiom c_enc_dec_inv ['a] (x : 'a) : c_decode (c_encode x) = x. 
-
-lemma scale_split (x ea eab eb : int):
-      0 <= eb => eb <= eab => eab <= ea =>
-      scale x ea eb = scale (scale x ea eab) eab eb. 
-proof. admit. qed.
-
-lemma scale_split_p_ppq_2t (x : Rp):
-      scale_Rp_R2t x = scale_Rppq_R2t (scale_Rp_Rppq x).
-proof. admit. qed.
-
-lemma scale_id (x ea eb : int) : ea = eb => scale x ea eb = x.
-proof. by move=> eq_eaeb; rewrite /scale eq_eaeb addzN expr0. qed.
-
-lemma scale_Zp_Zp_id (x : Zp) : scale_Zp_Zp x = x.
-proof. by rewrite /scale_Zp_Zp scale_id; [trivial | rewrite Zp.asintK]. qed.
-
-print fun_ext.
-lemma scale_Rp_Rp_id (x : Rp) : scale_Rp_Rp x = x.
-proof. 
-  rewrite /scale_Rp_Rp poly_eqP => c gte0_c.
-  have fi_xi: (fun i => scale_Zp_Zp x.[i]) = (fun i => x.[i]).
-   by rewrite fun_ext /(==) => ?; apply scale_Zp_Zp_id. 
-  rewrite fi_xi coeffE. 
-  split. move=> c0 gt0_c. simplify. rewrite lt0_coeff. apply gt0_c. trivial. exists (deg x). move => c0 ltc_deg. simplify. rewrite gedeg_coeff. split. move: ltc_deg. . rewrite /Rp."_.[_]". (fun (i : int) => x.[i]) c0). of_poly.
-
-  have   
-split. smt. /"_.[_]".
-pose f := fun (i : int) => scale_Zp_Zp x.[i]. 
-have : forall i, f i = x.[i].  move => ?. rewrite /f. apply scale_Zp_Zp_id. move => h1. rewrite poly_eqP. move=> c gt0_c. rewrite coeffE. split. move=> c' clt0. have: ispoly (of_poly x).
-apply Rp.of_polyP. move=> h2. rewrite h1. smt. rewrite ispoly. apply h1. qed.
-
-(* --- ROM --- *)
-clone import ROM as MLWR_ROM with
-   type in_t <- seed,
-   type out_t <- Rq_mat,
-   op dout <- fun (sd : seed) => dRq_mat,
-   type d_in_t <- unit,
-   type d_out_t <- bool.
-
-import Lazy.
-
-(* --- PKE --- *)
+(* --- General --- *)
 clone import PKE as Saber_PKE with
   type pkey <- pkey,
   type skey <- skey,
   type plaintext <- plaintext,
   type ciphertext <- ciphertext.
 
-(* --- General Lemmas --- *)
-lemma triangle_inequality (x y z : real) : `|x - z| <= `|x - y| + `|y - z| by smt.
-lemma reverse_triangle_inequality (x y : real) : `|x - y| >= `| `| x | - `| y | | by smt. 
-
-(*
---------------------------------
- Saber PKE Scheme (in ROM)
---------------------------------
-*)
-module Saber_PKE_Scheme_ROM : Scheme = {
+(* --- Actual --- *)
+module Saber_PKE_Scheme : Scheme = {
    proc kg() : pkey * skey = {
       var sd: seed;
       var _A: Rq_mat;
@@ -292,7 +38,7 @@ module Saber_PKE_Scheme_ROM : Scheme = {
       var b: Rp_vec;
       
       sd <$ dseed;
-      _A <@ LRO.o(sd);
+      _A <- gen sd;
       s <$ dsmallRq_vec;
       b <- scale_vec_Rq_Rp (_A *^ s + h);
       
@@ -314,11 +60,11 @@ module Saber_PKE_Scheme_ROM : Scheme = {
       pk_dec <- pk_decode pk;
       sd <- pk_dec.`1;
       b <- pk_dec.`2;
-      _A <@ LRO.o(sd);
+      _A <- gen sd;
       s' <$ dsmallRq_vec;
       b' <- scale_vec_Rq_Rp ((trmx _A) *^ s' + h);
       v' <- (dotp b (mod_p_Rq_vec s')) + (mod_p_Rq h1);
-      cm <- scale_Rp_R2t (v' + (Rp.inzmod (scale (R2.asint m_dec) 1 ep)));
+      cm <- scale_Rp_R2t (v' + (shl_enc m_dec (ep - 1)));
       
       return c_encode (cm, b');
    }
@@ -335,8 +81,8 @@ module Saber_PKE_Scheme_ROM : Scheme = {
       s <- sk_decode sk;
       cm <- c_dec.`1;
       b' <- c_dec.`2;
-      v <- (dotp b' (mod_p_Rq_vec s)) + (Rp.inzmod (Rq.asint h2));
-      m' <- scale_p_2 (v - (Rp.inzmod (scale (R2t.asint cm) (et + 1) ep)) + (Rp.inzmod (Rq.asint h2)));
+      v <- (dotp b' (mod_p_Rq_vec s)) + (mod_p_Rq h1);
+      m' <- scale_Rp_R2 (v - (shl_dec cm) + (mod_p_Rq h2));
       
       return Some (m_encode m');
    }
@@ -348,11 +94,11 @@ module Saber_PKE_Scheme_ROM : Scheme = {
 --------------------------------
 *)
 module type Adv_GMLWR = {
-   proc guess(sd : seed, b : Zp_vec) : bool
+   proc guess(sd : seed, b : Rp_vec) : bool
 }.
 
 module type Adv_XMLWR = {
-   proc guess(sd : seed, b : Zp_vec, a : Zq_vec, d : Zp) : bool
+   proc guess(sd : seed, b : Rp_vec, a : Rq_vec, d : Rp) : bool
 }.
 
 (*
@@ -360,45 +106,24 @@ module type Adv_XMLWR = {
  Games
 --------------------------------
 *)
-(* --- General CPA ROM Game --- *)
-module CPA_ROM (S : Scheme, A : Adversary) = {
-  proc main(b : bool) : bool = {
-    var pk : pkey;
-    var sk : skey;
-    var m0, m1 : plaintext;
-    var c : ciphertext;
-    var b' : bool;
-
-    LRO.init();
-
-    (pk, sk) <@ S.kg();
-    (m0, m1) <@ A.choose(pk);
-    c        <@ S.enc(pk, if b then m1 else m0);
-    b'       <@ A.guess(c);
-
-    return b';
-  }
-}.
 
 (* --- LWR-Related Games --- *)
 module GMLWR(A : Adv_GMLWR) = {
    proc main(u : bool) = {
       var u' : bool;
       var sd : seed;
-      var _A : Zq_mat;
-      var s : Zq_vec;
-      var b : Zp_vec;
-      
-      LRO.init();
+      var _A : Rq_mat;
+      var s : Rq_vec;
+      var b : Rp_vec;
 
       sd <$ dseed;
-      _A <@ LRO.o(sd);
-      s <$ dsmallZq_vec;
+      _A <- gen sd;
+      s <$ dsmallRq_vec;
       
       if (u) {
-         b <$ dZp_vec;
+         b <$ dRp_vec;
       } else {
-         b <- scale_vec_q_p (_A *^ s + h);
+         b <- scale_vec_Rq_Rp (_A *^ s + h);
       }
       
       u' <@ A.guess(sd, b);
@@ -411,30 +136,28 @@ module XMLWR(A : Adv_XMLWR) = {
    proc main(u : bool) = {
       var u' : bool;
       var sd : seed;
-      var _A : Zq_mat;
-      var s : Zq_vec;
-      var b : Zp_vec;
-      var a : Zq_vec;
-      var d : Zp;
-      
-      LRO.init();
+      var _A : Rq_mat;
+      var s : Rq_vec;
+      var b : Rp_vec;
+      var a : Rq_vec;
+      var d : Rp;
 
       sd <$ dseed;
-      _A <@ LRO.o(sd);
-      s <$ dsmallZq_vec;
+      _A <- gen sd;
+      s <$ dsmallRq_vec;
       
       if (u) {
-         b <$ dZp_vec;
+         b <$ dRp_vec;
       } else {
-         b <- scale_vec_q_p ((trmx _A) *^ s + h);
+         b <- scale_vec_Rq_Rp ((trmx _A) *^ s + h);
       }
       
-      a <$ dZq_vec;
+      a <$ dRq_vec;
 
       if (u) {
-         d <$ dZp;
+         d <$ dRp;
       } else {
-         d <- scale_q_p ((dotp a s) + h1);
+         d <- scale_Rq_Rp ((dotp a s) + h1);
       }
     
       u' <@ A.guess(sd, b, a, d);
@@ -446,191 +169,195 @@ module XMLWR(A : Adv_XMLWR) = {
 (* --- Game Sequence --- *)
 (* Game 0 *)
 module Game0(A : Adversary) = {
-   proc main(u : bool) = {
-      var u' : bool;
+   proc main() = {
+      var u, u' : bool;
       var m0, m1 : plaintext;
 
       var sd : seed;
-      var _A : Zq_mat;
-      var s, s' : Zq_vec;
-      var b, b' : Zp_vec;
-      var v' : Zp;
-      var cmu : Z2t;
-      
-      LRO.init();
+      var _A : Rq_mat;
+      var s, s' : Rq_vec;
+      var b, b' : Rp_vec;
+      var v' : Rp;
+      var cmu : R2t;
+
+      u <$ dbool;
 
       sd <$ dseed;
-      _A <@ LRO.o(sd);
-      s <$ dsmallZq_vec;
-      b <- scale_vec_q_p (_A *^ s + h);
+      _A <- gen sd;
+      s <$ dsmallRq_vec;
+      b <- scale_vec_Rq_Rp (_A *^ s + h);
 
       (m0, m1) <@ A.choose(pk_encode (sd, b));
 
-      s' <$ dsmallZq_vec;
-      b' <- scale_vec_q_p (( trmx _A) *^ s' + h);
-      v' <- (dotp b (mod_p_Zq_vec s')) + (Zp.inzmod (Zq.asint h1));
-      cmu <- scale_p_2t (v' + (Zp.inzmod (scale (Z2.asint (m_decode (if u then m1 else m0))) 1 ep)));
+      s' <$ dsmallRq_vec;
+      b' <- scale_vec_Rq_Rp (( trmx _A) *^ s' + h);
+      v' <- (dotp b (mod_p_Rq_vec s')) + (mod_p_Rq h1);
+      cmu <- scale_Rp_R2t (v' + (shl_enc (m_decode (if u then m1 else m0)) (ep - 1)));
       
       u' <@ A.guess(c_encode (cmu, b'));
 
-      return u';
+      return (u = u');
    }
 }.
 
 (* Game 1 *)
 module Game1(A : Adversary) = {
-   proc main(u : bool) = {
-      var u' : bool;
+   proc main() = {
+      var u, u' : bool;
       var m0, m1 : plaintext;
 
       var sd : seed;
-      var _A : Zq_mat;
-      var s, s' : Zq_vec;
-      var b, b' : Zp_vec;
-      var v' : Zp;
-      var cmu : Z2t;
-      
-      LRO.init();
+      var _A : Rq_mat;
+      var s, s' : Rq_vec;
+      var b, b' : Rp_vec;
+      var v' : Rp;
+      var cmu : R2t;
+
+      u <$ dbool;
 
       sd <$ dseed;
-      _A <@ LRO.o(sd);
-      (* Skip: s <$ dsmallZq_vec; *)
-      b <$ dZp_vec;
+      _A <- gen sd;
+      (* Skip: s <$ dsmallRq_vec; *)
+      b <$ dRp_vec;
 
       (m0, m1) <@ A.choose(pk_encode (sd, b));
 
-      s' <$ dsmallZq_vec;
-      b' <- scale_vec_q_p (( trmx _A) *^ s' + h);
-      v' <- (dotp b (mod_p_Zq_vec s')) + (Zp.inzmod (Zq.asint h1));
-      cmu <- scale_p_2t (v' + (Zp.inzmod (scale (m_decode (if u then m1 else m0)) 1 ep)));
+      s' <$ dsmallRq_vec;
+      b' <- scale_vec_Rq_Rp (( trmx _A) *^ s' + h);
+      v' <- (dotp b (mod_p_Rq_vec s')) + (mod_p_Rq h1);
+      cmu <- scale_Rp_R2t (v' + (shl_enc (m_decode (if u then m1 else m0)) (ep - 1)));
       
       u' <@ A.guess(c_encode (cmu, b'));
 
-      return u';
+      return (u = u');
    }
 }.
 
 (* Game 2 *)
 module Game2(A : Adversary) = {
-   proc main(u : bool) = {
-      var u' : bool;
+   proc main() = {
+      var u, u' : bool;
       var m0, m1 : plaintext;
 
       var sd : seed;
-      var _A : Zq_mat;
-      var s, s' : Zq_vec;
-      var b, b' : Zp_vec;
-      var v' : Zp;
-      var cmu : Zppq;
-      
-      LRO.init();
+      var _A : Rq_mat;
+      var s, s' : Rq_vec;
+      var b, b' : Rp_vec;
+      var v' : Rp;
+      var cmu : Rppq;
+
+      u <$ dbool;
 
       sd <$ dseed;
-      _A <@ LRO.o(sd);
-      (* Skip: s <$ dsmallZq_vec; *)
-      b <$ dZp_vec;
+      _A <- gen sd;
+      (* Skip: s <$ dsmallRq_vec; *)
+      b <$ dRp_vec;
 
       (m0, m1) <@ A.choose(pk_encode (sd, b));
 
-      s' <$ dsmallZq_vec;
-      b' <- scale_vec_q_p ((trmx _A) *^ s' + h);
-      v' <- (dotp b (mod_p_Zq_vec s')) + (Zp.inzmod (Zq.asint h1));
-      cmu <- scale_p_ppq (v' + (Zp.inzmod (scale (m_decode (if u then m1 else m0)) 1 ep)));
+      s' <$ dsmallRq_vec;
+      b' <- scale_vec_Rq_Rp (( trmx _A) *^ s' + h);
+      v' <- (dotp b (mod_p_Rq_vec s')) + (mod_p_Rq h1);
+      cmu <- scale_Rp_Rppq (v' + (shl_enc (m_decode (if u then m1 else m0)) (ep - 1)));
       
       u' <@ A.guess(c_encode (cmu, b'));
 
-      return u';
+      return (u = u');
    }
 }.
 
 (* Game 3 *)
 module Game3(A : Adversary) = {
-   proc main(u : bool) = {
-      var u' : bool;
+   proc main() = {
+      var u, u' : bool;
       var m0, m1 : plaintext;
 
       var sd : seed;
-      var _A : Zq_mat;
-      var s, s' : Zq_vec;
-      var b : Zq_vec;
-      var b' : Zp_vec;
-      var v' : Zp;
-      var cmu : Zp;
-      
-      LRO.init();
+      var _A : Rq_mat;
+      var s, s' : Rq_vec;
+      var b : Rq_vec;
+      var b' : Rp_vec;
+      var v' : Rp;
+      var cmu : Rp;
+
+      u <$ dbool;
 
       sd <$ dseed;
-      _A <@ LRO.o(sd);
-      (* Skip: s <$ dsmallZq_vec; *)
-      b <$ dZq_vec;
+      _A <- gen sd;
+      (* Skip: s <$ dsmallRq_vec; *)
+      b <$ dRq_vec;
 
       (m0, m1) <@ A.choose(pk_encode (sd, b));
 
-      s' <$ dsmallZq_vec;
-      b' <- scale_vec_q_p (( trmx _A) *^ s' + h);
-      v' <- scale_q_p ((dotp b s') + h1);
-      cmu <- scale_p_p (v' + (Zp.inzmod (scale (m_decode (if u then m1 else m0)) 1 (2 * ep - eq))));
-      
+      s' <$ dsmallRq_vec;
+      b' <- scale_vec_Rq_Rp (( trmx _A) *^ s' + h);
+      v' <- scale_Rq_Rp ((dotp b s') + h1);
+      cmu <- scale_Rp_Rp (v' + (shl_enc (m_decode (if u then m1 else m0)) (2 * ep - eq - 1)));
+   
       u' <@ A.guess(c_encode (cmu, b'));
 
-      return u';
+      return (u = u');
    }
 }.
 
 (* Game 4 *)
 module Game4(A : Adversary) = {
-   proc main(u : bool) = {
-      var u' : bool;
+   proc main() = {
+      var u, u' : bool;
       var m0, m1 : plaintext;
 
       var sd : seed;
-      var _A : Zq_mat;
-      var s, s' : Zq_vec;
-      var b : Zq_vec;
-      var b' : Zp_vec;
-      var v' : Zp;
-      var cmu : Zp;
+      var _A : Rq_mat;
+      var s, s' : Rq_vec;
+      var b : Rq_vec;
+      var b' : Rp_vec;
+      var v' : Rp;
+      var cmu : Rp;
+
+      u <$ dbool;
 
       sd <$ dseed;
-      _A <@ LRO.o(sd);
-      (* Skip: s <$ dsmallZq_vec; *)
-      b <$ dZq_vec;
+      _A <- gen sd;
+      (* Skip: s <$ dsmallRq_vec; *)
+      b <$ dRq_vec;
 
       (m0, m1) <@ A.choose(pk_encode (sd, b));
 
-      (* Skip: s' <$ dsmallZq_vec; *)
-      b' <$ dZp_vec;
-      v' <$ dZp;
-      cmu <- scale_p_p (v' + (Zp.inzmod (scale (m_decode (if u then m1 else m0)) 1 (2 * ep - eq))));
+      (* Skip: s' <$ dsmallRq_vec; *)
+      b' <$ dRp_vec;
+      v' <$ dRp;
+      cmu <- scale_Rp_Rp (v' + (shl_enc (m_decode (if u then m1 else m0)) (2 * ep - eq - 1)));
       
       u' <@ A.guess(c_encode (cmu, b'));
 
-      return u';
+      return (u = u');
    }
 }.
 
 (* Auxiliary Game with All Random Artifacts *)
 module Auxiliary_Game(A : Adversary) = {
-   proc main(u : bool) = {
-      var u' : bool;
+   proc main() = {
+      var u, u' : bool;
       var m0, m1 : plaintext;
       
       var sd : seed;
-      var b : Zq_vec;
-      var b' : Zp_vec;
-      var cmu : Zp;
+      var b : Rq_vec;
+      var b' : Rp_vec;
+      var cmu : Rp;
       
       sd <$ dseed;
-      b <$ dZq_vec;
+      b <$ dRq_vec;
       
       (m0, m1) <@ A.choose(pk_encode (sd, b));
        
-      b' <$ dZp_vec;
-      cmu <$ dZp;
+      b' <$ dRp_vec;
+      cmu <$ dRp;
          
       u' <@ A.guess(c_encode (cmu, b'));
+      
+      u <$ dbool;
 
-      return u';
+      return (u = u');
   }
 }.
 
@@ -642,25 +369,26 @@ module Auxiliary_Game(A : Adversary) = {
 (* --- LWR-Related Adversaries --- *)
 (* Adversary B0 against GMLWR constructed from adversary A distinguishing between Game0 and Game1 *)
 module B0(A : Adversary) : Adv_GMLWR = {
-   proc guess(sd : seed, b : Zp_vec) : bool = {
+   proc guess(sd : seed, b : Rp_vec) : bool = {
       var w, w' : bool;
       var m0, m1 : plaintext;
       
-      var _A : Zq_mat;
-      var s' : Zq_vec;
-      var b' : Zp_vec;
-      var v' : Zp;
-      var cmw : Z2t;
+      var _A : Rq_mat;
+      var s' : Rq_vec;
+      var b' : Rp_vec;
+      var v' : Rp;
+      var cmw : R2t;
       
       w <$ dbool;
-      _A <@ LRO.o(sd);
+
+      _A <- gen sd;
 
       (m0, m1) <@ A.choose(pk_encode (sd, b));
 
-      s' <$ dsmallZq_vec;
-      b' <- scale_vec_q_p ((trmx _A) *^ s' + h);
-      v' <- (dotp b (mod_p_Zq_vec s')) + (Zp.inzmod (Zq.asint h1));
-      cmw <- scale_p_2t (v' + (Zp.inzmod (scale (m_decode (if w then m1 else m0)) 1 ep)));
+      s' <$ dsmallRq_vec;
+      b' <- scale_vec_Rq_Rp ((trmx _A) *^ s' + h);
+      v' <- (dotp b (mod_p_Rq_vec s')) + (mod_p_Rq h1);
+      cmw <- scale_Rp_R2t (v' + (shl_enc (m_decode (if w then m1 else m0)) (ep - 1)));
       
       w' <@ A.guess(c_encode (cmw, b'));
       
@@ -670,17 +398,17 @@ module B0(A : Adversary) : Adv_GMLWR = {
 
 (* Adversary B1 against XMLWR constructed from adversary A distinguishing between Game3 and Game4 *)
 module B1(A : Adversary) : Adv_XMLWR = {
-   proc guess(sd : seed, b : Zp_vec, a : Zq_vec, d : Zp) : bool =  {
+   proc guess(sd : seed, b : Rp_vec, a : Rq_vec, d : Rp) : bool =  {
       var w, w' : bool;
       var m0, m1 : plaintext;
       
-      var cmw : Zp;
+      var cmw : Rp;
       
       w <$ dbool;
 
       (m0, m1) <@ A.choose(pk_encode (sd, a));
 
-      cmw <- scale_p_p (d + (Zp.inzmod (scale (m_decode (if w then m1 else m0)) 1 (2 * ep - eq))));
+      cmw <- scale_Rp_Rp (d + (shl_enc (m_decode (if w then m1 else m0)) (2 * ep - eq - 1)));
       
       w' <@ A.guess(c_encode (cmw, b));
       
@@ -701,17 +429,17 @@ module A2(A1 : Adversary) : Adversary = {
 
    proc guess(c : ciphertext) : bool = {
       var u' : bool;
-      var c_dec : Zppq * Zp_vec;
+      var c_dec : Rppq * Rp_vec;
 
-      var cmu : Zppq;
-      var b' : Zp_vec;
-      var cmu' : Z2t;
+      var cmu : Rppq;
+      var b' : Rp_vec;
+      var cmu' : R2t;
       
       c_dec <- c_decode c;
       cmu <- c_dec.`1;
       b' <- c_dec.`2;
 
-      cmu' <- scale_ppq_2t cmu; 
+      cmu' <- scale_Rppq_R2t cmu; 
             
       u' <@ A1.guess(c_encode (cmu', b'));
 
@@ -722,17 +450,17 @@ module A2(A1 : Adversary) : Adversary = {
 (* Adversary A3 against Game3 constructed from adversary A2 against Game2 *)
 module A3(A2 : Adversary) : Adversary = {
    proc choose(pk : pkey) : plaintext * plaintext = {
-      var pk_dec : seed * Zq_vec;
+      var pk_dec : seed * Rq_vec;
       var m0, m1 : plaintext;
       
       var sd : seed;
-      var b : Zq_vec;
-      var bp: Zp_vec;
+      var b : Rq_vec;
+      var bp: Rp_vec;
       
       pk_dec <- pk_decode pk;
       sd <- pk_dec.`1;
       b <- pk_dec.`2;
-      bp <- mod_p_Zq_vec b;
+      bp <- mod_p_Rq_vec b;
       
       (m0, m1) <@ A2.choose(pk_encode (sd, bp));
       
@@ -741,16 +469,16 @@ module A3(A2 : Adversary) : Adversary = {
 
    proc guess(c : ciphertext) : bool = {
       var u' : bool;
-      var c_dec : Zp * Zp_vec;
+      var c_dec : Rp * Rp_vec;
       
-      var cmu : Zp;
-      var b' : Zp_vec;
-      var cmu' : Zppq;
+      var cmu : Rp;
+      var b' : Rp_vec;
+      var cmu' : Rppq;
       
       c_dec <- c_decode c;
       cmu <- c_dec.`1;
       b' <- c_dec.`2;
-      cmu' <- Zppq.inzmod (Zp.asint cmu); 
+      cmu' <- mod_ppq_Rp cmu; 
       
       u' <@ A2.guess(c_encode (cmu', b'));
 
@@ -758,6 +486,11 @@ module A3(A2 : Adversary) : Adversary = {
    }
 }.
 
+(* -- Properties -- *)
+axiom Adv_CPA_choose_ll (A <: Adversary) : islossless A.choose.
+axiom Adv_CPA_guess_ll (A <: Adversary) : islossless A.guess.
+axiom Adv_GMLWR_ll (A <: Adv_GMLWR) : islossless A.guess.
+axiom Adv_XMLWR_ll (A <: Adv_XMLWR) : islossless A.guess.
 
 (*
 --------------------------------
@@ -765,211 +498,186 @@ module A3(A2 : Adversary) : Adversary = {
 --------------------------------
 *)
 (* Saber's INDCPA == Game 0 *)
-lemma Equivalence_SaberINDCPA_Game0 &m (A <: Adversary{LRO}) :
-      `| Pr[CPA_ROM(Saber_PKE_Scheme_ROM, A).main(true) @ &m : res] - Pr[CPA_ROM(Saber_PKE_Scheme_ROM, A).main(false) @ &m : res] |
+lemma Equivalence_SaberINDCPA_Game0 &m (A <: Adversary) :
+      `| Pr[CPA(Saber_PKE_Scheme, A).main() @ &m : res] - 1%r / 2%r |
       =
-      `| Pr[Game0(A).main(true) @ &m : res] - Pr[Game0(A).main(false) @ &m : res] |.
+      `| Pr[Game0(A).main() @ &m : res] - 1%r /2%r |.
 proof.
-  have eq_T_T : Pr[CPA_ROM(Saber_PKE_Scheme_ROM, A).main(true) @ &m : res] = Pr[Game0(A).main(true) @ &m : res].
+  have ->: Pr[CPA(Saber_PKE_Scheme, A).main() @ &m : res] = Pr[Game0(A).main() @ &m : res].
    byequiv => //.
-   proc; inline *.
+   proc; inline *. 
+   swap {1} 7 -6.
    call (_ : true); auto; call (_: true); auto.
-   progress; smt.
-  have eq_F_F: Pr[CPA_ROM(Saber_PKE_Scheme_ROM, A).main(false) @ &m : res] = Pr[Game0(A).main(false) @ &m : res].
-   byequiv => //.
-   proc; inline *.
-   call (_ : true); auto; call (_: true); auto.
-   progress; smt.
-  by rewrite eq_T_T eq_F_F.
+   progress; first do! congr; by rewrite pk_enc_dec_inv. 
+    by case (bL); case (result_R0).
+  by reflexivity.
 qed.
 
 (* Game0 <> Game1 ==> GMLWR *)
-lemma Distinguish_Game0_Game1_To_GMLWR &m  (A <: Adversary{LRO}) :
-      `| `| Pr[Game0(A).main(true) @ &m : res] - Pr[Game0(A).main(false) @ &m : res] | - 
-         `| Pr[Game1(A).main(true) @ &m : res] - Pr[Game1(A).main(false) @ &m : res] | | 
-      <= 
-      2%r * `| Pr[GMLWR( B0(A) ).main(true) @ &m : res] - Pr[GMLWR( B0(A) ).main(false) @ &m : res] |. 
+lemma Distinguish_Game0_Game1_To_GMLWR &m  (A <: Adversary) :
+      `| Pr[Game0(A).main() @ &m : res] - Pr[Game1(A).main() @ &m : res] |
+      = 
+      `| Pr[GMLWR( B0(A) ).main(true) @ &m : res] - Pr[GMLWR( B0(A) ).main(false) @ &m : res] |. 
 proof.
-  admit.
+  have ->: Pr[Game0(A).main() @ &m : res] =  Pr[GMLWR( B0(A) ).main(false) @ &m : res].
+   byequiv => //.
+   proc; inline *.
+   rcondf {2} 4.
+    by move=> &m0; auto.
+   swap {2} 7 -6; wp.
+   by call (_ : true); auto; call (_: true); auto.
+  have ->: Pr[Game1(A).main() @ &m : res] =  Pr[GMLWR( B0(A) ).main(true) @ &m : res].
+   byequiv => //.
+   proc; inline *.
+   rcondt {2} 4.
+    by move=> &m0; auto.
+   swap {2} 7 -6; wp.
+   call (_ : true); auto; call (_: true); auto; rnd {2}; auto.
+   by progress; apply dsmallRq_vec_ll.
+  by apply RealOrder.distrC.
 qed.
 
+
 (* Game1 ==> Game2 *)
-lemma Game1_To_Game2 &m (A <: Adversary{LRO}) :
-      `| Pr[Game1(A).main(true) @ &m : res] - Pr[Game1(A).main(false) @ &m : res]|
+lemma Game1_To_Game2 &m (A <: Adversary) :
+      `| Pr[Game1(A).main() @ &m : res] - 1%r / 2%r |
       =
-      `| Pr[Game2( A2(A) ).main(true) @ &m : res] - Pr[Game2( A2(A) ).main(false) @ &m : res]|.
+      `| Pr[Game2( A2(A) ).main() @ &m : res] - 1%r / 2%r |.
 proof.
-  have eq_T_T : Pr[Game1(A).main(true) @ &m : res] = Pr[Game2( A2(A) ).main(true) @ &m : res].
+  have ->: Pr[Game1(A).main() @ &m : res] = Pr[Game2( A2(A) ).main() @ &m : res].
    byequiv => //.
    proc; inline *.
    wp; call (_ : true); auto; call (_ : true); auto.
-   progress; smt. 
-  have eq_F_F: Pr[Game1(A).main(false) @ &m : res] = Pr[Game2( A2(A) ).main(false) @ &m : res].
-   byequiv => //.
-   proc; inline *.
-   wp; call (_ : true); auto; call (_ : true); auto.
-   progress; smt. 
-  by rewrite eq_T_T eq_F_F.
+   by progress; do! congr; rewrite c_enc_dec_inv; first rewrite scale_comp_Rp_Rppq_R2t.  
+  by reflexivity.
 qed.
 
 (* Game2 ==> Game3 *)
-lemma Game2_To_Game3 &m (A <: Adversary{LRO}) :
-      `| Pr[Game2(A).main(true) @ &m : res] - Pr[Game2(A).main(false) @ &m : res]|
+lemma Game2_To_Game3 &m (A <: Adversary) :
+      `| Pr[Game2(A).main() @ &m : res] - 1%r / 2%r |
       =
-      `| Pr[Game3( A3(A) ).main(true) @ &m : res] - Pr[Game3( A3(A) ).main(false) @ &m : res]|.
+      `| Pr[Game3( A3(A) ).main() @ &m : res] - 1%r / 2%r |.
 proof.
-  have eq_T_T : Pr[Game2(A).main(true) @ &m : res] = Pr[Game3( A3(A) ).main(true) @ &m : res].
-   byequiv =>//.
+  have ->: Pr[Game2(A).main() @ &m : res] = Pr[Game3( A3(A) ).main() @ &m : res].
+   byequiv => //.
    proc; inline *.
-   wp; call(_ : true); wp; rnd; wp; call(_ : true); wp.
-   rnd (fun (x : Zp_vec) => offunv (fun i => Zq.inzmod (Zp.asint x.[i])))
-       (fun (x : Zq_vec) => mod_p_Zq_vec x).
-  auto.
-  progress.
-  admit.
-  have eq_F_F: Pr[Game2(A).main(false) @ &m : res] = Pr[Game3( A3(A) ).main(false) @ &m : res].
-  admit.
-  by rewrite eq_T_T eq_F_F.
+   wp; call (_ : true); auto; call (_ : true); wp.
+   (* What functions to use here... *)
+   admit.
+  by reflexivity.
 qed.
 
 
 (* Game3 <> Game4 ==> XMLWR *)
-lemma Distinguish_Game3_Game4_To_XMLWR &m (A <: Adversary{LRO}) :
-      `| `| Pr[Game3(A).main(true) @ &m : res] - Pr[Game3(A).main(false) @ &m : res] | - 
-         `| Pr[Game4(A).main(true) @ &m : res] - Pr[Game4(A).main(false) @ &m : res] | | 
-      <= 
-      2%r * `| Pr[XMLWR( B1(A) ).main(true) @ &m : res] - Pr[XMLWR( B1(A) ).main(false) @ &m : res] |. 
+lemma Distinguish_Game3_Game4_To_XMLWR &m (A <: Adversary) :
+      `| Pr[Game3(A).main() @ &m : res] - Pr[Game4(A).main() @ &m : res] |
+      = 
+      `| Pr[XMLWR( B1(A) ).main(true) @ &m : res] - Pr[XMLWR( B1(A) ).main(false) @ &m : res] |. 
 proof.
-  admit.
+  have ->: Pr[Game3(A).main() @ &m : res] =  Pr[XMLWR( B1(A) ).main(false) @ &m : res].
+   byequiv => //.
+   proc; inline *.
+   rcondf {2} 4.
+    by move=> &m0; auto.
+   rcondf {2} 6.
+    by move=> &m0; auto.
+   swap {2} 11 -10; swap {1} 5 3; swap {2} 6 -2; wp.
+   by sim.
+  have ->: Pr[Game4(A).main() @ &m : res] =  Pr[XMLWR( B1(A) ).main(true) @ &m : res].
+   byequiv => //.
+   proc; inline *.
+   rcondt {2} 4.
+    by move=> &m0; auto.
+   rcondt {2} 6.
+    by move=> &m0; auto.
+   swap {2} 11 -10; swap {1} 5 2; swap {2} 6 -1; wp.
+   sim; rnd {2}; auto.
+   by  progress; apply dsmallRq_vec_ll.
+  by apply RealOrder.distrC.
 qed.
-
 
 (* Auxiliary_Game Analysis *)
-lemma Aux_Advantage_Zero &m  (A <: Adversary{LRO}) :
-      `| Pr[Auxiliary_Game(A).main(true) @ &m : res] - Pr[Auxiliary_Game(A).main(false) @ &m : res] | = 0%r. 
+lemma Aux_Prob_Half &m  (A <: Adversary) :
+      Pr[Auxiliary_Game(A).main() @ &m : res]  = 1%r / 2%r. 
 proof.
-  have eq_T_F:  Pr[Auxiliary_Game(A).main(true) @ &m : res] = Pr[Auxiliary_Game(A).main(false) @ &m : res]. 
-   byequiv => //.
-   proc.
-   by call (_: true); auto; call(_ : true); auto.
-  by rewrite eq_T_F. 
+  byphoare => //.
+  proc.
+  rnd. 
+  call (_: true); [ apply (Adv_CPA_guess_ll A) | auto ].
+  call(_ : true); [ apply (Adv_CPA_choose_ll A) | auto ].
+  by progress; [ apply dseed_ll | apply dRq_vec_ll | apply dRp_vec_ll | apply DRp.dunifin_ll | apply dbool1E ].
 qed.
 
-(* Game4 == Aux *)
-lemma Equivalence_Game4_Aux &m  (A <: Adversary{LRO}) :
-      `| Pr[Game4(A).main(true) @ &m : res] - Pr[Game4(A).main(false) @ &m : res] | 
+lemma Equivalence_Game4_Aux &m  (A <: Adversary) :
+      `| Pr[Game4(A).main() @ &m : res] - 1%r /2%r | 
       =
-      `| Pr[Auxiliary_Game(A).main(true) @ &m : res] - Pr[Auxiliary_Game(A).main(false) @ &m : res] |.
+      `| Pr[Auxiliary_Game(A).main() @ &m : res] - 1%r / 2%r |.
 proof.
-  have xmx_0 : forall (x : Zp), x - x = Zp.zero. 
-   by move=> xZp; rewrite -Zp.ZModule.addrC Zp.ZModule.addNr.
- 
-  have eq_T_T: Pr[Auxiliary_Game(A).main(true) @ &m : res] = Pr[Game4(A).main(true) @ &m : res].
-   byequiv => //.
-   proc; inline*.
-   call (_ : true); wp. 
-   rnd (fun (x : Zp) => x - Zp.inzmod(scale (m_decode m1{2}) 1 (2 * ep - eq)))  
-       (fun (x : Zp) => x + Zp.inzmod(scale (m_decode m1{2}) 1 (2 * ep - eq))). 
-   auto; call (_ : true); auto.
-   rnd {2}; auto.
+  have ->: Pr[Game4(A).main() @ &m : res] = Pr[Auxiliary_Game(A).main() @ &m : res].
+   byequiv => //. 
+   proc; inline *.
+   swap {2} 7 -6.
+   call (_ : true); wp.
+   rnd (fun (x : Rp) => x + (shl_enc (m_decode (if u{1} then m1{1} else m0{1})) (2 * ep - eq - 1)))  
+       (fun (x : Rp) => x - (shl_enc (m_decode (if u{1} then m1{1} else m0{1})) (2 * ep - eq - 1))).
+   auto; call(_ : true); auto.
    progress.
-    by apply dZq_mat_ll.
-    pose x := (inzmod (scale (m_decode result_R.`2) 1 (2 * ep - eq)))%Zp.
-    by rewrite -Zp.ZModule.addrA xmx_0 Zp.ZModule.addrC Zp.ZModule.add0r.
-    pose x := (inzmod (scale (m_decode result_R.`2) 1 (2 * ep - eq)))%Zp.
-    by rewrite -Zp.ZModule.addrA Zp.ZModule.addNr Zp.ZModule.addrC Zp.ZModule.add0r.
-    by rewrite {1} H8 scale_p_p_id.
-  
-  have eq_F_F: Pr[Auxiliary_Game(A).main(false) @ &m : res] = Pr[Game4(A).main(false) @ &m : res].
-   byequiv => //.
-   proc; inline*.
-   call (_ : true); wp. 
-   rnd (fun (x : Zp) => x - Zp.inzmod(scale (m_decode m0{2}) 1 (2 * ep - eq)))  
-       (fun (x : Zp) => x + Zp.inzmod(scale (m_decode m0{2}) 1 (2 * ep - eq))). 
-   auto; call (_ : true); auto.
-   rnd {2}; auto.
-   progress.
-    by apply dZq_mat_ll.
-    pose x := (inzmod (scale (m_decode result_R.`2) 1 (2 * ep - eq)))%Zp.
-    by rewrite -Zp.ZModule.addrA xmx_0 Zp.ZModule.addrC Zp.ZModule.add0r.
-    pose x := (inzmod (scale (m_decode result_R.`2) 1 (2 * ep - eq)))%Zp.
-    by rewrite -Zp.ZModule.addrA Zp.ZModule.addNr Zp.ZModule.addrC Zp.ZModule.add0r.
-    by rewrite {1} H8 scale_p_p_id.
-  
-  by rewrite eq_T_T eq_F_F.
+    pose x := shl_enc (m_decode (if uL then result_R.`2 else result_R.`1)) (2 * ep - eq - 1).
+    by rewrite -Rp.PolyRing.addrA Rp.PolyRing.addNr Rp.PolyRing.addrC Rp.PolyRing.add0r.
+    pose x := shl_enc (m_decode (if uL then result_R.`2 else result_R.`1)) (2 * ep - eq - 1).
+    have xx_0 : forall (x : Rp), x - x = Rp.poly0.
+     by move=> x0; rewrite -(Rp.PolyRing.addrN x0).
+    by rewrite -Rp.PolyRing.addrA xx_0 Rp.PolyRing.addrC Rp.PolyRing.add0r.
+    by rewrite scale_Rp_Rp_id H7.
+  by reflexivity.    
 qed.
-
 
 (* Game4 Analysis *)
-lemma Game4_Advantage_Zero &m (A <: Adversary{LRO}) :
-      `| Pr[Game4(A).main(true) @ &m : res] - Pr[Game4(A).main(false) @ &m : res] | = 0%r. 
+lemma Game4_Prob_Half &m (A <: Adversary) :
+      Pr[Game4(A).main() @ &m : res] = 1%r / 2%r. 
 proof.
-   by rewrite (Equivalence_Game4_Aux &m A); apply (Aux_Advantage_Zero &m A).
+  rewrite -(Real.RField.subr_eq0  Pr[Game4(A).main() @ &m : res]  (1%r / 2%r)) -RealOrder.normr0P.
+  by rewrite (Equivalence_Game4_Aux &m A) (Aux_Prob_Half &m A).
 qed.
-
 
 (* Intelligibility Intermediate Result *)
-lemma Difference_Advantage_Game1_Game4 &m (A <: Adversary{LRO}):
-      `| `| Pr[Game1(A).main(true) @ &m : res] - Pr[Game1(A).main(false) @ &m : res] | - 
-         `| Pr[Game4( A3(A2(A)) ).main(true) @ &m : res] - Pr[Game4( A3(A2(A)) ).main(false) @ &m : res] | |
-      <=
-      2%r * `| Pr[XMLWR( B1(A3(A2(A))) ).main(true) @ &m : res] - Pr[XMLWR( B1(A3(A2(A))) ).main(false) @ &m : res] |.
+lemma Difference_Game1_Game4_To_XMLWR &m (A <: Adversary):
+      `| Pr[Game1(A).main() @ &m : res] - Pr[Game4( A3(A2(A)) ).main() @ &m : res] |
+      =
+      `| Pr[XMLWR( B1(A3(A2(A))) ).main(true) @ &m : res] - Pr[XMLWR( B1(A3(A2(A))) ).main(false) @ &m : res] |.
 proof. 
-  rewrite (Game4_Advantage_Zero &m (A3(A2(A)))) /= (Game1_To_Game2 &m A) (Game2_To_Game3 &m (A2(A))).
-  change (`| `|Pr[Game3( A3(A2(A)) ).main(true) @ &m : res] - Pr[Game3( A3(A2(A)) ).main(false) @ &m : res]| - 0%r| <=
-           2%r * `|Pr[XMLWR( B1(A3(A2(A))) ).main(true) @ &m : res] - Pr[XMLWR( B1(A3(A2(A))) ).main(false) @ &m : res]|).
-  by rewrite -(Game4_Advantage_Zero &m (A3(A2(A)))) (Distinguish_Game3_Game4_To_XMLWR &m (A3(A2(A)))).
+  by rewrite (Game4_Prob_Half &m (A3(A2(A)))) (Game1_To_Game2 &m A) (Game2_To_Game3 &m (A2(A))) 
+            -(Game4_Prob_Half &m (A3(A2(A)))) (Distinguish_Game3_Game4_To_XMLWR &m (A3(A2(A)))).
 qed.
 
-
 (* Final Result (Security Theorem) *)
-lemma Saber_INDCPA_Security_Theorem &m (A <: Adversary{LRO}) :
-      `| Pr[CPA_ROM(Saber_PKE_Scheme_ROM, A).main(true) @ &m : res] - Pr[CPA_ROM(Saber_PKE_Scheme_ROM, A).main(false) @ &m : res] |
+lemma Saber_INDCPA_Security_Theorem &m (A <: Adversary) :
+      `| Pr[CPA(Saber_PKE_Scheme, A).main() @ &m : res] - 1%r / 2%r |
       <=
-      2%r * `| Pr[GMLWR( B0(A) ).main(true) @ &m : res] - Pr[GMLWR( B0(A) ).main(false) @ &m : res] | 
+      `| Pr[GMLWR( B0(A) ).main(true) @ &m : res] - Pr[GMLWR( B0(A) ).main(false) @ &m : res] | 
       +
-      2%r * `| Pr[XMLWR( B1(A3(A2(A))) ).main(true) @ &m : res] - Pr[XMLWR( B1(A3(A2(A))) ).main(false) @ &m : res] |. 
+      `| Pr[XMLWR( B1(A3(A2(A))) ).main(true) @ &m : res] - Pr[XMLWR( B1(A3(A2(A))) ).main(false) @ &m : res] |. 
 proof.
-  rewrite (Equivalence_SaberINDCPA_Game0 &m A).
-  have eq_double_abs_min0: forall (x : real), `| x | = `| `| x | - 0%r |.
-   by smt.
-  rewrite {1} eq_double_abs_min0  -(Game4_Advantage_Zero &m (A3(A2(A)))).
+  rewrite (Equivalence_SaberINDCPA_Game0 &m A) -(Game4_Prob_Half &m (A3(A2(A)))).
 
-  have apply_triangle_inequality: 
-     `| `|Pr[Game0(A).main(true) @ &m : res] - Pr[Game0(A).main(false) @ &m : res]| -
-     `|Pr[Game4(A3(A2(A))).main(true) @ &m : res] - Pr[Game4(A3(A2(A))).main(false) @ &m : res]| | 
-     <=
-     `| `| Pr[Game0(A).main(true) @ &m : res] - Pr[Game0(A).main(false) @ &m : res] | - 
-        `| Pr[Game1(A).main(true) @ &m : res] - Pr[Game1(A).main(false) @ &m : res] | |
-     +
-     `| `| Pr[Game1(A).main(true) @ &m : res] - Pr[Game1(A).main(false) @ &m : res] | - 
-        `| Pr[Game4( A3(A2(A)) ).main(true) @ &m : res] - Pr[Game4( A3(A2(A)) ).main(false) @ &m : res] | |.
-   by rewrite (triangle_inequality 
-                `| Pr[Game0(A).main(true) @ &m : res] - Pr[Game0(A).main(false) @ &m : res] |
-                `| Pr[Game1(A).main(true) @ &m : res] - Pr[Game1(A).main(false) @ &m : res] |
-                `| Pr[Game4( A3(A2(A)) ).main(true) @ &m : res] - Pr[Game4( A3(A2(A)) ).main(false) @ &m : res] |).
+  have triangle_inequality: 
+       `| Pr[Game0(A).main() @ &m : res] - Pr[Game4( A3(A2(A)) ).main() @ &m : res] |  
+       <=
+       `| Pr[Game0(A).main() @ &m : res] - Pr[Game1(A).main() @ &m : res] |
+       +
+       `| Pr[Game1(A).main() @ &m : res] - Pr[Game4( A3(A2(A)) ).main() @ &m : res] |.
+   by apply RealOrder.ler_dist_add.
 
-  have adv01_adv14_lt_2advlwr: 
-    `| `| Pr[Game0(A).main(true) @ &m : res] - Pr[Game0(A).main(false) @ &m : res] | - 
-       `| Pr[Game1(A).main(true) @ &m : res] - Pr[Game1(A).main(false) @ &m : res] | |        
-     +
-    `| `| Pr[Game1(A).main(true) @ &m : res] - Pr[Game1(A).main(false) @ &m : res] | - 
-       `| Pr[Game4( A3(A2(A)) ).main(true) @ &m : res] - Pr[Game4( A3(A2(A)) ).main(false) @ &m : res] | |
-    <=
-    2%r * `|Pr[GMLWR( B0(A) ).main(true) @ &m : res] -  Pr[GMLWR( B0(A) ).main(false) @ &m : res]|
-    +
-    2%r * `|Pr[XMLWR( B1(A3(A2(A))) ).main(true) @ &m : res] - Pr[XMLWR( B1(A3(A2(A))) ).main(false) @ &m : res]|.
-   have double_lt: forall (x xg y yg: real), x <= xg => y <= yg => x + y <= xg + yg. 
-    by smt.
-   rewrite (double_lt
-              `| `| Pr[Game0(A).main(true) @ &m : res] - Pr[Game0(A).main(false) @ &m : res] | -
-                 `| Pr[Game1(A).main(true) @ &m : res] - Pr[Game1(A).main(false) @ &m : res] | |
-              (2%r * `| Pr[GMLWR( B0(A) ).main(true) @ &m : res] - Pr[GMLWR( B0(A) ).main(false) @ &m : res] |)
-              `| `| Pr[Game1(A).main(true) @ &m : res] - Pr[Game1(A).main(false) @ &m : res] | -
-                 `| Pr[Game4( A3(A2(A)) ).main(true) @ &m : res] - Pr[Game4( A3(A2(A)) ).main(false) @ &m : res] | |
-              (2%r * `| Pr[XMLWR( B1(A3(A2(A))) ).main(true) @ &m : res] - Pr[XMLWR( B1(A3(A2(A))) ).main(false) @ &m : res] |)).
-    by rewrite (Distinguish_Game0_Game1_To_GMLWR &m A).
-    by rewrite (Difference_Advantage_Game1_Game4 &m A).
+  have intermediate_result:
+       `| Pr[Game0(A).main() @ &m : res] - Pr[Game1(A).main() @ &m : res] |
+       +
+       `| Pr[Game1(A).main() @ &m : res] - Pr[Game4( A3(A2(A)) ).main() @ &m : res] |
+       <=
+       `|Pr[GMLWR(B0(A)).main(true) @ &m : res] - Pr[GMLWR(B0(A)).main(false) @ &m : res]| 
+       +
+       `|Pr[XMLWR(B1(A3(A2(A)))).main(true) @ &m : res] - Pr[XMLWR(B1(A3(A2(A)))).main(false) @ &m : res]|.
+   by apply /RealOrder.ler_add; [ rewrite (Distinguish_Game0_Game1_To_GMLWR &m A) |
+                                  rewrite -(Difference_Game1_Game4_To_XMLWR &m A) ].
 
-  by smt.
+  by move: triangle_inequality intermediate_result; apply RealOrder.ler_trans.
 qed.
