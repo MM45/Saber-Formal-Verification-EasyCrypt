@@ -560,10 +560,7 @@ proof.
    proc; inline *.
    wp; call (_ : true); auto; call (_ : true); wp.
    (* What functions to use here... *)
-   rnd (fun (x : Zp_vec) => offunv (fun i => Zq.inzmod (Zp.asint x.[i])))
-       (fun (x : Zq_vec)  => offunv (fun i => Zp.inzmod (Zq.asint x.[i]))).
-   auto.
-   progress; admit.
+   admit.
   by reflexivity.
 qed.
 

@@ -7,15 +7,12 @@ pragma Goals:printall.
 *)
 (* --- Built-in --- *)
 require import AllCore Distr DBool ZModP IntDiv StdOrder.
-require (*--*) Poly Matrix PKE.
-
-clone import Poly as Polynomial.
+require (*--*) Matrix PKE.
 
 (* --- Local --- *)
 require import SaberRqPreliminaries.
-(*---*) import Zq Zp Zppq Z2t Z2.
 (*---*) import Rq Rp Rppq R2t R2.
-(*---*) import Mat_Rq Mat_Rp. 
+(*---*) import Mat_Rq Mat_Rp.
 
 (*
 ----------------------------------

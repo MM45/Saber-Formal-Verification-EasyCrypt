@@ -5,9 +5,10 @@
 *)
 (* --- Built-in --- *)
 require import AllCore Distr ZModP IntDiv StdOrder.
-require (*--*) Poly Matrix.
+require (*--*) Matrix.
 
-clone import Poly as Polynomial.
+(* --- Local --- *)
+require import ZModPoly.
 
 (*
 --------------------------------
@@ -115,14 +116,13 @@ qed.
 type Zq.
 type Rq.
 
-clone import ZModRing as Zq with
+clone import ZModRingPoly as Rq with 
     op p <- q,
-    type zmod <- Zq
-  proof ge2_p by apply /(lez_trans 8 2 q) /ge8_q.
-
-clone import Poly as Rq with
     type coeff <- Zq,
-    type poly <- Rq.
+    type poly <- Rq
+  proof ge2_coeffp by apply /(lez_trans 8 2 q) /ge8_q
+
+  rename [theory] "Coeff" as "Zq".
 
 clone import MFinite as DRq with
     type t <- Rq,
@@ -147,14 +147,13 @@ op dsmallRq_vec : Rq_vec distr = Mat_Rq.Matrix.dvector dsmallRq.
 type Zp.
 type Rp.
 
-clone import ZModRing as Zp with
+clone import ZModRingPoly as Rp with 
     op p <- p,
-    type zmod <- Zp
-  proof ge2_p by apply /(lez_trans 4 2 p) /ge4_p.
-
-clone import Poly as Rp with
     type coeff <- Zp,
-    type poly <- Rp.
+    type poly <- Rp
+  proof ge2_coeffp by apply /(lez_trans 4 2 p) /ge4_p
+
+  rename [theory] "Coeff" as "Zp".
 
 clone import MFinite as DRp with
     type t <- Rp,
@@ -174,40 +173,37 @@ op dRp_vec : Rp_vec distr = Mat_Rp.Matrix.dvector dRp.
 type Zppq.
 type Rppq.
 
-clone import ZModRing as Zppq with
+clone import ZModRingPoly as Rppq with 
     op p <- p * p %/ q,
-    type zmod <- Zppq
-  proof ge2_p by apply ge2_ppq.
-
-clone import Poly as Rppq with 
     type coeff <- Zppq,
-    type poly <- Rppq.
+    type poly <- Rppq
+  proof ge2_coeffp by apply ge2_ppq
+
+  rename [theory] "Coeff" as "Zppq".
 
 (* -- Z2t = Z/2tZ  -- *)
 type Z2t.
 type R2t.
 
-clone import ZModRing as Z2t with
+clone import ZModRingPoly as R2t with 
     op p <- 2 * t,
-    type zmod <- Z2t
-    proof ge2_p by apply ge2_2t.
-
-clone import Poly as R2t with 
     type coeff <- Z2t,
-    type poly <- R2t.
+    type poly <- R2t
+  proof ge2_coeffp by apply ge2_2t
+
+  rename [theory] "Coeff" as "Z2t".
 
 (* -- Z2 = Z/2Z -- *)
 type Z2.
 type R2.
 
-clone import ZModRing as Z2 with
+clone import ZModRingPoly as R2 with 
     op p <- 2,
-    type zmod <- Z2
-    proof ge2_p by apply lezz.
-
-clone import Poly as R2 with 
     type coeff <- Z2,
-    type poly <- R2.
+    type poly <- R2
+  proof ge2_coeffp by apply lezz
+
+  rename [theory] "Coeff" as "Z2".
 
 (* - Properties - *)
 (* Vector distribution has same properties as the distribution of the vector's elements *)
@@ -356,11 +352,11 @@ qed.
 lemma scale_comp_Zp_Zppq_Z2t (x : Zp):
       scale_Zp_Z2t x = scale_Zppq_Z2t (scale_Zp_Zppq x).
 proof. 
-  rewrite /scale_Zp_Z2t /scale_Zppq_Z2t /scale_Zp_Zppq inzmodK -eq_inzmod; do 2! congr.
+  rewrite /scale_Zp_Z2t /scale_Zppq_Z2t /scale_Zp_Zppq Zppq.inzmodK -Z2t.eq_inzmod; do 2! congr.
   have ge2epeq_ep: 2 * ep - eq <= ep.
    by rewrite mulzC -intmulz mulr2z -(lez_add2l (-ep) _ _) -addzA addzCA addzA /= subz_le0 (lez_trans (ep + 1) ep eq);
               [rewrite (lez_addl _ 1) | apply geep1_eq ].
-  rewrite (modz_small (scale (asint x) ep (2 * ep - eq)) (p * p %/ q)); first split; 
+  rewrite (modz_small (scale (Zp.asint x) ep (2 * ep - eq)) (p * p %/ q)); first split; 
           rewrite /scale /shr; last move => ?.
    by apply /divz_ge0 /Zp.ge0_asint /IntOrder.expr_gt0.
    rewrite IntOrder.ger0_norm; first by apply /(lez_trans 2 0 (p * p %/ q)) /ge2_ppq. 
@@ -379,11 +375,13 @@ qed.
 lemma scale_comp_Rp_Rppq_R2t (x : Rp):
       scale_Rp_R2t x = scale_Rppq_R2t (scale_Rp_Rppq x).
 proof. 
-  (*rewrite /scale_Rp_R2t /scale_Rppq_R2t /scale_Rp_Rppq. 
-  congr. rewrite fun_ext /(==) => i. 
-  rewrite coeffE; first split; [| exists (deg x)] => [c0 gt0_c /= | c0 ltc_deg /=]. 
-   rewrite /scale_Zp_Zppq /scale /shr. have ->: (x.[c0] = Rp.Coeff.zeror). by rewrite lt0_coeff. admit. *) 
-admit. 
+  rewrite /scale_Rp_R2t /scale_Rppq_R2t /scale_Rp_Rppq. 
+  congr; rewrite fun_ext /(==) => i. 
+  rewrite coeffE /=; first split; [| exists (deg x)] => [c0 gt0_c /= | c0 ltc_deg /=]; 
+          rewrite /scale_Zp_Zppq /scale /shr -Zppq.eq_inzmod; have ->: (Zp.asint x.[c0] = 0);
+          [by rewrite -Zp.zeroE Zp.asint_eq lt0_coeff | | by rewrite -Zp.zeroE Zp.asint_eq gedeg_coeff //=; apply ltzW in ltc_deg |];
+          by do 2!congr; apply div0z.
+  by apply scale_comp_Zp_Zppq_Z2t. 
 qed.
 
 lemma scale_id (x ea eb : int) : ea = eb => scale x ea eb = x.
