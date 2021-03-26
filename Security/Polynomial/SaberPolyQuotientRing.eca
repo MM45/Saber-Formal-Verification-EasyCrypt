@@ -12,12 +12,16 @@ require (*--*) Subtype.
 
 (*
 ----------------------------------- 
- ZModRingPoly
+ Saber's Polynomial Quotient Rings
 -----------------------------------
 *)
-abstract theory ZModRingPoly.
 
 const p : { int | 2 <= p } as ge2_coeffp.
+
+const en : { int | 0 <= en } as ge0_en. 
+const n : int = 2 ^ en.
+
+lemma ge1_n: 1 <= n by rewrite exprn_ege1; first apply ge0_en.
 
 type coeff.
 type poly.
@@ -64,7 +68,7 @@ type prepoly = int -> coeff.
 inductive ispoly (p : prepoly) =
 | IsPoly of
       (forall c, c < 0 => p c = zero)
-    & (exists d, forall c, (d < c)%Int => p c = zero).
+    & (exists d, d < n /\ forall c, (d < c)%Int => p c = zero).
 
 clone include Subtype with 
     type T   <- prepoly,
@@ -83,89 +87,136 @@ qed.
 
 op deg (p : poly) = argmin idfun (fun i => forall j, (i <= j)%Int => p.[j] = zero).
 
+lemma ge0_deg p : 0 <= deg p.
+proof. rewrite /deg &(ge0_argmin). qed.
+
+lemma len_deg (p : poly) : deg p <= n.
+proof. 
+rewrite /deg.
+case: (of_polyP p) => [wf_p [d hd]]; move: hd; case => gtd_n pc0.
+pose P i := forall j, (i <= j)%Int => p.[j] = zero.
+have : P (idfun (max (d + 1) 0)). rewrite /idfun /max /P => j. case (d + 1 < 0) => [lt0_d1 ge0_j | gt0_d1 ged1_j]. 
+smt. 
+smt.
+move => pidmax.
+have learg_maxd10: argmin idfun P <= max (d + 1) 0.
+move: (argmin_min idfun P (max (d + 1) 0)) => ddd. 
+apply (contraL (0 <= max (d + 1) 0 && max (d + 1) 0 < argmin idfun P) (P (idfun (max (d + 1) 0)))) in ddd. 
+rewrite pidmax /= andabP negb_and -ltzNge -lezNgt in ddd.
+move: ddd. case.
+rewrite ltzNge maxrr //=.
+trivial.
+smt.
+qed.
+
 lemma gedeg_coeff (p : poly) (c : int) : deg p <= c => p.[c] = zero.
 proof.
   move=> le_p_c; pose P p i := forall j, (i <= j)%Int => p.[j] = zero.
-  case: (of_polyP p) => [wf_p [d hd]]; move: (argminP idfun (P p)).
+  case: (of_polyP p) => [wf_p [d hd]]; move: hd; case => gtd_n pc0; move: (argminP idfun (P p)).
   move/(_ (max (d+1) 0) _ _) => @/P @/idfun /=; first exact: maxrr.
-  - by move=> j le_d_j; apply: hd => /#.
+  - by move=> j le_d_j; apply: pc0 => /#.
   by apply; apply: le_p_c.
 qed.
 
 lemma gedeg_coeff_contra (p : poly) (c : int) : p.[c] <> zero => c < deg p.
 proof. move: (gedeg_coeff p c); rewrite lerNgt; apply (contraR (c < deg p) (p.[c] = zero)). qed.
 
-lemma ge0_deg p : 0 <= deg p.
-proof. rewrite /deg &(ge0_argmin). qed.
+lemma len_maxdegs (p q : poly) : max (deg p) (deg q) <= n.
+proof. by rewrite /max; case (deg p < deg q) => ?; apply len_deg. qed.
+
+lemma ltn_maxdegs1 (p q : poly) : max (deg p) (deg q) - 1 < n.
+proof. by rewrite -(lez_add1r) addzC /= len_maxdegs. qed. 
+
+lemma ge0_maxdegs (p q : poly) : 0 <= max (deg p) (deg q).
+proof. by rewrite /max; case (deg p < deg q) => ?; apply ge0_deg. qed.
 
 op prepolyC  (c   : coeff) = fun i => if i = 0 then c else zero.
-op prepolyXn (k   : int  ) = fun i => if 0 <= k /\ i = k then one else zero.
+op prepolyXn (k   : int  ) = fun i => if 0 <= k /\ k < n /\ i = k then one else zero.
 op prepolyD  (p q : poly ) = fun i => p.[i] + q.[i].
 op prepolyN  (p   : poly ) = fun i => - p.[i].
 
-op prepolyM (p q : poly) = fun k =>
-  BCA.bigi predT (fun i => p.[i] * q.[k-i]) 0 (k+1).
+op prepolyM (p q : poly) = fun (k : int) =>
+  if 0 <= k /\ k < n
+  then BCA.bigi predT (fun (i : int) => p.[i] * q.[k - i] - p.[i] * q.[n + k - i]) 0 n
+  else zero.
 
 op prepolyZ (z : coeff) (p : poly) = fun k =>
   z * p.[k].
 
 lemma ispolyC (c : coeff) : ispoly (prepolyC c).
 proof.
-  split=> @/prepolyC [c' ?|]; first by rewrite ltr_eqF.
-  by exists 0 => c' gt1_c'; rewrite gtr_eqF.
+  split => @/prepolyC [c' ?|]; 1: by rewrite ltr_eqF.
+   exists 0; split; 1: by apply /(ltr_le_trans 1) /ge1_n. 
+    by move => c' gt1_c'; rewrite gtr_eqF.
 qed.
 
 lemma ispolyXn (k : int) : ispoly (prepolyXn k).
 proof.
-  split=> @/prepolyXn [c lt0_c|].
-  + by case: (0 <= k) => //= ge0_k; rewrite ltr_eqF //#.
-  + by exists k => c gt1_c; rewrite gtr_eqF.
+  split => @/prepolyXn [c lt0_c|].
+   by case: (0 <= k) => //= ge0_k; rewrite ltr_eqF //#.
+   case: (k < n) => krel; first exists k; split; 1: by apply krel.
+    by move => c; rewrite ltz_def -neqF; case => neq_ck ?; rewrite neq_ck. 
+    by exists (n - 1); split; 1: rewrite -(ltz_add2r 1) /= (ltz_addl n).
 qed.
 
 lemma ispolyN (p : poly) : ispoly (prepolyN p).
 proof.
-  split=> @/prepolyN [c lt0_c|]; first by rewrite ZModpRing.oppr_eq0 lt0_coeff.
-  by exists (deg p) => c => /ltrW /gedeg_coeff ->; rewrite ZModpRing.oppr0.
+  split => @/prepolyN [c lt0_c|]; 1: by rewrite ZModpRing.oppr_eq0 lt0_coeff.
+   exists (deg p - 1); split; 1: by apply /(ltr_le_trans (deg p)) /len_deg;
+          rewrite -(ltz_add2r 1) /= (ltz_addl).  
+    by move => c ltdegp1_c; rewrite -lez_add1r addzC /= in ltdegp1_c; 
+       rewrite ZModpRing.oppr_eq0 gedeg_coeff.
 qed.
 
 lemma ispolyD (p q : poly) : ispoly (prepolyD p q).
 proof.
-  split=> @/prepolyD [c lt0_c|]; first by rewrite !lt0_coeff // ZModpRing.addr0.
-  by exists (1 + max (deg p) (deg q)) => c le; rewrite !gedeg_coeff ?ZModpRing.addr0 //#.
+  split=> @/prepolyD [c lt0_c|]; 1: by rewrite !lt0_coeff // ZModpRing.addr0. 
+  exists (max (deg p) (deg q) - 1); split; 1: apply ltn_maxdegs1; move => c.
+   by rewrite /max; case (deg p < deg q) => deg_rel ltc_deg1; 
+           have: (p.[c] = zero /\ q.[c] = zero); 
+           [| by case => p0 q0; rewrite p0 q0 ZModule.add0r | | by case => p0 q0; rewrite p0 q0 ZModule.add0r];
+           split; rewrite gedeg_coeff //=; rewrite -lez_add1r addzC /= in ltc_deg1;
+           [apply /ltzW /(ltr_le_trans (deg q)) | | | rewrite -lezNgt in deg_rel;apply (lez_trans (deg p))]. 
 qed.
 
 lemma ispolyM (p q : poly) : ispoly (prepolyM p q).
 proof.
-  split => @/prepolyM [c lt0_c|]; 1: by rewrite BCA.big_geq //#.
-  exists (deg p + deg q + 1) => c ltc; rewrite BCA.big_seq BCA.big1 //= => i.
-  rewrite mem_range => -[gt0_i lt_ic]; rewrite /( * ) /zero -eq_inzmod mod0z.
-  have ->: asint p.[i] * asint q.[c - i] = 0; first rewrite mulf_eq0.
+  split => @/prepolyM [c lt0_c|]; 1: by rewrite ltzNge -neqF in lt0_c; rewrite lt0_c //=.
+   exists (max (deg p) (deg q) - 1); split; 1: by apply ltn_maxdegs1.
+    move => c ltc; case: (0 <= c /\ c < n) => gt0ltn_c; rewrite //= BCA.big_seq BCA.big1 //= => i.
+     rewrite mem_range => -[gt0_i lt_ic]; rewrite /( * ) /zero -eq_inzmod mod0z inzmodK.
+     have ->: asint p.[i] * asint q.[c - i] = 0. admit. (*; first rewrite mulf_eq0.*)
+     have ->: asint p.[i] * asint q.[n + c - i] = 0. admit.
+     rewrite -inzmodN /= inzmodK //.
+(*
   case: (p.[i] = zero); first rewrite -asint_eq inzmodK mod0z.
    by move=> eq_0p; left; apply eq_0p.
    move=> neq_0p; right. 
     have gti_dp: i < deg p.
      by move: neq_0p; apply gedeg_coeff_contra. 
-    rewrite -zeroE asint_eq; apply /gedeg_coeff /ltzW /(ltz_trans (deg q + 1)); first by rewrite ltz_addl.
+    rewrite -zeroE asint_eq. apply /gedeg_coeff /ltzW. /(ltz_trans (deg q + 1)). first by rewrite ltz_addl.
      rewrite (ler_lt_trans (deg p + deg q + 1 - i)); last by rewrite (ltz_add2r (-i)).
       rewrite addzAC -addzA addzAC addzA -addzA -addzC (lez_addr _ (deg p - i)) -(lez_add2r i) -addzA /=.
       by apply ltzW in gti_dp.
     by apply mod0z.
+*)
 qed.
 
 lemma ispolyZ z p : ispoly (prepolyZ z p).
 proof.  
-  split => @/prepolyZ [c lt0_c|]; [| exists (deg p + 1) => c gtc]; rewrite /( * ) -eq_inzmod mod0z;
-           have ->: asint z * asint p.[c] = 0; [| by apply mod0z | | by apply mod0z];
-           rewrite mulf_eq0 -zeroE (asint_eq (p.[c])); right; 
-           [by apply lt0_coeff | apply gedeg_coeff].
-  by apply ltzW in gtc; apply /(ler_trans (deg p + 1)) /gtc; rewrite lez_addl.  
+  by split => @/prepolyZ [c lt0_c|]; 
+           [| exists (deg p - 1); split; [rewrite -lez_add1r addzC /= len_deg | move => c ltc]]; 
+           rewrite /( * ) -eq_inzmod mod0z; have ->: asint z * asint p.[c] = 0; 
+           [| apply mod0z | | apply mod0z]; rewrite mulf_eq0 -zeroE (asint_eq (p.[c])); right; 
+           [apply lt0_coeff | apply gedeg_coeff; rewrite -lez_add1r addzC /= in ltc]. 
 qed.
 
-lemma poly_eqP (p q : poly) : p = q <=> (forall c, 0 <= c => p.[c] = q.[c]).
+lemma poly_eqP (p q : poly) : p = q <=> (forall c, 0 <= c => c < n => p.[c] = q.[c]).
 proof.
   split=> [->//|eq_coeff]; apply/of_poly_inj/fun_ext => c.
-  case: (c < 0) => [lt0_c|/lerNgt /=]; last by apply: eq_coeff.
-  by rewrite -/"_.[_]" !lt0_coeff.
+  case: (c < 0 \/ n <= c); [case => [lt0_c | gen_c] | by rewrite negb_or -ltzNge -lezNgt; case; apply eq_coeff]. 
+   by rewrite -/"_.[_]" !lt0_coeff.
+   by rewrite -/"_.[_]" !gedeg_coeff; 1, 2: apply /(lez_trans n); 1, 3: apply len_deg.
 qed.
 
 op polyC  c   = to_polyd (prepolyC  c).
@@ -202,7 +253,9 @@ lemma polyDE p q k : (p + q).[k] = p.[k] + q.[k].
 proof. by rewrite coeffE 1:ispolyD. qed.
 
 lemma polyME p q k : (p * q).[k] =
-  BCA.bigi predT (fun i => p.[i] * q.[k-i]) 0 (k+1).
+  if 0 <= k /\ k < n
+  then BCA.bigi predT (fun (i : int) => p.[i] * q.[k - i] - p.[i] * q.[n + k - i]) 0 n
+  else zero.
 proof. by rewrite coeffE 1:ispolyM. qed.
 
 lemma polyZE z p k : (z ** p).[k] = z * p.[k].
@@ -218,7 +271,8 @@ lemma degP p c :
   => deg p = c.
 proof.
   move=> ge0_c nz_p_cB1 degc @/deg; apply: argmin_eq => @/idfun /=.
-  - by apply/ltrW. - by apply: degc.
+  - by apply/ltrW. 
+  - by apply: degc.
   move=> j [ge0_j lt_jc]; rewrite negb_forall /=.
   by exists (c-1); apply/negP => /(_ _); first by move=> /#.
 qed.
@@ -249,7 +303,7 @@ qed.
 lemma deg_eq0 p : (deg p = 0) <=> (p = poly0).
 proof.
   split=> [z_degp|->]; last by rewrite deg0.
-  apply/poly_eqP=> c ge0_c; rewrite poly0E.
+  apply/poly_eqP=> c ge0_c ltn_c; rewrite poly0E.
   by apply/gedeg_coeff; rewrite z_degp.
 qed.
 
@@ -261,10 +315,10 @@ proof.
   + by move=> i ge1_i; apply: gedeg_coeff; rewrite eq1_degp.
   exists p.[0]; split; last first.
   + apply/poly_eqP => c /ler_eqVlt -[<<-|]; first by rewrite polyCE.
-    by move=> gt0_c; rewrite polyCE gtr_eqF //= &(pC) /#.
+    by move=> gt0_c ltn_c; rewrite polyCE gtr_eqF //= &(pC) /#.
   apply: contraL eq1_degp => z_p0; suff ->: p = poly0 by rewrite deg0.
   apply/poly_eqP=> c; rewrite poly0E => /ler_eqVlt [<<-//|].
-  by move=> gt0_c; apply: pC => /#.
+  by move=> gt0_c ltn_c; apply: pC => /#.
 qed.
 
 lemma coeff_degB1_neq0 p : p <> poly0 => p.[deg p - 1] <> zero.
@@ -296,37 +350,114 @@ clone import Ring.ZModule as ZPoly with
   realize addNr.
   proof. by move=> p; apply/poly_eqP => c; rewrite !coeffpE ZModpRing.addNr. qed.
 
+(*
 lemma polyMEw M p q k : (k <= M)%Int => (p * q).[k] =
   BCA.bigi predT (fun i => p.[i] * q.[k-i]) 0 (M+1).
 proof. 
   move=> le_kM; case: (k < 0) => [lt0_k|/lerNgt ge0_k].
-  + rewrite lt0_coeff // BCA.big_seq BCA.big1 //= => i.
+   rewrite lt0_coeff // BCA.big_seq BCA.big1 //= => i.
     case/mem_range=> [ge0_i lt_iM]; rewrite /( * ) -eq_inzmod mod0z.
     have ->: asint p.[i] * asint q.[k - i] = 0; [rewrite mulf_eq0 -zeroE; right | by apply mod0z].
      rewrite (asint_eq q.[k - i]) lt0_coeff //.
      by apply /(ler_lt_trans k) /lt0_k /(lez_add2r i); rewrite -addzA /= (lez_addl k).
-  rewrite (@BCA.big_cat_int (k+1)) 1,2:/# -polyME.
+  rewrite (@BCA.big_cat_int n) 1,2:/# -polyME.
   rewrite BCA.big_seq BCA.big1 2:ZModpRing.addr0 //= => i /mem_range.
   case=> [lt_ki lt_iM]; rewrite /( * ) -eq_inzmod mod0z.
     have ->: asint p.[i] * asint q.[k - i] = 0; [rewrite mulf_eq0 -zeroE; right | by apply mod0z].
      by rewrite (asint_eq q.[k - i]) lt0_coeff // -(ltz_add2r i) -addzA /= -lez_add1r addzC.
 qed.
+*)
 
 lemma mulpC : commutative ( * ).
 proof.
   move=> p q; apply: poly_eqP => k ge0_k; rewrite !polyME.
-  pose F j := k - j; rewrite (@BCA.big_reindex _ _ F F) 1:/#.
-  rewrite predT_comp /(\o) /=; pose s := map _ _.
-  apply: (eq_trans _ _ _ (BCA.eq_big_perm _ _ _ (range 0 (k+1)) _)).
+  case (0 <= k /\ k < n) => gt0ltn_k //.
+  pose F1 i := p.[i] * q.[k - i].
+  pose F2 i :=  - (p.[i] * q.[n + k - i]).
+  pose F i := F1 i + F2 i.
+  have <-: F = fun (i : int) => (p.[i] * q.[k - i] - p.[i] * q.[n + k - i]).
+   by rewrite fun_ext /(==) /F /F1 /F2 => x.
+  rewrite (BCA.big_split predT F1 F2 (range 0 n)).
+  rewrite (BCA.big_cat_int (k + 1) 0 n _ F1) 3: (BCA.big_cat_int (k + 1) 0 n _ F2). smt. smt. smt. smt.
+  have ->: (BCA.bigi predT F1 (k + 1) n) = zero. 
+   rewrite BCA.big_int.
+   apply BCA.big1 => i. simplify. case => gtk1_i ltn_i. 
+   rewrite /F1  /( * ) -eq_inzmod mod0z.
+   have ->: asint p.[i] * asint q.[k - i] = 0.
+    apply mulf_eq0; right.
+    rewrite -zeroE asint_eq.
+    apply lt0_coeff. 
+    rewrite subz_lt0. 
+    by rewrite addzC lez_add1r in gtk1_i.    
+    by apply mod0z.    
+  have ->: (BCA.bigi predT F2 0 (k + 1)) = zero. 
+   rewrite BCA.big_int.
+   apply BCA.big1 => i. simplify. case => gt0_i ltk1_i. 
+   rewrite /F2 /( * ) ZModpRing.oppr_eq0 -eq_inzmod mod0z.
+   have ->: asint p.[i] * asint q.[n + k - i] = 0.
+    apply mulf_eq0; right.
+    rewrite -zeroE asint_eq.
+    apply gedeg_coeff. 
+    rewrite (lez_trans n) 1:len_deg -(lez_add2r i) -addzA /= lez_add2l. 
+     by rewrite -lez_add1r {1}addzC -(lez_add2r (-1)) /= in ltk1_i.
+     by apply mod0z.
+  rewrite -ZModpRing.addrA 2!ZModpRing.add0r.
+
+  pose F1' i := q.[i] * p.[k - i].
+  pose F2' i :=  - (q.[i] * p.[n + k - i]).
+  pose F' i := F1' i + F2' i.
+  have <-: F' = fun (i : int) => (q.[i] * p.[k - i] - q.[i] * p.[n + k - i]).
+   by rewrite fun_ext /(==) /F /F1 /F2 => x.
+  rewrite (BCA.big_split predT F1' F2' (range 0 n)).
+  rewrite (BCA.big_cat_int (k + 1) 0 n _ F1') 3: (BCA.big_cat_int (k + 1) 0 n _ F2'). smt. smt. smt. smt.
+  simplify.
+  have ->: (BCA.bigi predT F1' (k + 1) n) = zero. 
+   rewrite BCA.big_int.
+   apply BCA.big1 => i. simplify. case => gtk1_i ltn_i. 
+   rewrite /F1'  /( * ) -eq_inzmod mod0z.
+   have ->: asint q.[i] * asint p.[k - i] = 0.
+    apply mulf_eq0; right.
+    rewrite -zeroE asint_eq.
+    apply lt0_coeff. 
+    rewrite subz_lt0. 
+    by rewrite addzC lez_add1r in gtk1_i.    
+    by apply mod0z.    
+  have ->: (BCA.bigi predT F2' 0 (k + 1)) = zero. 
+   rewrite BCA.big_int.
+   apply BCA.big1 => i. simplify. case => gt0_i ltk1_i. 
+   rewrite /F2 /( * ) ZModpRing.oppr_eq0 -eq_inzmod mod0z.
+   have ->: asint q.[i] * asint p.[n + k - i] = 0.
+    apply mulf_eq0; right.
+    rewrite -zeroE asint_eq.
+    apply gedeg_coeff. 
+    rewrite (lez_trans n) 1:len_deg -(lez_add2r i) -addzA /= lez_add2l. 
+     by rewrite -lez_add1r {1}addzC -(lez_add2r (-1)) /= in ltk1_i.
+     by apply mod0z.
+  rewrite -ZModpRing.addrA 2!ZModpRing.add0r.
+  pose K j := k - j; pose NK j := n + k - j.
+  rewrite (@BCA.big_reindex predT F1 K K) 1:/# (@BCA.big_reindex predT F2 NK NK) 1:/#.
+  rewrite (predT_comp K) (predT_comp NK) /(\o) /=. pose s1 := map _ _; pose s2 := map _ _. 
+  have ->: BCA.big predT (fun (x : int) => F1 (K x)) s1 = BCA.bigi predT F1' 0 (k + 1).
+  apply: (eq_trans _ _ _ (BCA.eq_big_perm _ _ _ (range 0 (k + 1)) _)).
   + rewrite uniq_perm_eq 2:&(range_uniq) /s.
     * rewrite map_inj_in_uniq 2:&(range_uniq) => x y.
-      by rewrite !mem_range /F /#.
-    * move=> x; split => [/mapP[y []]|]; 1: by rewrite !mem_range /#.
-      rewrite !mem_range => *; apply/mapP; exists (F x).
-      by rewrite !mem_range /F /#.
-  + by apply: BCA.eq_bigr => /= i _ @/F; rewrite ZModpRing.mulrC /#.
+      by rewrite !mem_range /K /#.
+    * move=> x; split => [/mapP[y []]|]; 1: rewrite !mem_range /#.
+      rewrite !mem_range => *; apply/mapP; exists (K x).
+      by rewrite !mem_range /K /#.
+  + apply: BCA.eq_bigr => /= i _ @/K @/F1 @/F1'; rewrite ZModpRing.mulrC /#.
+  have ->: BCA.big predT (fun (x : int) => F2 (NK x)) s2 = BCA.bigi predT F2' (k + 1) n.
+  apply: (eq_trans _ _ _ (BCA.eq_big_perm _ _ _ (range (k + 1) n) _)).
+  + rewrite uniq_perm_eq 2:&(range_uniq) /s.
+    * rewrite map_inj_in_uniq 2:&(range_uniq) => x y.
+      by rewrite !mem_range /NK /#.
+    * move=> x; split => [/mapP[y []]|]; 1: rewrite !mem_range /#.
+      rewrite !mem_range => *; apply/mapP; exists (NK x).
+      by rewrite !mem_range /NK /#.
+  + apply: BCA.eq_bigr => /= i _ @/NK @/F2 @/F2'; rewrite ZModpRing.mulrC /#.
+trivial.
 qed.
-
+(*
 lemma polyMEwr M p q k : (k <= M)%Int => (p * q).[k] =
   BCA.bigi predT (fun i => p.[k-i] * q.[i]) 0 (M+1).
 proof.
@@ -337,10 +468,10 @@ qed.
 lemma polyMEr p q k : (p * q).[k] =
   BCA.bigi predT (fun i => p.[k-i] * q.[i]) 0 (k+1).
 proof. by rewrite (@polyMEwr k). qed.
-
+*)
 lemma mulpA : associative ( * ).
 proof.
-  move=> p q r; apply: poly_eqP => k ge0_k.
+  move=> p q r; apply: poly_eqP => k ge0_k ltn_k.
   have ->: ((p * q) * r).[k] =
     BCA.bigi predT (fun i =>
       BCA.bigi predT (fun j => p.[j] * q.[k - i - j] * r.[i]) 0 (k+1)) 0 (k+1).
@@ -503,5 +634,3 @@ op peval (p : poly) (a : coeff) =
 
 (* -------------------------------------------------------------------- *)
 abbrev root p a = peval p a = zero.
-
-end ZModRingPoly.

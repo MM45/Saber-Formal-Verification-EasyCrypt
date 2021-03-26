@@ -505,8 +505,8 @@ proof.
    proc; inline *. 
    swap {1} 7 -6.
    call (_ : true); auto; call (_: true); auto.
-   progress; first do! congr; by rewrite pk_enc_dec_inv. 
-    by case (bL); case (result_R0).
+   progress; first do! congr; by rewrite pk_enc_dec_inv.
+    by rewrite (eq_sym result_R0 bL).
   by reflexivity.
 qed.
 
