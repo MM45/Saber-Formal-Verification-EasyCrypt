@@ -68,7 +68,7 @@ type prepoly = int -> coeff.
 inductive ispoly (p : prepoly) =
 | IsPoly of
       (forall c, c < 0 => p c = zero)
-    & (exists d, d < n /\ forall c, (d < c)%Int => p c = zero).
+    & (exists d, d < n /\ forall c, (d < c) => p c = zero).
 
 clone include Subtype with 
     type T   <- prepoly,
@@ -80,34 +80,15 @@ clone include Subtype with
 
 op "_.[_]" (p : poly) (i : int) = (of_poly p) i.
 
-lemma lt0_coeff p c : c < 0 => p.[c] = zero.
+lemma lt0_coeff (p : poly) (c : int) : c < 0 => p.[c] = zero.
 proof.
   by move=> lt0_c; rewrite /"_.[_]"; case: (of_polyP p) => /(_ _ lt0_c).
 qed.
 
-op deg (p : poly) = argmin idfun (fun i => forall j, (i <= j)%Int => p.[j] = zero).
+op deg (p : poly) = argmin idfun (fun (i : int) => forall (j : int), (i <= j) => p.[j] = zero).
 
-lemma ge0_deg p : 0 <= deg p.
+lemma ge0_deg (p : poly) : 0 <= deg p.
 proof. rewrite /deg &(ge0_argmin). qed.
-
-lemma len_deg (p : poly) : deg p <= n.
-proof. 
-rewrite /deg.
-case: (of_polyP p) => [wf_p [d hd]]; move: hd; case => gtd_n pc0.
-pose P i := forall j, (i <= j)%Int => p.[j] = zero.
-have : P (idfun (max (d + 1) 0)). rewrite /idfun /max /P => j. case (d + 1 < 0) => [lt0_d1 ge0_j | gt0_d1 ged1_j]. 
-smt. 
-smt.
-move => pidmax.
-have learg_maxd10: argmin idfun P <= max (d + 1) 0.
-move: (argmin_min idfun P (max (d + 1) 0)) => ddd. 
-apply (contraL (0 <= max (d + 1) 0 && max (d + 1) 0 < argmin idfun P) (P (idfun (max (d + 1) 0)))) in ddd. 
-rewrite pidmax /= andabP negb_and -ltzNge -lezNgt in ddd.
-move: ddd. case.
-rewrite ltzNge maxrr //=.
-trivial.
-smt.
-qed.
 
 lemma gedeg_coeff (p : poly) (c : int) : deg p <= c => p.[c] = zero.
 proof.
@@ -120,6 +101,24 @@ qed.
 
 lemma gedeg_coeff_contra (p : poly) (c : int) : p.[c] <> zero => c < deg p.
 proof. move: (gedeg_coeff p c); rewrite lerNgt; apply (contraR (c < deg p) (p.[c] = zero)). qed.
+
+lemma len_deg (p : poly) : deg p <= n.
+proof. 
+  rewrite /deg; case: (of_polyP p) => [wf_p [d hd]]; move: hd; case => gtd_n pc0.
+  pose P (i : int) := forall (j : int), (i <= j) => p.[j] = zero.
+  have minz_maxd10: P (idfun (max (d + 1) 0)); 1: rewrite /idfun /max /P => j. 
+  case (d + 1 < 0) => [lt0_d1 ge0_j | gt0_d1 ged1_j]; move: (pc0 j); have ->: d < j; 2, 4: trivial.
+   by apply /(ltr_le_trans 0) /ge0_j /(ltz_trans (d + 1)) /lt0_d1; rewrite (ltz_addl d 1). 
+   by rewrite addzC lez_add1r in ged1_j.
+  have learg_maxd10: argmin idfun P <= max (d + 1) 0.
+   move: (argmin_min idfun P (max (d + 1) 0)) => amin. 
+    apply (contraL (0 <= max (d + 1) 0 && max (d + 1) 0 < argmin idfun P) (P (idfun (max (d + 1) 0)))) in amin.
+    rewrite minz_maxd10 /= andabP negb_and -ltzNge -lezNgt in amin.
+   move: amin; case; by rewrite // ltzNge maxrr.
+  apply /(lez_trans (max (d + 1) 0) _ _ learg_maxd10); rewrite ler_maxrP; split.
+   by rewrite addzC lez_add1r. 
+   by apply /(lez_trans 1) /ge1_n.     
+qed.
 
 lemma len_maxdegs (p q : poly) : max (deg p) (deg q) <= n.
 proof. by rewrite /max; case (deg p < deg q) => ?; apply len_deg. qed.
@@ -182,24 +181,9 @@ qed.
 lemma ispolyM (p q : poly) : ispoly (prepolyM p q).
 proof.
   split => @/prepolyM [c lt0_c|]; 1: by rewrite ltzNge -neqF in lt0_c; rewrite lt0_c //=.
-   exists (max (deg p) (deg q) - 1); split; 1: by apply ltn_maxdegs1.
-    move => c ltc; case: (0 <= c /\ c < n) => gt0ltn_c; rewrite //= BCA.big_seq BCA.big1 //= => i.
-     rewrite mem_range => -[gt0_i lt_ic]; rewrite /( * ) /zero -eq_inzmod mod0z inzmodK.
-     have ->: asint p.[i] * asint q.[c - i] = 0. admit. (*; first rewrite mulf_eq0.*)
-     have ->: asint p.[i] * asint q.[n + c - i] = 0. admit.
-     rewrite -inzmodN /= inzmodK //.
-(*
-  case: (p.[i] = zero); first rewrite -asint_eq inzmodK mod0z.
-   by move=> eq_0p; left; apply eq_0p.
-   move=> neq_0p; right. 
-    have gti_dp: i < deg p.
-     by move: neq_0p; apply gedeg_coeff_contra. 
-    rewrite -zeroE asint_eq. apply /gedeg_coeff /ltzW. /(ltz_trans (deg q + 1)). first by rewrite ltz_addl.
-     rewrite (ler_lt_trans (deg p + deg q + 1 - i)); last by rewrite (ltz_add2r (-i)).
-      rewrite addzAC -addzA addzAC addzA -addzA -addzC (lez_addr _ (deg p - i)) -(lez_add2r i) -addzA /=.
-      by apply ltzW in gti_dp.
-    by apply mod0z.
-*)
+   exists (n - 1); split; 1: by rewrite -(ltz_add2r 1) /= ltz_addl.
+    move => c; rewrite -(lez_add1r) addzC /= => lec_n. 
+     by move: (lez_lt_asym n c); rewrite andabP negb_and -(implyNb) lec_n /= -neqF => cnf; rewrite cnf //=.
 qed.
 
 lemma ispolyZ z p : ispoly (prepolyZ z p).
@@ -469,14 +453,108 @@ qed.
 
 
 lemma mulpA : associative ( * ).
-proof. admit. qed.
-(*
+proof.
   move=> p q r; apply: poly_eqP => k ge0_k ltn_k.
-(*   rewrite polyMEr ge0_k ltn_k /= !polyME. !BCA.big_seq &(BCA.eq_bigr) => /= i.
-   case/mem_range => ge_i ltn_i. rewrite !polyME.
   have ->: ((p * q) * r).[k] =
             if 0 <= k /\ k < n
-            then *)
+            then (BCA.bigi predT (fun (i : int) => 
+                  (BCA.bigi predT (fun (j : int) => p.[j] * q.[k - i - j] * r.[i]) 0 (k - i + 1))
+                  +
+                  (BCA.bigi predT (fun (j : int) => - p.[j] * q.[n + k - i - j] * r.[i]) (k - i + 1) n))
+                  0 (k + 1))
+                 +
+                 (BCA.bigi predT (fun (i : int) => - (
+                  (BCA.bigi predT (fun (j : int) => p.[j] * q.[n + k - i - j] * r.[i]) 0 (n + k - i + 1))
+                   +
+                  (BCA.bigi predT (fun (j : int) => - p.[j] * q.[n + n + k - i - j] * r.[i]) (n + k - i + 1) n)))
+                  (k + 1) n)
+            else zero.
+  rewrite polyMSr. rewrite ge0_k ltn_k /=.
+   have <-: (BCA.bigi predT (fun (i : int) => (p * q).[k - i] * r.[i]) 0 (k + 1)) =
+            (BCA.bigi predT (fun (i : int) =>
+              (BCA.bigi predT (fun (j : int) => p.[j] * q.[k - i - j] * r.[i]) 0 (k - i + 1)) 
+               +
+              (BCA.bigi predT (fun (j : int) => - p.[j] * q.[n + k - i - j] * r.[i]) (k - i + 1) n)) 0 (k + 1)).
+ rewrite !BCA.big_seq &(BCA.eq_bigr) => /= i; case/mem_range => ge_i ltn_i.
+ rewrite polyMS. have ->:  0 <= k - i /\ k - i < n; [smt | simplify].
+ rewrite ZModpRing.mulrDl !BCA.mulr_suml /=. admit.
+   have <-: (BCA.bigi predT (fun (i : int) => - (p * q).[n + k - i] * r.[i]) (k + 1) n) =
+            (BCA.bigi predT (fun (i : int) =>
+             -(
+              (BCA.bigi predT (fun (j : int) => p.[j] * q.[n + k - i - j] * r.[i]) 0 (n + k - i + 1)) 
+               +
+              (BCA.bigi predT (fun (j : int) => - p.[j] * q.[n + n + k - i - j] * r.[i]) (n + k - i + 1) n)
+              )) 
+              (k + 1) n).
+ rewrite !BCA.big_seq &(BCA.eq_bigr) => /= i; case/mem_range => ge_i ltn_i.
+ rewrite polyMS. have ->:  0 <= n + k - i /\ n + k - i < n; [smt | simplify].
+ rewrite ZModpRing.mulrDl !BCA.mulr_suml /=. admit.
+by reflexivity.
+  have ->: (p * (q * r)).[k] =
+            if 0 <= k /\ k < n
+            then (BCA.bigi predT (fun (i : int) => 
+                  (BCA.bigi predT (fun (j : int) => p.[i] * q.[k - i - j] * r.[j]) 0 (k - i + 1))
+                  +
+                  (BCA.bigi predT (fun (j : int) => - p.[i] * q.[n + k - i - j] * r.[j]) (k - i + 1) n))
+                  0 (k + 1))
+                 +
+                 (BCA.bigi predT (fun (i : int) => - (
+                  (BCA.bigi predT (fun (j : int) => p.[i] * q.[n + k - i - j] * r.[j]) 0 (n + k - i + 1))
+                   +
+                  (BCA.bigi predT (fun (j : int) => - p.[i] * q.[n + n + k - i - j] * r.[j]) (n + k - i + 1) n)))
+                  (k + 1) n)
+            else zero.
+admit.
+rewrite ge0_k ltn_k /=. rewrite !BCA.big_split.
+
+have ->: (BCA.bigi predT (fun (i : int) =>
+          (BCA.bigi predT (fun (j : int) => p.[i] * q.[k - i - j] * r.[j]) 0 (k - i + 1))) 0 (k + 1))
+         =
+         (BCA.bigi predT (fun (i : int) =>
+          (BCA.bigi predT (fun (j : int) => p.[j] * q.[k - i - j] * r.[i]) 0 (k - i + 1))) 0 (k + 1)).
+(*
+rewrite BCA.big_mapT.
+rewrite !BCA.big_seq. rewrite (BCA.exchange_big predT predT _ (range 0 (k - i + t)) (range 0 (k + 1))).  &(BCA.eq_bigr) => /= i; case/mem_range => ge_i ltn_i. -(BCA.exchange_big predT predT).
+ rewrite !BCA.big_seq &(BCA.eq_bigr) => /= i; case/mem_range => ge_i ltn_i.
+  rewrite polyMS. 
+ case: (0 <= n + k - i /\ n + k - i < n) => [[gt0_ki ltn_ki] | /negb_and ]; 2: by rewrite ZModpRing.mul0r.
+ rewrite ZModpRing.mulrDl !BCA.mulr_suml /=. admit.
+by reflexivity.
+
+  have ->: (p * (q * r)).[k] =
+            if 0 <= k /\ k < n
+            then (BCA.bigi predT (fun (i : int) => 
+                  if 0 <= k - i /\ k - i < n 
+                  then (BCA.bigi predT (fun (j : int) => 
+                        p.[i] * q.[k - i - j] * r.[j]) 0 (k - i + 1))
+                       +
+                       (BCA.bigi predT (fun (j : int) => 
+                       - p.[i] * q.[n + k - i - j] * r.[j]) (k - i + 1) n)
+                  else zero) 0 (k + 1))
+                  +
+                  (BCA.bigi predT (fun (i : int) => 
+                  - (
+                  if 0 <= n + k - i /\ n + k - i < n 
+                  then (BCA.bigi predT (fun (j : int) => 
+                        p.[i] * q.[n + k - i - j] * r.[j]) 0 (n + k - i + 1))
+                       +
+                       (BCA.bigi predT (fun (j : int) => 
+                        - p.[i] * q.[n + n + k - i - j] * r.[j]) (n + k - i + 1) n)
+                  else zero)) (k + 1) n)
+            else zero.
+admit.
+rewrite ge0_k ltn_k /=.
+   have <-: (BCA.bigi predT (fun (i : int) => (p * q).[k - i] * r.[i]) 0 (k + 1)) =
+            (BCA.bigi predT (fun (i : int) =>
+             if 0 <= k - i /\ k - i < n 
+             then
+              (BCA.bigi predT (fun (j : int) => p.[j] * q.[k - i - j] * r.[i]) 0 (k - i + 1)) 
+               +
+              (BCA.bigi predT (fun (j : int) => - p.[j] * q.[n + k - i - j] * r.[i]) (k - i + 1) n)
+             else zero) 0 (k + 1)).
+ rewrite !BCA.big_seq &(BCA.eq_bigr) => /= i; case/mem_range => ge_i ltn_i.
+ rewrite polyMS.
+
   have ->: ((p * q) * r).[k] =
             if 0 <= k /\ k < n
             then (BCA.bigi predT (fun (i : int) => 
@@ -556,298 +634,16 @@ proof. admit. qed.
 rewrite BCA.exchange_big /=. rewrite !BCA.big_seq &(BCA.eq_bigr) => /= i. *)
 rewrite -!BCA.big_mkcond. 
 rewrite BCA.big_seq_cond.
-rewrite (BCA.big_seq_cond (fun (i : int) => 0 <= k - i /\ k - i < n)).
-rewrite BCA.exchange_big /=. 
+rewrite (BCA.big_seq_cond (fun (i : int) => 0 <= k - i /\ k - i < n)) /=.
+rewrite BCA.exchange_big /=.
 rewrite BCA.big_seq.
 rewrite BCA.exchange_big /=.
-rewrite &(BCA.eq_bigr) => /= i.
-case. case/mem_range => gt0_i ltn_i [gt0_ki ltn_ki].
-rewrite BCA.big_seq /= &(BCA.eq_bigr) => j; case/mem_range => gt0_j ltn_j /=.
-
-rewrite !BCA.big_seq. rewrite &(BCA.eq_bigr). => /= i.
-  rewrite -BCA.big_mkcond.
- rewrite !BCA.big_seq &(BCA.eq_bigr) => /= i; case/mem_range => ge_i ltn_i.
-   rewrite polyME.
- case: (0 <= k - i /\ k - i < n) => [[gt0_ki ltn_ki] | /negb_and ]; 2: by rewrite ZModpRing.mul0r.
-   by rewrite BCA.mulr_suml /= &(BCA.eq_bigr) => j _ /=; rewrite ZModpRing.mulrBl /#.
-
-
- 
-    have ntln_nki: n + k - i < n = false.  
-     by rewrite neqF -lezNgt -(lez_add2r i) -addzA /= lez_add2l -(lez_add2r (-i)) /=.
-     rewrite ntln_nki /= ZModpRing.mul0r ZModpRing.subr0.
-     rewrite BCA.mulr_suml /= &(BCA.eq_bigr) => j _ /=; rewrite ZModpRing.mulrBl /#.
- 
-   rewrite polyME.
-   pose F1 i := (p * q).[k - i] * r.[i]; pose F2 i := - (p * q).[n + k - i] * r.[i].
-   pose F i := F1 i + F2 i.
-   rewrite BCA.big_split.
-   print polyME. 
-   rewrite polyME.
-
- !BCA.big_seq &(BCA.eq_bigr) => /= i.
-   case/mem_range => ge_i ltn_i.
-
-
- rewrite polyME.
-  have ->: ((p * q) * r).[k] =
-            if 0 <= k /\ k < n
-            then (BCA.bigi predT (fun (i : int) => 
-                  (BCA.bigi predT (fun (j : int) => 
-                  if  (0 <= k - i /\ k - i < n) 
-                  then (p.[j] * q.[k - i - j] * r.[i] - p.[j] * q.[n + k - i - j] * r.[i])
-                  else if 0 <= n + k - i /\ n + k - i < n
-                  then  p.[j] * q.[n + k - i - j] * r.[i] - p.[j] * q.[n + n + k - i - j] * r.[i]
-                  else zero) 
-                  0 n)) 
-                 0 n)
-            else zero.
- admit.
-  have ->: (p * (q * r)).[k] =
-            if 0 <= k /\ k < n
-            then (BCA.bigi predT (fun (i : int) => 
-                  (BCA.bigi predT (fun (j : int) => 
-                  if  (0 <= k - i /\ k - i < n) 
-                  then (p.[i] * q.[k - i - j] * r.[j] - p.[i] * q.[n + k - i - j] * r.[j])
-                  else if 0 <= n + k - i /\ n + k - i < n
-                  then  p.[i] * q.[n + k - i - j] * r.[j] - p.[i] * q.[n + n + k - i - j] * r.[j]
-                  else zero) 
-                  0 n)) 
-                 0 n)
-            else zero.
- admit.
-rewrite ge0_k ltn_k /=.
-rewrite BCA.exchange_big /=. rewrite !BCA.big_seq &(BCA.eq_bigr) => /= i.
-case/mem_range => ge0_i ltn_i. 
-rewrite !BCA.big_seq &(BCA.eq_bigr) => /= j.
-case/mem_range => ge0_j ltn_j. 
-   case: (0 <= k - j /\ k - j < n) => [[gt0_ki ltn_ki] | /negb_and ].
-    have ntln_nki: n + k - j < n = false.  
-     by rewrite neqF -lezNgt -(lez_add2r j) -addzA /= lez_add2l -(lez_add2r (-j)) /=.
-     rewrite ntln_nki /= ZModpRing.mul0r ZModpRing.subr0.
-     rewrite BCA.mulr_suml /= &(BCA.eq_bigr) => j _ /=; rewrite ZModpRing.mulrBl /#.
-
-  have ->: ((p * q) * r).[k] =
-            if 0 <= k /\ k < n
-            then (BCA.bigi predT (fun (i : int) => 
-                  (BCA.bigi predT (fun (j : int) => 
-                    p.[j] * q.[k - i - j] * r.[i] - p.[j] * q.[n + k - i - j] * r.[i]) 0 (k - i + 1))
-                  +
-                  (BCA.bigi predT (fun (j : int) => 
-                    p.[j] * q.[k - i - j] * r.[i] - p.[j] * q.[n + k - i - j] * r.[i]) (k - i + 1) n)
-               ) 0 (k + 1))
-                 + 
-                 (BCA.bigi predT (fun (i : int) => 
-                  (BCA.bigi predT (fun (j : int) => 
-                    p.[j] * q.[k - i - j] * r.[i] - p.[j] * q.[n + k - i - j] * r.[i]) 0 n)) (k + 1) n)
-            else zero.
-admit.
-  have ->: (p * (q * r)).[k] =
-            if 0 <= k /\ k < n
-            then (BCA.bigi predT (fun (i : int) => 
-                  (BCA.bigi predT (fun (j : int) => 
-                    p.[i] * q.[k - i - j] * r.[j] - p.[i] * q.[n + k - i - j] * r.[j]) 0 n)) 0 (k + 1))
-                 + 
-                 (BCA.bigi predT (fun (i : int) => 
-                  (BCA.bigi predT (fun (j : int) => 
-                    p.[i] * q.[k - i - j] * r.[j] - p.[i] * q.[n + k - i - j] * r.[j]) 0 n)) (k + 1) n)
-            else zero.
-admit.
-   rewrite ge0_k ltn_k //=.
-have ->: (BCA.bigi predT (fun (i : int) =>
-          (BCA.bigi predT (fun (j : int) =>
-            (p.[i] * q.[k - i - j] * r.[j] - p.[i] * q.[n + k - i - j] * r.[j])) 0 n)) 0 (k + 1))
-          =
-          (BCA.bigi predT (fun (i : int) =>
-           (BCA.bigi predT (fun (j : int) =>
-            (p.[j] * q.[k - i - j] * r.[i] - p.[j] * q.[n + k - i - j] * r.[i])) 0 n)) 0 (k + 1)).
-
-rewrite BCA.exchange_big /=. &(BCA.eq_bigr) => /= i _. rewrite &(BCA.eq_bigr) => /= j _ /#. 
-
-   rewrite polyMSr ge0_k ltn_k /=. !BCA.big_seq &(BCA.eq_bigr) => /= i.
-   case/mem_range => ge_i ltn_i. rewrite !polyMS.           
-  have ->: ((p * q) * r).[k] =
-            if 0 <= k /\ k < n
-            then (BCA.bigi predT (fun (i : int) => 
-                  if 0 <= k - i /\ k - i < n 
-                  then (BCA.bigi predT (fun (j : int) => 
-                        p.[j] * q.[k - i - j] * r.[i] - p.[j] * q.[n + k - i - j] * r.[i]) 0 n)
-                  else if 0 <= n + k - i /\ n + k - i < n
-                  then (BCA.bigi predT (fun (j : int) => 
-                        p.[j] * q.[n + k - i - j] * r.[i] - p.[j] * q.[n + n + k - i - j] * r.[i]) 0 n)
-                  else zero
-                  ) 0 n)
-            else zero.
-   rewrite polyMEr ge0_k ltn_k /= !BCA.big_seq &(BCA.eq_bigr) => /= i.
-   case/mem_range => ge_i ltn_i. rewrite !polyME.
-   case: (0 <= k - i /\ k - i < n) => [[gt0_ki ltn_ki] | /negb_and ].
-    have ntln_nki: n + k - i < n = false.  
-     by rewrite neqF -lezNgt -(lez_add2r i) -addzA /= lez_add2l  -(lez_add2r (-i)) /=.
-     rewrite ntln_nki /= ZModpRing.mul0r ZModpRing.subr0.
-     rewrite BCA.mulr_suml /= &(BCA.eq_bigr) => j _ /=; rewrite ZModpRing.mulrBl /#. admit.
-   have ->: (p * (q * r)).[k] =
-            if 0 <= k /\ k < n
-            then (BCA.bigi predT (fun (i : int) => 
-                  if 0 <= k - i /\ k - i < n 
-                  then (BCA.bigi predT (fun (j : int) => 
-                        p.[i] * q.[k - i - j] * r.[j] - p.[i] * q.[n + k - i - j] * r.[j]) 0 n)
-                  else if 0 <= n + k - i /\ n + k - i < n
-                  then (BCA.bigi predT (fun (j : int) => 
-                        p.[i] * q.[n + k - i - j] * r.[j] - p.[i] * q.[n + n + k - i - j] * r.[j]) 0 n)
-                  else zero
-                  ) 0 n)
-            else zero.
- admit.
-rewrite ge0_k ltn_k /=.
-   have ->: ((p * q) * r).[k] =
-            if 0 <= k /\ k < n
-            then (BCA.bigi predT (fun (i : int) => 
-                   (BCA.bigi predT (fun (j : int) => 
-                     p.[j] * q.[k - i - j] * r.[i] - p.[j] * q.[n + k - i - j] * r.[i] - 
-                     (p.[j] * q.[n + k - i - j] * r.[i] - p.[j] * q.[n + n + k - i - j] * r.[i]))
-                     0 n)) 0 n)
-            else zero.
-   rewrite polyMEr ge0_k ltn_k /= !BCA.big_seq &(BCA.eq_bigr) => /= i.
-   case/mem_range => ge0_i ltn_i. rewrite !polyME.
-   case: (0 <= k - i /\ k - i < n) => [[gt0_ki ltn_ki] | /negb_and ].
-    have ntln_nki: n + k - i < n = false.  
-     by rewrite neqF -lezNgt -(lez_add2r i) -addzA /= lez_add2l  -(lez_add2r (-i)) /=.
-     rewrite ntln_nki /= ZModpRing.mul0r ZModpRing.subr0.
-     rewrite BCA.mulr_suml /= !BCA.big_seq &(BCA.eq_bigr) /= => j; case/mem_range => ge0_j ltn_j. 
-     have ->: 
-&(BCA.eq_bigr) => j _ /=; rewrite ZModpRing.mulrBl. /#.   rewrite g
- case: (0 <= k - i /\ k - i < n) => [[gt0_ki ltn_ki] | /negb_and ].
-   admit.
-   have ->: (p * (q * r)).[k] =
-            if 0 <= k /\ k < n
-            then (BCA.bigi predT (fun (i : int) => 
-                   (BCA.bigi predT (fun (j : int) => 
-                     p.[i] * q.[k - i - j] * r.[j] - p.[i] * q.[n + k - i - j] * r.[j] - 
-                     (p.[i] * q.[n + k - i - j] * r.[j] - p.[i] * q.[n + n + k - i - j] * r.[j]))
-                     0 n)) 0 n)
-            else zero.
-   admit.
-   rewrite ge0_k ltn_k //=.
-rewrite BCA.exchange_big &(BCA.eq_bigr) => /= i _. rewrite &(BCA.eq_bigr) => /= j _ /#. 
-
-
-rewrite BCA.big_exchange.
-   have ->: ((p * q) * r).[k] =
-            if 0 <= k /\ k < n
-            then (BCA.bigi predT (fun (i : int) => 
-                  if 0 <= k - i /\ k - i < n 
-                  then (BCA.bigi predT (fun (j : int) => 
-                        p.[j] * q.[k - i - j] * r.[i] - p.[j] * q.[n + k - i - j] * r.[i]) 0 n)
-                  else if 0 <= n + k - i /\ n + k - i < n
-                  then (BCA.bigi predT (fun (j : int) => 
-                        p.[j] * q.[n + k - i - j] * r.[i] - p.[j] * q.[n + n + k - i - j] * r.[i]) 0 n)
-                  else zero
-                  ) 0 n)
-            else zero.
-   rewrite polyMEr ge0_k ltn_k /= !BCA.big_seq &(BCA.eq_bigr) => /= i.
-   case/mem_range => ge_i ltn_i. rewrite !polyME.
-   case: (0 <= k - i /\ k - i < n) => [[gt0_ki ltn_ki] | /negb_and ].
-    have ntln_nki: n + k - i < n = false.  
-     by rewrite neqF -lezNgt -(lez_add2r i) -addzA /= lez_add2l  -(lez_add2r (-i)) /=.
-     rewrite ntln_nki /= ZModpRing.mul0r ZModpRing.subr0.
-     rewrite BCA.mulr_suml /= &(BCA.eq_bigr) => j _ /=; rewrite ZModpRing.mulrBl /#. admit.
-   have ->: (p * (q * r)).[k] =
-            if 0 <= k /\ k < n
-            then (BCA.bigi predT (fun (i : int) => 
-                  if 0 <= k - i /\ k - i < n 
-                  then (BCA.bigi predT (fun (j : int) => 
-                        p.[i] * q.[k - i - j] * r.[j] - p.[i] * q.[n + k - i - j] * r.[j]) 0 n)
-                  else if 0 <= n + k - i /\ n + k - i < n
-                  then (BCA.bigi predT (fun (j : int) => 
-                        p.[i] * q.[n + k - i - j] * r.[j] - p.[i] * q.[n + n + k - i - j] * r.[j]) 0 n)
-                  else zero
-                  ) 0 n)
-            else zero.
-
-   have ->: (p * (q * r)).[k] =
-            if 0 <= k /\ k < n
-            then (BCA.bigi predT (fun (i : int) => 
-                  if 0 <= k - i /\ k - i < n 
-                  then (BCA.bigi predT (fun (j : int) => 
-                        p.[i] * q.[k - i - j] * r.[j] - p.[i] * q.[n + k - i - j] * r.[j]) 0 n)
-                  else if 0 <= n + k - i /\ n + k - i < n
-                  then (BCA.bigi predT (fun (j : int) => 
-                        p.[i] * q.[n + k - i - j] * r.[j] - p.[i] * q.[n + n + k - i - j] * r.[j]) 0 n)
-                  else zero
-                  ) 0 n)
-            else zero.
-admit.
-   rewrite ge0_k ltn_k //=. apply BCA.exchange_big.
-      case: (0 <= k - i /\ k - i < n) => ?. !BCA.big_seq &(BCA.eq_bigr) /= => i.
-    case/mem_range => ge_i ltn_i.
-   case: (0 <= k - i /\ k - i < n) => ?.
-   rewrite BCA.exchange_big &(BCA.eq_bigr) => /= i _. rewrite &(BCA.eq_bigr) => /= j _ /#.
-   have ->: (p * (q * r)).[k] =
-            if 0 <= k /\ k < n
-            then (BCA.bigi predT (fun (i : int) => 
-                  (BCA.bigi predT (fun (j : int) => 
-                        p.[i] * q.[k - i - j] * r.[j] + p.[i] * q.[n + n + k - i - j] * r.[j]) 0 n)
-                  ) 0 n)
-            else zero.
-   admit.
-   rewrite ge0_k ltn_k //=.
-   rewrite BCA.exchange_big &(BCA.eq_bigr) => /= i _. rewrite &(BCA.eq_bigr) => /= j _ /#.
-     by rewrite &(BCA.eq_bigr) => j _ /=; rewrite ZModpRing.mulrBl /#.
-   case: (0 <= k - i /\ k - i < n) => [[gt0_ki ltn_ki] | /negb_and ].
-    have ->: n + k - i < n = false; 2: rewrite /= ZModpRing.mul0r ZModpRing.subr0. 
-     by rewrite neqF -lezNgt -(lez_add2r i) -addzA /= lez_add2l  -(lez_add2r (-i)) /=.    
-     by rewrite BCA.mulr_suml /= &(BCA.eq_bigr) => j _ /=; rewrite ZModpRing.mulrBl /#.
-   rewrite -ltzNge -lezNgt; case => [lt0_ki | gen_ki].
-
-   have ->: (p * (q * r)).[k] =
-            (BCA.bigi predT (fun (i : int) => 
-              (BCA.bigi predT (fun (j : int) => 
-                p.[i] * q.[k - i - j] * r.[j] - p.[i] * q.[n + k - i - j] * r.[j])) 0 n) 0 n).
-   admit.
-   simplify.
-   rewrite BCA.exchange_big &(BCA.eq_bigr) => /= i _. rewrite &(BCA.eq_bigr) => /= j _ /#.
-   have ->: (BCA.bigi predT (fun (i : int) => p.[i] * (q * r).[k - i]) 0 (k + 1)) =
-            (BCA.bigi predT (fun (i : int) => (p * q).[k - i] * r.[i]) 0 (k + 1)).
-    rewrite !BCA.big_seq &(BCA.eq_bigr) => /= i.
-    case/mem_range => ge0_i ltk1_i.
-    rewrite polyMS polyMSr. ge0_k ltn_k /=.
-  have ->: BCA.bigi predT (fun (i : int) => p.[i] * (q * r).[k - i]) 0 (k + 1) =
-    BCA.bigi predT (fun i =>
-      BCA.bigi predT (fun j => p.[j] * q.[k - i - j] * r.[i]) 0 (k+1)) 0 (k+1).
-  + rewrite polyMEr !BCA.big_seq &(BCA.eq_bigr) => /= i.
-  apply BCA.eq_big_int => i /=; case => ge0_i ltn_i.
-  pose ki := k - i; pose nki := n + k - i.
-  rewrite polyME polyMEr polyME. ge0_i ltn_i /=.
-  case: (0 <= ki /\ ki < n) => [[gt0_ki ltn_ki] | /negb_and].
-   have nltn_nki: nki < n = false; 2: rewrite nltn_nki /= ZModpRing.mulr0 ZModpRing.subr0.
-    rewrite neqF -lezNgt /nki -(lez_add2r i) -addzA /= lez_add2l -(lez_add2r (-i)) /= gt0_ki.
-   have ->: r.[nki] = zero; 2: rewrite ZModpRing.mulr0 ZModpRing.subr0.
-    by rewrite gedeg_coeff // (lez_trans n) 1:len_deg lezNgt -neqF.
-   rewrite BCA.mulr_sumr BCA.mulr_suml /=. 
-   apply BCA.eq_big_int => j /=; case => ge0_j ltn_j. 
-   rewrite ZModpRing.mulrC !ZModpRing.mulrDl !ZModpRing.mulrC.
-ZModpRing.mulrDl.
-   
-  pose qr := q * r. rewrite polyMS in qr.
-admit.
-(*
-  have ->: ((p * q) * r).[k] =
-    BCA.bigi predT (fun i =>
-      BCA.bigi predT (fun j => p.[j] * q.[k - i - j] * r.[i]) 0 (k+1)) 0 (k+1).
-  + rewrite polyMEr !BCA.big_seq &(BCA.eq_bigr) => /= i.
-    case/mem_range => ge0_i lt_i_Sk; rewrite (@polyMEw k) 1:/#.
-    by rewrite BCA.mulr_suml &(BCA.eq_bigr).
-  have ->: (p * (q * r)).[k] =
-    BCA.bigi predT (fun i =>
-      BCA.bigi predT (fun j => p.[i] * q.[k - i - j] * r.[j]) 0 (k+1)) 0 (k+1).
-  + rewrite polyME !BCA.big_seq &(BCA.eq_bigr) => /= i.
-    case/mem_range => g0_i lt_i_Sk; rewrite (@polyMEwr k) 1:/#.
-    by rewrite BCA.mulr_sumr &(BCA.eq_bigr) => /= j _; rewrite ZModpRing.mulrA.
-  rewrite BCA.exchange_big &(BCA.eq_bigr) => /= i _.
-  by rewrite &(BCA.eq_bigr) => /= j _ /#.
-*)
+rewrite (BCA.exchange_big ((fun (i : int) => (i \in range 0 n) /\ 0 <= k - i /\ k - i < n)) predT).
+rewrite BCA.big_seq /=.
+rewrite BCA.exchange_big /=.
+rewrite BCA.exchange_big /=.  eq_sym BCA.exchange_big /=. rewrite &(BCA.eq_big). rewrite BCA.exchange_big.*)
+admit. admit.
 qed.
-*)
 
 lemma mul1p : left_id poly1 polyM.
 proof.
