@@ -1,5 +1,3 @@
-pragma Goals:printall.
-
 (*
 ----------------------------------- 
  Require/Import EasyCrypt Theories
@@ -416,15 +414,6 @@ proof.
    apply: BCA.eq_bigr => /= i _ @/NK @/F2 @/F2'; rewrite ZModpRing.mulrC /#.
 qed.
 
-(*
-lemma polyMEwr M p q k : (k <= M)%Int => (p * q).[k] =
-  BCA.bigi predT (fun i => p.[k-i] * q.[i]) 0 (M+1).
-proof.
-  rewrite mulpC => /polyMEw ->; apply: BCA.eq_bigr.
-  by move=> i _ /=; rewrite  ZModpRing.mulrC.
-qed.
-*)
-
 lemma polyMEr (p q : poly) (k : int) : (p * q).[k] =
   if 0 <= k /\ k < n 
   then (BCA.bigi predT (fun (i : int) => (p.[k - i] * q.[i] - p.[n + k - i] * q.[i])) 0 n)
@@ -450,6 +439,8 @@ proof.
   by reflexivity.
 qed.
 
+(* --- Associativity Helper Lemmas --- *)
+(* - (p * q) * r - *)
 lemma eq_pre_mulpA_left (p q r : poly) (k : int) : ((p * q) * r).[k] =
   if 0 <= k /\ k < n
   then  (BCA.bigi predT (fun (i : int) => 
@@ -519,53 +510,6 @@ proof.
   by reflexivity.
 qed.
 
-(*
-lemma eq_pre2_mulpA_left (p q r : poly) (k : int) : ((p * q) * r).[k] =
-  if 0 <= k /\ k < n
-  then  (BCA.bigi predT (fun (i : int) => 
-        (BCA.bigi predT (fun (j : int) => p.[j] * q.[k - i - j] * r.[i]) 0 n)) 0 (k + 1))
-        +
-        (BCA.bigi predT (fun (i : int) => 
-         (BCA.bigi predT (fun (j : int) => - p.[j] * q.[n + k - i - j] * r.[i]) 0 n)) 0 (k + 1))
-        +
-        (BCA.bigi predT (fun (i : int) =>
-         (BCA.bigi predT (fun (j : int) => - p.[j] * q.[n + k - i - j] * r.[i]) 0 n)) (k + 1) n)
-        +
-        (BCA.bigi predT (fun (i : int) =>
-         (BCA.bigi predT (fun (j : int) => p.[j] * q.[n + n + k - i - j] * r.[i]) 0 n)) (k + 1) n)
-  else zero.  
-proof.
-  rewrite eq_pre_mulpA_left; case (0 <= k /\ k < n) => [[ge0_k ltn_k] |] //.
-  by rewrite eq_bigterm2_mulpA_left_min ZModpRing.addrA. 
-qed.
-*)
-(*
-lemma eq_pre2_mulpA_left (p q r : poly) (k : int) : ((p * q) * r).[k] =
-  if 0 <= k /\ k < n
-  then  (BCA.bigi predT (fun (i : int) => 
-        (BCA.bigi predT (fun (j : int) => p.[j] * q.[k - i - j] * r.[i]) 0 n)) 0 (k + 1))
-        +
-        (BCA.bigi predT (fun (i : int) => 
-         (BCA.bigi predT (fun (j : int) => - p.[j] * q.[n + k - i - j] * r.[i]) 0 n)) 0 n)
-        +
-        (BCA.bigi predT (fun (i : int) =>
-         (BCA.bigi predT (fun (j : int) => p.[j] * q.[n + n + k - i - j] * r.[i]) 0 n)) (k + 1) n)
-  else zero.  
-proof.
-  rewrite eq_pre_mulpA_left; case (0 <= k /\ k < n) => [[ge0_k ltn_k] |] //.
-  rewrite eq_bigterm2_mulpA_left_min ZModpRing.addrA. rewrite ZModpRing.addrC -ZModpRing.addrA. 
-  have ->: ((BCA.bigi predT (fun (i : int) =>
-            (BCA.bigi predT (fun (j : int) => - p.[j] * q.[n + k - i - j] * r.[i]) 0 n)) 0 (k + 1))
-           +
-           (BCA.bigi predT (fun (i : int) =>
-            (BCA.bigi predT (fun (j : int) => - p.[j] * q.[n + k - i - j] * r.[i]) 0 n)) (k + 1) n))
-           =
-           (BCA.bigi predT (fun (i : int) => 
-            (BCA.bigi predT (fun (j : int) => - p.[j] * q.[n + k - i - j] * r.[i]) 0 n)) 0 n).
-   by rewrite -BCA.big_cat_int; 1,2: smt.
-  by rewrite ZModpRing.addrC.
-qed.
-*)
 lemma eq_term1_mulpA_left (p q r : poly) (k : int) : 0 <= k => k < n =>
   (BCA.bigi predT (fun (i : int) => 
    (BCA.bigi predT (fun (j : int) => p.[j] * q.[k - i - j] * r.[i]) 0 n)) 0 (k + 1))
@@ -630,6 +574,7 @@ proof.
   by rewrite ZModpRing.addrC eq_term1_mulpA_left 3:eq_term4_mulpA_left.
 qed.
 
+(* - p * (q * r) - *)
 lemma eq_pre_mulpA_right (p q r : poly) (k : int) : (p * (q * r)).[k] =
   if 0 <= k /\ k < n
   then  (BCA.bigi predT (fun (i : int) => 
@@ -763,6 +708,7 @@ proof.
   by rewrite ZModpRing.addrC eq_term1_mulpA_right 3:eq_term4_mulpA_right.
 qed.
 
+(* - Associativity: (p * q) * r = p * (q * r) - *)
 lemma mulpA : associative ( * ).
 proof.
   move=> p q r; apply: poly_eqP => k ge0_k ltn_k.
@@ -818,30 +764,14 @@ proof.
              rewrite ZModpRing.addrCA -ZModpRing.addrA ZModpRing.addrCA ZModpRing.addrA.
 qed.
 
-
 lemma onep_neq0 : poly1 <> poly0.
 proof.  
   apply/negP => /poly_eqP /(_ 0); rewrite !polyCE ZModpRing.oner_neq0 implybF /=.
   by apply /(ltr_le_trans 1) /ge1_n.
 qed.
 
-pred unitp (p : poly) = 
-  Coeff.unit p.[0] /\
-  exists (q : poly), (forall (i : int), 0 < i => (p * q).[i] = zero).
-
-(*
-pred nilpotent (a : coeff) = exists (n : int), inzmod (exp (asint a) n) = zero.
-pred unitp (p : poly) = Coeff.unit p.[0] /\ forall (i : int), 0 < i => nilpotent p.[i].
-
-op polyV (p : poly) =
-  if deg p = 1 then polyC (Coeff.inv p.[0]) else p.
-
-lemma degV (p : poly) : deg (polyV p) = deg p.
-proof.
-rewrite /polyV; case: (deg p = 1); last done.
-by case/deg_eq1=> c [nz_c ->>]; rewrite !degC polyCE /= ZModpRing.invr_eq0.
-qed.
-*)
+op unitp (p : poly) = exists (q : poly), (p * q) = poly1.
+op polyV (p : poly) = choiceb (fun q => p * q = poly1) p.
 
 clone import Ring.ComRing as PolyRing with
     type t <- poly ,
@@ -849,89 +779,57 @@ clone import Ring.ComRing as PolyRing with
     op oner <- poly1,
     op ( + ) <- polyD,
     op [ - ] <- polyN,
-    op ( * ) <- polyM
-  proof addrA     by apply ZPoly.addrA
-  proof addrC     by apply ZPoly.addrC
-  proof add0r     by apply ZPoly.add0r
-  proof addNr     by apply ZPoly.addNr
-  proof mulrA     by apply mulpA
-  proof mulrC     by apply mulpC
-  proof mul1r     by apply mul1p
-  proof mulrDl    by apply mulpDl
-  proof oner_neq0 by apply onep_neq0.
-
-(*
-realize unitout.
-proof.
-
-move=> p @/unitp @/polyV; case: (deg p = 1) => //=.
-move=> dp_eq1 unitN_p0; apply/poly_eqP => c ge0_c.
-case: (c < 1) => [lt1_c|/lerNgt ge1_c]; last first.
-- rewrite !(@gedeg_coeff _ c) 2:dp_eq1 //.
-  by apply/(ler_trans _ _ _ _ ge1_c)/degC_le.
-- suff ->: c = 0; first by rewrite polyCE /= invr_out //; apply /ZModpRing.unitout /unitN_p0.
-  by rewrite eqr_le ge0_c /= -ltz1.
-qed.
-
-
-realize mulVr.
-proof.
-move=> p inv_p; apply/poly_eqP=> c /ler_eqVlt [<<-|].
-+ rewrite polyCE /= polyME /= BCA.big_int1 /= /polyV.
-  by case: inv_p => -> inv_p0 /=; rewrite polyCE /= ZModpRing.mulVr.
-+ move=> gt0_c; rewrite polyME polyCE gtr_eqF //=.
-  rewrite BCA.big_seq BCA.big1 //= => i; rewrite mem_range.
-  case: inv_p => @/polyV ^ degp -> inv_p0 [+ lt_i_Sc] - /ler_eqVlt [<<-|] /=.
-  - by rewrite (gedeg_coeff _ c) -1:ZModpRing.mulr0 // degp /#.
-  - move=> gt0_i; rewrite (gedeg_coeff _ i) -1:ZModpRing.mul0r //.
-    by apply/(ler_trans _ _ _ (degC_le _)) => /#.
-qed.
-
-realize unitP.
-proof. admit. qed.
-(*
-move=> p q ^pMqE /(congr1 deg); rewrite deg1.
-move/(congr1 ((+) 1)) => /=; rewrite addrC; move: pMqE.
-case: (deg p = 0) => [/deg_eq0->|nz_p].
-- by rewrite mulpC mul0p eq_sym onep_neq0.
-case: (deg q = 0) => [/deg_eq0->|nz_q].
-- by rewrite mul0p eq_sym onep_neq0.
-rewrite degM -1?deg_eq0 // => ME eq.
-have {eq}[]: deg p = 1 /\ deg q = 1 by smt(ge0_deg).
-move/deg_eq1=> [cp [nz_cp ->>]]; move/deg_eq1=> [cq [nz_cq ->>]].
-move/poly_eqP: ME => /(_ 0 _) //; rewrite polyCE /=.
-rewrite polyME BCA.big_int1 /= => /unitP @/unitp -> /=.
-by rewrite deg_eq1; exists cp.
-qed. *)
-*)
+    op ( * ) <- polyM,
+    op invr <- polyV,
+    pred unit <- unitp
+  proof *.
+  realize addrA     by apply ZPoly.addrA.
+  realize addrC     by apply ZPoly.addrC. 
+  realize add0r     by apply ZPoly.add0r.  
+  realize addNr     by apply ZPoly.addNr. 
+  realize mulrA     by apply mulpA. 
+  realize mulrC     by apply mulpC.
+  realize mul1r     by apply mul1p. 
+  realize mulrDl    by apply mulpDl. 
+  realize oner_neq0 by apply onep_neq0. 
+  realize mulVr     by move=> p inv_p; rewrite mulrC &(choicebP (fun q => p * q = poly1) p).
+  realize unitP     by move=> x y yxp1; exists y; rewrite mulrC. 
+  realize unitout   by move => ?; rewrite negb_exists /= &(choiceb_dfl).
 
 (* -------------------------------------------------------------------- *)
 theory BigPoly.
 clone include BigComRing with
     type t <- poly,
+    pred CR.unit <- unitp,
     op CR.zeror <- poly0,
     op CR.oner <- poly1,
     op CR.( + ) <- polyD,
     op CR.([-]) <- polyN,
     op CR.( * ) <- polyM,
+    op CR.invr <- polyV,
     op CR.intmul <- PolyRing.intmul,
     op CR.ofint <- PolyRing.ofint,
     op CR.exp <- PolyRing.exp
-  proof CR.addrA     by apply: PolyRing.addrA    
-  proof CR.addrC     by apply: PolyRing.addrC    
-  proof CR.add0r     by apply: PolyRing.add0r    
-  proof CR.addNr     by apply: PolyRing.addNr    
-  proof CR.oner_neq0 by apply: PolyRing.oner_neq0
-  proof CR.mulrA     by apply: PolyRing.mulrA    
-  proof CR.mulrC     by apply: PolyRing.mulrC    
-  proof CR.mul1r     by apply: PolyRing.mul1r    
-  proof CR.mulrDl    by apply: PolyRing.mulrDl
+  proof CR.*
 
   rename [theory] "BAdd" as "PCA"
          [theory] "BMul" as "PCM"
 
   remove abbrev CR.(-)
   remove abbrev CR.(/).
+
+  realize CR.addrA     by apply: PolyRing.addrA.    
+  realize CR.addrC     by apply: PolyRing.addrC.   
+  realize CR.add0r     by apply: PolyRing.add0r.  
+  realize CR.addNr     by apply: PolyRing.addNr. 
+  realize CR.oner_neq0 by apply: PolyRing.oner_neq0.
+  realize CR.mulrA     by apply: PolyRing.mulrA.
+  realize CR.mulrC     by apply: PolyRing.mulrC.
+  realize CR.mul1r     by apply: PolyRing.mul1r.
+  realize CR.mulrDl    by apply: PolyRing.mulrDl.
+  realize CR.mulVr     by apply: PolyRing.mulVr.
+  realize CR.unitP     by apply: PolyRing.unitP.
+  realize CR.unitout   by apply: PolyRing.unitout.
 
 lemma polysumE ['a] P F s k :
   (PCA.big<:'a> P F s).[k] = BCA.big P (fun i => (F i).[k]) s.
