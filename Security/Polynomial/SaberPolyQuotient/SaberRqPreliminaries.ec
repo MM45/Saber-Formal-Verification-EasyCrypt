@@ -4,7 +4,7 @@
 -----------------------------------
 *)
 (* --- Built-in --- *)
-require import AllCore Distr ZModP IntDiv StdOrder.
+require import AllCore List Distr ZModP IntDiv StdOrder.
 require (*--*) Matrix.
 
 (* --- Local --- *)
@@ -20,7 +20,7 @@ require (*--*) SaberPolyQuotientRing.
 const eq: int.
 const ep: int.
 const et: int.
-const en: int = 8.
+const en: int.
 
 (* -- Parameters -- *)
 const q: int = 2^eq. 
@@ -30,10 +30,11 @@ const n: int = 2^en.
 const l: int.
 
 (* -- Assumptions/Properties -- *)
+axiom ge0_en: 0 <= en.
 axiom ge1_et1: 1 <= et + 1.
 axiom geet2_ep: et + 2 <= ep.
 axiom geep1_eq: ep + 1 <= eq.
-axiom sec_assumption: eq - ep <= ep - et - 1. (* q %/ p <= p %/ 2*t. *)
+axiom sec_assumption: eq - ep <= ep - et - 1.
 axiom ge1_l: 1 <= l.
 
 lemma ge0_et: 0 <= et by apply /(lez_add2l (-1) 1 (et + 1)) /ge1_et1.
@@ -41,19 +42,9 @@ lemma ge2_ep: 2 <= ep by apply /(lez_trans (et + 2) 2 ep) /geet2_ep /(lez_add2r 
 lemma ge3_eq: 3 <= eq by apply /(lez_trans (ep + 1) 3 eq) /geep1_eq /(lez_add2r 1 2 ep) /ge2_ep.
 
 lemma ge1_t: 1 <= t by rewrite IntOrder.exprn_ege1; [apply ge0_et |].
-lemma ge2_2t: 2 <= 2 * t by move: (IntOrder.ler_pmul2l 2) => /= mm; rewrite (mm 1 t) ge1_t. 
-lemma ge4_p: 4 <= p by move: (IntOrder.ler_weexpn2l 2) => /= mn; move: (mn 2 ep) => /=; rewrite ge2_ep /= expr2. 
-lemma ge8_q: 8 <= q by move: (IntOrder.ler_weexpn2l 2) => /= mn; move: (mn 3 eq) => /=; rewrite ge3_eq /= (exprS 2 2) // expr2.
-
-lemma geeq1_2ep: eq + 1 <= 2 * ep.
-proof.
-  have le0_eq2ep: eq - ep - ep <= -1.
-   apply (lez_trans (-et - 1) (eq - ep - ep) (-1)). 
-    by move: (lez_add2l (-ep) (eq - ep) (ep - et - 1)); rewrite sec_assumption addzC 2!addzA.
-    by rewrite -(lez_add2r (et + 1) (-et - 1) (-1)) addzA addzC addzA /= ge0_et.
-  by rewrite mulzC -(intmulz ep 2) mulr2z -(lez_add2r (-1) _ _) /= 
-             -(lez_add2l ((-(ep + ep))) _ _) addzA /= addzC opprD addzA.
-qed.  
+lemma ge2_2t: 2 <= 2 * t by move: (IntOrder.ler_pmul2l 2 _ 1 t); rewrite // ge1_t //.
+lemma ge4_p: 4 <= p by move: (IntOrder.ler_weexpn2l 2 _ 2 ep); rewrite //= ge2_ep /= expr2.
+lemma ge8_q: 8 <= q by move: (IntOrder.ler_weexpn2l 2 _ 3 eq); rewrite //= ge3_eq /= (exprS 2 2) // expr2.
 
 lemma two_div_t: 2 %| 2 * t by apply /dvdz_mulr /dvdzz.
 
@@ -79,7 +70,17 @@ qed.
 
 lemma t_div_q: t %| q by apply /(dvdz_trans p t q) /p_div_q /t_div_p.
 
-lemma q_div_pp: q %| p * p.
+lemma geeq1_2ep: eq + 1 <= 2 * ep.
+proof.
+  have le0_eq2ep: eq - ep - ep <= -1.
+   apply (lez_trans (-et - 1) (eq - ep - ep) (-1)). 
+    by move: (lez_add2l (-ep) (eq - ep) (ep - et - 1)); rewrite sec_assumption addzC 2!addzA.
+    by rewrite -(lez_add2r (et + 1) (-et - 1) (-1)) addzA addzC addzA /= ge0_et.
+  by rewrite mulzC -(intmulz ep 2) mulr2z -(lez_add2r (-1) _ _) /= 
+             -(lez_add2l ((-(ep + ep))) _ _) addzA /= addzC opprD addzA.
+qed.  
+
+lemma q_div_pp: q %| (p * p).
 proof.
   rewrite /p /q -exprD_nneg; first 2 by apply /(IntOrder.ler_trans 2 0 ep) /ge2_ep.
   rewrite dvdz_exp2l; split; [by apply /(lez_trans 3 0 eq) /ge3_eq | move => ?]. 
@@ -87,7 +88,7 @@ proof.
              [rewrite (lez_addl eq 1) | apply geeq1_2ep].
 qed.
 
-lemma ge2_ppq: 2 <= p * p %/ q.
+lemma ge2_ppq: 2 <= (p * p) %/ q.
 proof.
   apply (IntOrder.ler_pmul2r q); first by rewrite /q IntOrder.expr_gt0.
    have ->: p * p %/ q * q = p * p.
@@ -99,7 +100,7 @@ proof.
       by rewrite -mul1r2z mulrC /ofint_id intmulz /= geeq1_2ep.
 qed.
 
-lemma eq_22epeq_ppq: 2 ^ (2 * ep - eq) = p * p %/ q.
+lemma eq_22epeq_ppq: 2 ^ (2 * ep - eq) = (p * p) %/ q.
 proof.
   apply (mulfI q); [by rewrite neq_ltz; right; apply IntOrder.expr_gt0 | rewrite mulzC -(mulzC (p * p %/ q) _)].  
   have ->: p * p %/ q * q = p * p.
@@ -122,7 +123,7 @@ clone import SaberPolyQuotientRing as Rq with
     type coeff <- Zq,
     type poly <- Rq
   proof ge2_coeffp by apply /(lez_trans 8 2 q) /ge8_q
-  proof ge0_en by trivial
+  proof ge0_en by apply ge0_en
 
   rename [theory] "Coeff" as "Zq".
 
@@ -155,7 +156,7 @@ clone import SaberPolyQuotientRing as Rp with
     type coeff <- Zp,
     type poly <- Rp
   proof ge2_coeffp by apply /(lez_trans 4 2 p) /ge4_p
-  proof ge0_en by trivial
+  proof ge0_en by apply ge0_en
 
   rename [theory] "Coeff" as "Zp".
 
@@ -173,21 +174,21 @@ type Rp_vec = Mat_Rp.vector.
 op dRp : Rp distr = DRp.dunifin. 
 op dRp_vec : Rp_vec distr = Mat_Rp.Matrix.dvector dRp.
 
-(* -- Zppq = Z/ppqZ -- *)
+(* -- Rppq = Z/ppqZ [X] / (X^n + 1) -- *)
 type Zppq.
 type Rppq.
 
 clone import SaberPolyQuotientRing as Rppq with 
-    op p <- p * p %/ q,
+    op p <- (p * p) %/ q,
     op en <- en,
     type coeff <- Zppq,
     type poly <- Rppq
   proof ge2_coeffp by apply ge2_ppq
-  proof ge0_en by trivial
+  proof ge0_en by apply ge0_en
 
   rename [theory] "Coeff" as "Zppq".
 
-(* -- Z2t = Z/2tZ  -- *)
+(* -- R2t = Z/2tZ [X] / (X^n + 1)  -- *)
 type Z2t.
 type R2t.
 
@@ -197,11 +198,11 @@ clone import SaberPolyQuotientRing as R2t with
     type coeff <- Z2t,
     type poly <- R2t
   proof ge2_coeffp by apply ge2_2t
-  proof ge0_en by trivial
+  proof ge0_en by apply ge0_en
 
   rename [theory] "Coeff" as "Z2t".
 
-(* -- Z2 = Z/2Z -- *)
+(* -- R2 = Z/2Z [X] / (X^n + 1) -- *)
 type Z2.
 type R2.
 
@@ -211,7 +212,7 @@ clone import SaberPolyQuotientRing as R2 with
     type coeff <- Z2,
     type poly <- R2
   proof ge2_coeffp by apply lezz
-  proof ge0_en by trivial
+  proof ge0_en by apply ge0_en
 
   rename [theory] "Coeff" as "Z2".
 
@@ -249,8 +250,9 @@ lemma dRq_mat_uni: is_uniform dRq_mat.
 proof. apply /Mat_Rq.Matrix.dmatrix_uni; rewrite /dRq; apply /DRq.dunifin_uni. qed.
 
 (* - Imports - *)
-import Mat_Rq.
-import Mat_Rp.
+import Zq Zp.
+import Rq Rp.
+import Mat_Rq Mat_Rp.
 
 (* - Constants - *)
 const h1 : Rq = to_polyd (fun _ => Zq.inzmod (2^(eq - ep - 1))).
@@ -382,19 +384,18 @@ proof.
   by apply sec_assumption.
 qed.
 
-pragma Goals:printall.
-
 lemma scale_comp_Rp_Rppq_R2t (x : Rp):
       scale_Rp_R2t x = scale_Rppq_R2t (scale_Rp_Rppq x).
 proof. 
   rewrite /scale_Rp_R2t /scale_Rppq_R2t /scale_Rp_Rppq. 
   congr; rewrite fun_ext /(==) => i. 
   rewrite coeffE /=; first split; [| exists (deg x - 1); split] => [c0 gt0_c /= | |  c0 ltc_deg /= ];
-          1, 3: rewrite /scale_Zp_Zppq /scale /shr /Zppq.zero -Zppq.eq_inzmod; 1, 3: have ->: (Zp.asint x.[c0] = 0);
+          1, 3: rewrite /scale_Zp_Zppq /scale /shr /Zppq.zero -Zppq.eq_inzmod; 
+          1, 3: have ->: (Zp.asint x.[c0] = 0);
           [by rewrite -Zp.zeroE Zp.asint_eq lt0_coeff | | | 
            by rewrite -Zp.zeroE Zp.asint_eq gedeg_coeff //=; rewrite -(lez_add1r) addzC /= in ltc_deg|];
           1, 3: by do 2!congr; apply div0z.
-  by rewrite (IntOrder.ltr_le_trans Rp.n) // -(lez_add1r) addzC /= Rp.len_deg.
+  by rewrite (IntOrder.ltr_le_trans Rp.n) // -lez_add1r addzC /= Rp.len_deg.
   by apply scale_comp_Zp_Zppq_Z2t. 
 qed.
 
@@ -402,7 +403,7 @@ lemma scale_id (x ea eb : int) : ea = eb => scale x ea eb = x.
 proof. by move=> eq_eaeb; rewrite /scale /shr eq_eaeb addzN expr0. qed.
 
 lemma scale_Zp_Zp_id (x : Zp) : scale_Zp_Zp x = x.
-proof. by rewrite /scale_Zp_Zp scale_id; [trivial | rewrite Zp.asintK]. qed.
+proof. by rewrite /scale_Zp_Zp scale_id 2: Zp.asintK. qed.
 
 lemma scale_Rp_Rp_id (x : Rp) : scale_Rp_Rp x = x.
 proof. 
@@ -410,6 +411,69 @@ proof.
   have ->: (fun i => scale_Zp_Zp x.[i]) = (fun i => x.[i]).
    by rewrite fun_ext /(==) => ?; apply scale_Zp_Zp_id. 
   rewrite coeffE //; split; [| exists (deg x - 1); split] => [c0 gt0_c /= | | c0 ltc_deg /=]; 
-             [by apply /Rp.lt0_coeff | | by apply /Rp.gedeg_coeff; rewrite -(lez_add1r) addzC /= in ltc_deg]. 
-   by rewrite -(lez_add1r) addzC /= Rp.len_deg.
+          [by apply /Rp.lt0_coeff | | by apply /Rp.gedeg_coeff; rewrite -lez_add1r addzC /= in ltc_deg]. 
+   by rewrite -lez_add1r addzC /= Rp.len_deg.
 qed.
+
+lemma eq_scaleZqZp_modZppq_scaleZpZppq (x : Zq) (m : Z2) :
+  Zppq.inzmod (Zp.asint ( (scale_Zq_Zp x) + (Zp.inzmod (shl (Z2.asint m) (2 * ep - eq - 1)))))
+  =
+  scale_Zp_Zppq ((Zp.inzmod (Zq.asint x)) + Zp.inzmod (shl (Z2.asint m) (ep - 1))).
+proof.
+  rewrite /scale_Zq_Zp /scale_Zp_Zppq /scale /shr /shl !Zp.inzmodK !modzDm. 
+  rewrite {2}(mulzC 2) -(intmulz ep) mulr2z !opprD !addzA /= (addzC _ eq). 
+  case: (Z2.asint m = 0) => [-> /= | /neq_ltz]; last case => [lt0_m | gt0_m]; move: (Z2.Sub.valP m) => [ge0_m lt2_m].
+   rewrite -Zppq.eq_inzmod -eq_22epeq_ppq /p /q (modz_pow2_div); 
+           last rewrite opprD (addzC _ ep) addzA -mulr2z intmulz (mulzC ep) modz_mod modz_dvd_pow //.
+    by apply Zq.ge0_asint.
+    split => [| ?]; first by apply /(lez_trans 1) /(lez_add2l ep); 2: rewrite addzCA /= geep1_eq.
+     by rewrite -(lez_add2r ep) -addzA /= -mulr2z intmulz mulzC (lez_trans (eq + 1)) 2:geeq1_2ep lez_addl.
+    split => [| ?]; rewrite -(lez_add2r eq) -addzA /=; 1: by rewrite (lez_trans (eq + 1)) 2:geeq1_2ep lez_addl.
+     by rewrite mulzC -intmulz mulr2z -(lez_add2l (-ep)) addzCA /= addzA /= (lez_trans (ep + 1)) 2:geep1_eq (lez_addl ep).
+   by rewrite -/Z2.asint lezNgt in ge0_m.
+   have -> /= {gt0_m ge0_m lt2_m}: Z2.asint m = 1; first rewrite eqz_leq; split. 
+    by rewrite -/Z2.asint -lez_add1r -(lez_add2l (-1)) /= in lt2_m.
+    by rewrite -lez_add1r in gt0_m.
+   rewrite -Zppq.eq_inzmod -eq_22epeq_ppq /p modz_dvd_pow.
+    split => [| ?]; rewrite -(lez_add2r eq) -addzA /=; 1: by rewrite (lez_trans (eq + 1)) 2:geeq1_2ep lez_addl.
+     by rewrite mulzC -intmulz mulr2z -(lez_add2l (-ep)) addzCA /= addzA /= (lez_trans (ep + 1)) 2:geep1_eq
+                (lez_addl ep).
+   rewrite modz_pow2_div; last rewrite opprD (addzC (-eq)) addzA /= -mulr2z intmulz (mulzC ep) modz_mod. 
+     by apply /addz_ge0 /IntOrder.expr_ge0; 1: apply Zq.ge0_asint.    
+   split => [| ?]; first by apply /(lez_trans 1) /(lez_add2l ep); 2: rewrite addzCA /= geep1_eq.
+     by rewrite -(lez_add2r ep) -addzA /= -mulr2z intmulz mulzC (lez_trans (eq + 1)) 2:geeq1_2ep lez_addl.  
+   rewrite divzDr 1: dvdz_exp2l. 
+    split => [| ?]; first by apply /(lez_trans 1) /(lez_add2l ep); 2: rewrite addzCA /= geep1_eq.
+     by rewrite -(lez_add2r 1) -(lez_add2l ep) -!addzA /= !addzA addzAC addzC !addzA /= -mulr2z intmulz mulzC geeq1_2ep.
+   have -> //: 2 ^ (ep - 1) %/ 2 ^ (eq - ep) = 2 ^ (2 * ep - eq - 1).
+    rewrite eq_sym eqz_div 2:dvdz_exp2l 3: -exprD_nneg; last congr; rewrite //#. 
+     by rewrite neq_ltz; right; apply IntOrder.expr_gt0.
+     split => [| ?]; first by rewrite subz_ge0 (lez_trans (ep + 1)) 2:geep1_eq lez_addl.
+      by rewrite -(lez_add2r 1) -(lez_add2l ep) -!addzA /= !addzA addzAC addzC !addzA /= -mulr2z intmulz mulzC geeq1_2ep.
+     by rewrite -(lez_add2r 1) -addzA /= -(lez_add2r eq) -addzA addzC /= geeq1_2ep.
+     by apply /(lez_trans 1) /(lez_add2l ep); 2: rewrite addzCA /= geep1_eq.
+qed. 
+
+lemma eq_scaleRqRp_modRppq_scale_Rppq (x : Rq) (m : R2) :
+  mod_ppq_Rp ( (scale_Rq_Rp x) + (shl_enc m (2 * ep - eq - 1)))
+  =
+  scale_Rp_Rppq ((mod_p_Rq x) + (shl_enc m (ep - 1))).
+proof.
+  rewrite /mod_ppq_Rp /scale_Rp_Rppq; congr; rewrite fun_ext /(==) => i. 
+  rewrite !polyDE /mod_p_Rq /scale_Rq_Rp /shl_enc /"_.[_]" !to_polydK //=; first 4 split => [c lt0_c |]; 
+          rewrite -/R2."_.[_]" -/Rq."_.[_]" //=; 2: exists (Rp.n - 1); 2: split => [| c lt0_c]; 
+          2: by rewrite -lez_add1r.
+   by rewrite lt0_coeff; 2: rewrite /scale_Zq_Zp /scale /shr Zq.zeroE.
+   by rewrite gedeg_coeff 1:(lez_trans Rq.n) 1:Rq.len_deg; 1: rewrite -lez_add1r in lt0_c;
+              last rewrite /scale_Zq_Zp /scale /shr Zq.zeroE.
+   by rewrite lt0_coeff 2:Z2.zeroE.
+   by rewrite gedeg_coeff 1:(lez_trans Rq.n) 1:R2.len_deg; 1: rewrite -lez_add1r in lt0_c;
+              last rewrite /scale_Zq_Zp /scale /shr Z2.zeroE.
+   by rewrite lt0_coeff 2:Zq.zeroE.
+   by rewrite gedeg_coeff 1:(lez_trans Rq.n) 1:Rq.len_deg; 1: rewrite -lez_add1r in lt0_c;
+              last rewrite /scale_Zq_Zp /scale /shr Zq.zeroE.
+   by rewrite lt0_coeff 2:Z2.zeroE.
+   by rewrite gedeg_coeff 1:(lez_trans Rq.n) 1:R2.len_deg; 1: rewrite -lez_add1r in lt0_c;
+              last rewrite /scale_Zq_Zp /scale /shr Z2.zeroE.
+ by apply eq_scaleZqZp_modZppq_scaleZpZppq.
+qed.  

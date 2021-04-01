@@ -253,7 +253,7 @@ module Game2(A : Adversary) = {
       (m0, m1) <@ A.choose(pk_encode (sd, b));
 
       s' <$ dsmallRq_vec;
-      b' <- scale_vec_Rq_Rp (( trmx _A) *^ s' + h);
+      b' <- scale_vec_Rq_Rp ((trmx _A) *^ s' + h);
       v' <- (dotp b (mod_p_Rq_vec s')) + (mod_p_Rq h1);
       cmu <- scale_Rp_Rppq (v' + (shl_enc (m_decode (if u then m1 else m0)) (ep - 1)));
       
@@ -287,7 +287,7 @@ module Game3(A : Adversary) = {
       (m0, m1) <@ A.choose(pk_encode (sd, b));
 
       s' <$ dsmallRq_vec;
-      b' <- scale_vec_Rq_Rp (( trmx _A) *^ s' + h);
+      b' <- scale_vec_Rq_Rp ((trmx _A) *^ s' + h);
       v' <- scale_Rq_Rp ((dotp b s') + h1);
       cmu <- scale_Rp_Rp (v' + (shl_enc (m_decode (if u then m1 else m0)) (2 * ep - eq - 1)));
    

@@ -733,7 +733,7 @@ proof.
             (BCA.bigi predT (fun (j : int) => p.[i] * q.[n + n + k - i - j] * r.[j]) 0 n)) 0 n)
            =
            (BCA.bigi predT (fun (i : int) =>
-            (BCA.bigi predT (fun (j : int) => p.[j] * q.[n +n + k - i - j] * r.[i]) 0 n)) 0 n).
+            (BCA.bigi predT (fun (j : int) => p.[j] * q.[n + n + k - i - j] * r.[i]) 0 n)) 0 n).
   rewrite BCA.exchange_big /= !BCA.big_seq &(BCA.eq_bigr) => i /=; case /mem_range => ge0_i ltn_i.
    rewrite !BCA.big_seq &(BCA.eq_bigr) => j /=; case /mem_range => ge0_j ltn_j; rewrite /#.
  by reflexivity.
@@ -771,7 +771,7 @@ proof.
 qed.
 
 op unitp (p : poly) = exists (q : poly), (p * q) = poly1.
-op polyV (p : poly) = choiceb (fun q => p * q = poly1) p.
+op polyV (p : poly) = choiceb (fun (q : poly) => p * q = poly1) p.
 
 clone import Ring.ComRing as PolyRing with
     type t <- poly ,
@@ -792,8 +792,8 @@ clone import Ring.ComRing as PolyRing with
   realize mul1r     by apply mul1p. 
   realize mulrDl    by apply mulpDl. 
   realize oner_neq0 by apply onep_neq0. 
-  realize mulVr     by move=> p inv_p; rewrite mulrC &(choicebP (fun q => p * q = poly1) p).
-  realize unitP     by move=> x y yxp1; exists y; rewrite mulrC. 
+  realize mulVr     by move=> p ?; rewrite mulrC &(choicebP (fun (q : poly) => p * q = poly1) p).
+  realize unitP     by move=> ? y ?; exists y; rewrite mulrC. 
   realize unitout   by move => ?; rewrite negb_exists /= &(choiceb_dfl).
 
 (* -------------------------------------------------------------------- *)
