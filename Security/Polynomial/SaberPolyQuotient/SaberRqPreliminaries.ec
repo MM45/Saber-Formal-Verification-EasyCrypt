@@ -295,8 +295,12 @@ op scale_Rppq_R2t (x : Rppq) : R2t = to_polyd (fun i => scale_Zppq_Z2t x.[i]).
 op scale_vec_Rq_Rp (v : Rq_vec) : Rp_vec = offunv (fun i => scale_Rq_Rp v.[i]).
 
 op mod_p_Rq (x : Rq) : Rp = to_polyd (fun i => Zp.inzmod (Zq.asint x.[i])).
-op mod_ppq_Rp (x : Rp) : Rppq =  to_polyd (fun i => Zppq.inzmod (Zp.asint x.[i])).
 op mod_p_Rq_vec (v : Rq_vec) : Rp_vec = offunv (fun i => mod_p_Rq v.[i]).
+
+op mod_q_Rp (x : Rp) : Rq = to_polyd (fun i => Zq.inzmod (Zp.asint x.[i])).
+op mod_q_Rp_vec (v : Rp_vec) : Rq_vec = offunv (fun i => mod_q_Rp v.[i]).
+
+op mod_ppq_Rp (x : Rp) : Rppq =  to_polyd (fun i => Zppq.inzmod (Zp.asint x.[i])).
 
 op pk_encode ['a] : 'a -> pkey.
 op pk_decode ['a] : pkey -> 'a.

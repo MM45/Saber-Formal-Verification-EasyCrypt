@@ -106,7 +106,7 @@ module type Adv_XMLWR = {
 
 (* --- LWR-Related Games --- *)
 module GMLWR(A : Adv_GMLWR) = {
-   proc main(u : bool) = {
+   proc main(u : bool) : bool = {
       var u' : bool;
       var sd : seed;
       var _A : Rq_mat;
@@ -130,7 +130,7 @@ module GMLWR(A : Adv_GMLWR) = {
 }.
 
 module XMLWR(A : Adv_XMLWR) = {
-   proc main(u : bool) = {
+   proc main(u : bool) : bool = {
       var u' : bool;
       var sd : seed;
       var _A : Rq_mat;
@@ -166,7 +166,7 @@ module XMLWR(A : Adv_XMLWR) = {
 (* --- Game Sequence --- *)
 (* Game 0 *)
 module Game0(A : Adversary) = {
-   proc main() = {
+   proc main() : bool = {
       var u, u' : bool;
       var m0, m1 : plaintext;
 
@@ -199,7 +199,7 @@ module Game0(A : Adversary) = {
 
 (* Game 1 *)
 module Game1(A : Adversary) = {
-   proc main() = {
+   proc main() : bool = {
       var u, u' : bool;
       var m0, m1 : plaintext;
 
@@ -232,7 +232,7 @@ module Game1(A : Adversary) = {
 
 (* Game 2 *)
 module Game2(A : Adversary) = {
-   proc main() = {
+   proc main() : bool = {
       var u, u' : bool;
       var m0, m1 : plaintext;
 
@@ -265,7 +265,7 @@ module Game2(A : Adversary) = {
 
 (* Game 3 *)
 module Game3(A : Adversary) = {
-   proc main() = {
+   proc main() : bool = {
       var u, u' : bool;
       var m0, m1 : plaintext;
 
@@ -299,7 +299,7 @@ module Game3(A : Adversary) = {
 
 (* Game 4 *)
 module Game4(A : Adversary) = {
-   proc main() = {
+   proc main() : bool = {
       var u, u' : bool;
       var m0, m1 : plaintext;
 
@@ -333,7 +333,7 @@ module Game4(A : Adversary) = {
 
 (* Auxiliary Game with All Random Artifacts *)
 module Auxiliary_Game(A : Adversary) = {
-   proc main() = {
+   proc main() : bool = {
       var u, u' : bool;
       var m0, m1 : plaintext;
       
@@ -572,18 +572,18 @@ proof.
    byequiv => //.
    proc; inline *.
    rcondf {2} 4.
-    by move=> &m0; auto.
+    by move => &m0; auto.
    rcondf {2} 6.
-    by move=> &m0; auto.
+    by move => &m0; auto.
    swap {2} 11 -10; swap {1} 5 3; swap {2} 6 -2; wp.
    by sim.
   have ->: Pr[Game4(A).main() @ &m : res] =  Pr[XMLWR( B1(A) ).main(true) @ &m : res].
    byequiv => //.
    proc; inline *.
    rcondt {2} 4.
-    by move=> &m0; auto.
+    by move => &m0; auto.
    rcondt {2} 6.
-    by move=> &m0; auto.
+    by move => &m0; auto.
    swap {2} 11 -10; swap {1} 5 2; swap {2} 6 -1; wp.
    sim; rnd {2}; auto.
    by  progress; apply dsmallRq_vec_ll.
@@ -620,7 +620,7 @@ proof.
     by rewrite -Rp.PolyRing.addrA Rp.PolyRing.addNr Rp.PolyRing.addrC Rp.PolyRing.add0r.
     pose x := shl_enc (m_decode (if uL then result_R.`2 else result_R.`1)) (2 * ep - eq - 1).
     have xx_0 : forall (x : Rp), x - x = Rp.poly0.
-     by move=> x0; rewrite -(Rp.PolyRing.addrN x0).
+     by move => x0; rewrite -(Rp.PolyRing.addrN x0).
     by rewrite -Rp.PolyRing.addrA xx_0 Rp.PolyRing.addrC Rp.PolyRing.add0r.
     by rewrite scale_Rp_Rp_id H7.  
 qed.
@@ -657,9 +657,9 @@ proof.
        +
        `| Pr[Game1(A).main() @ &m : res] - Pr[Game4( A3(A2(A)) ).main() @ &m : res] |
        <=
-       `|Pr[GMLWR(B0(A)).main(true) @ &m : res] - Pr[GMLWR(B0(A)).main(false) @ &m : res]| 
+       `| Pr[GMLWR(B0(A)).main(true) @ &m : res] - Pr[GMLWR(B0(A)).main(false) @ &m : res] | 
        +
-       `|Pr[XMLWR(B1(A3(A2(A)))).main(true) @ &m : res] - Pr[XMLWR(B1(A3(A2(A)))).main(false) @ &m : res]|.
+       `| Pr[XMLWR(B1(A3(A2(A)))).main(true) @ &m : res] - Pr[XMLWR(B1(A3(A2(A)))).main(false) @ &m : res] |.
    by apply /RealOrder.ler_add; [rewrite (Distinguish_Game0_Game1_To_GMLWR &m A) |
                                  rewrite -(Difference_Game1_Game4_To_XMLWR &m A) ].
   move: (RealOrder.ler_dist_add (Pr[Game1(A).main() @ &m : res]) 
