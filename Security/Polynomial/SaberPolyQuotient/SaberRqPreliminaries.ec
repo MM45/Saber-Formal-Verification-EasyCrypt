@@ -4,7 +4,7 @@
 -----------------------------------
 *)
 (* --- Built-in --- *)
-require import AllCore List Distr ZModP IntDiv StdOrder.
+require import AllCore Distr ZModP IntDiv StdOrder.
 require (*--*) Matrix.
 
 (* --- Local --- *)
@@ -421,35 +421,27 @@ lemma eq_scaleZqZp_modZppq_scaleZpZppq (x : Zq) (m : Z2) :
   scale_Zp_Zppq ((Zp.inzmod (Zq.asint x)) + Zp.inzmod (shl (Z2.asint m) (ep - 1))).
 proof.
   rewrite /scale_Zq_Zp /scale_Zp_Zppq /scale /shr /shl !Zp.inzmodK !modzDm. 
-  rewrite {2}(mulzC 2) -(intmulz ep) mulr2z !opprD !addzA /= (addzC _ eq). 
+  rewrite {2}(mulzC 2) -(intmulz ep) mulr2z !opprD !addzA /= (addzC _ eq).
+  have ge0_eqep: 0 <= eq - ep; 1: by apply /(lez_trans 1) /(lez_add2l ep); 2: rewrite addzCA /= geep1_eq.
+  have leep_eq_ep: eq - ep <= ep; 1: by rewrite -(lez_add2r ep) -addzA /= -mulr2z intmulz mulzC (lez_trans (eq + 1)) 2:geeq1_2ep lez_addl.
+  have ge0_2epeq: 0 <= 2 * ep - eq; 1: by rewrite -(lez_add2r eq) -addzA /= (lez_trans (eq + 1)) 2:geeq1_2ep lez_addl.
+  have leep_2epeq: 2 * ep - eq <= ep; first rewrite mulzC -intmulz mulr2z -(lez_add2l (-ep)) 2!addzA /=;
+       move: (oppz_le0 (eq - ep)); rewrite ge0_eqep opprD /= addzC => -> //.
   case: (Z2.asint m = 0) => [-> /= | /neq_ltz]; last case => [lt0_m | gt0_m]; move: (Z2.Sub.valP m) => [ge0_m lt2_m].
-   rewrite -Zppq.eq_inzmod -eq_22epeq_ppq /p /q (modz_pow2_div); 
-           last rewrite opprD (addzC _ ep) addzA -mulr2z intmulz (mulzC ep) modz_mod modz_dvd_pow //.
-    by apply Zq.ge0_asint.
-    split => [| ?]; first by apply /(lez_trans 1) /(lez_add2l ep); 2: rewrite addzCA /= geep1_eq.
-     by rewrite -(lez_add2r ep) -addzA /= -mulr2z intmulz mulzC (lez_trans (eq + 1)) 2:geeq1_2ep lez_addl.
-    split => [| ?]; rewrite -(lez_add2r eq) -addzA /=; 1: by rewrite (lez_trans (eq + 1)) 2:geeq1_2ep lez_addl.
-     by rewrite mulzC -intmulz mulr2z -(lez_add2l (-ep)) addzCA /= addzA /= (lez_trans (ep + 1)) 2:geep1_eq (lez_addl ep).
+   by rewrite -Zppq.eq_inzmod -eq_22epeq_ppq /p /q (modz_pow2_div); 
+           [apply Zq.ge0_asint | split | rewrite opprD (addzC _ ep) addzA -mulr2z intmulz (mulzC ep) modz_mod modz_dvd_pow //].
    by rewrite -/Z2.asint lezNgt in ge0_m.
    have -> /= {gt0_m ge0_m lt2_m}: Z2.asint m = 1; first rewrite eqz_leq; split. 
     by rewrite -/Z2.asint -lez_add1r -(lez_add2l (-1)) /= in lt2_m.
     by rewrite -lez_add1r in gt0_m.
-   rewrite -Zppq.eq_inzmod -eq_22epeq_ppq /p modz_dvd_pow.
-    split => [| ?]; rewrite -(lez_add2r eq) -addzA /=; 1: by rewrite (lez_trans (eq + 1)) 2:geeq1_2ep lez_addl.
-     by rewrite mulzC -intmulz mulr2z -(lez_add2l (-ep)) addzCA /= addzA /= (lez_trans (ep + 1)) 2:geep1_eq
-                (lez_addl ep).
-   rewrite modz_pow2_div; last rewrite opprD (addzC (-eq)) addzA /= -mulr2z intmulz (mulzC ep) modz_mod. 
-     by apply /addz_ge0 /IntOrder.expr_ge0; 1: apply Zq.ge0_asint.    
-   split => [| ?]; first by apply /(lez_trans 1) /(lez_add2l ep); 2: rewrite addzCA /= geep1_eq.
-     by rewrite -(lez_add2r ep) -addzA /= -mulr2z intmulz mulzC (lez_trans (eq + 1)) 2:geeq1_2ep lez_addl.  
-   rewrite divzDr 1: dvdz_exp2l. 
-    split => [| ?]; first by apply /(lez_trans 1) /(lez_add2l ep); 2: rewrite addzCA /= geep1_eq.
-     by rewrite -(lez_add2r 1) -(lez_add2l ep) -!addzA /= !addzA addzAC addzC !addzA /= -mulr2z intmulz mulzC geeq1_2ep.
+   rewrite -Zppq.eq_inzmod -eq_22epeq_ppq /p modz_dvd_pow; 1: by split.
+   rewrite modz_pow2_div; [by apply /addz_ge0 /IntOrder.expr_ge0; 1: apply Zq.ge0_asint | by split |]. 
+   rewrite opprD (addzC (-eq)) addzA /= -mulr2z intmulz (mulzC ep) modz_mod divzDr 1: dvdz_exp2l. 
+    by split => [| ?]; last rewrite -(lez_add2r 1) -(lez_add2l ep) -!addzA /= !addzA addzAC addzC !addzA /= -mulr2z intmulz mulzC geeq1_2ep.
    have -> //: 2 ^ (ep - 1) %/ 2 ^ (eq - ep) = 2 ^ (2 * ep - eq - 1).
     rewrite eq_sym eqz_div 2:dvdz_exp2l 3: -exprD_nneg; last congr; rewrite //#. 
      by rewrite neq_ltz; right; apply IntOrder.expr_gt0.
-     split => [| ?]; first by rewrite subz_ge0 (lez_trans (ep + 1)) 2:geep1_eq lez_addl.
-      by rewrite -(lez_add2r 1) -(lez_add2l ep) -!addzA /= !addzA addzAC addzC !addzA /= -mulr2z intmulz mulzC geeq1_2ep.
+     by split => [| ?]; last rewrite -(lez_add2r 1) -(lez_add2l ep) -!addzA /= !addzA addzAC addzC !addzA /= -mulr2z intmulz mulzC geeq1_2ep.
      by rewrite -(lez_add2r 1) -addzA /= -(lez_add2r eq) -addzA addzC /= geeq1_2ep.
      by apply /(lez_trans 1) /(lez_add2l ep); 2: rewrite addzCA /= geep1_eq.
 qed. 
@@ -461,19 +453,19 @@ lemma eq_scaleRqRp_modRppq_scale_Rppq (x : Rq) (m : R2) :
 proof.
   rewrite /mod_ppq_Rp /scale_Rp_Rppq; congr; rewrite fun_ext /(==) => i. 
   rewrite !polyDE /mod_p_Rq /scale_Rq_Rp /shl_enc /"_.[_]" !to_polydK //=; first 4 split => [c lt0_c |]; 
-          rewrite -/R2."_.[_]" -/Rq."_.[_]" //=; 2: exists (Rp.n - 1); 2: split => [| c lt0_c]; 
-          2: by rewrite -lez_add1r.
+          rewrite -/R2."_.[_]" -/Rq."_.[_]" //=; 2: exists (Rp.n - 1); 2: split => [| c gtn1_c]; 
+          2: by rewrite -lez_add1r. 
    by rewrite lt0_coeff; 2: rewrite /scale_Zq_Zp /scale /shr Zq.zeroE.
-   by rewrite gedeg_coeff 1:(lez_trans Rq.n) 1:Rq.len_deg; 1: rewrite -lez_add1r in lt0_c;
+   by rewrite gedeg_coeff 1:(lez_trans Rq.n) 1:Rq.len_deg; 1: rewrite -lez_add1r in gtn1_c;
               last rewrite /scale_Zq_Zp /scale /shr Zq.zeroE.
    by rewrite lt0_coeff 2:Z2.zeroE.
-   by rewrite gedeg_coeff 1:(lez_trans Rq.n) 1:R2.len_deg; 1: rewrite -lez_add1r in lt0_c;
+   by rewrite gedeg_coeff 1:(lez_trans Rq.n) 1:R2.len_deg; 1: rewrite -lez_add1r in gtn1_c;
               last rewrite /scale_Zq_Zp /scale /shr Z2.zeroE.
    by rewrite lt0_coeff 2:Zq.zeroE.
-   by rewrite gedeg_coeff 1:(lez_trans Rq.n) 1:Rq.len_deg; 1: rewrite -lez_add1r in lt0_c;
+   by rewrite gedeg_coeff 1:(lez_trans Rq.n) 1:Rq.len_deg; 1: rewrite -lez_add1r in gtn1_c;
               last rewrite /scale_Zq_Zp /scale /shr Zq.zeroE.
    by rewrite lt0_coeff 2:Z2.zeroE.
-   by rewrite gedeg_coeff 1:(lez_trans Rq.n) 1:R2.len_deg; 1: rewrite -lez_add1r in lt0_c;
+   by rewrite gedeg_coeff 1:(lez_trans Rq.n) 1:R2.len_deg; 1: rewrite -lez_add1r in gtn1_c;
               last rewrite /scale_Zq_Zp /scale /shr Z2.zeroE.
  by apply eq_scaleZqZp_modZppq_scaleZpZppq.
 qed.  
