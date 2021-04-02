@@ -500,14 +500,13 @@ lemma Equivalence_SaberINDCPA_Game0 &m (A <: Adversary) :
       =
       `| Pr[Game0(A).main() @ &m : res] - 1%r /2%r |.
 proof.
-  have ->: Pr[CPA(Saber_PKE_Scheme, A).main() @ &m : res] = Pr[Game0(A).main() @ &m : res].
+  have -> //: Pr[CPA(Saber_PKE_Scheme, A).main() @ &m : res] = Pr[Game0(A).main() @ &m : res].
    byequiv => //.
    proc; inline *. 
    swap {1} 7 -6.
    call (_ : true); auto; call (_: true); auto.
    progress; first do! congr; by rewrite pk_enc_dec_inv.
     by rewrite (eq_sym result_R0 bL).
-  by reflexivity.
 qed.
 
 (* Game0 <> Game1 ==> GMLWR *)
@@ -541,12 +540,11 @@ lemma Game1_To_Game2 &m (A <: Adversary) :
       =
       `| Pr[Game2( A2(A) ).main() @ &m : res] - 1%r / 2%r |.
 proof.
-  have ->: Pr[Game1(A).main() @ &m : res] = Pr[Game2( A2(A) ).main() @ &m : res].
+  have -> //: Pr[Game1(A).main() @ &m : res] = Pr[Game2( A2(A) ).main() @ &m : res].
    byequiv => //.
    proc; inline *.
    wp; call (_ : true); auto; call (_ : true); auto.
    by progress; do! congr; rewrite c_enc_dec_inv; first rewrite scale_comp_Rp_Rppq_R2t.  
-  by reflexivity.
 qed.
 
 (* Game2 ==> Game3 *)
@@ -555,13 +553,12 @@ lemma Game2_To_Game3 &m (A <: Adversary) :
       =
       `| Pr[Game3( A3(A) ).main() @ &m : res] - 1%r / 2%r |.
 proof.
-  have ->: Pr[Game2(A).main() @ &m : res] = Pr[Game3( A3(A) ).main() @ &m : res].
+  have -> //: Pr[Game2(A).main() @ &m : res] = Pr[Game3( A3(A) ).main() @ &m : res].
    byequiv => //.
    proc; inline *.
    wp; call (_ : true); auto; call (_ : true); wp.
    (* What functions to use here... *)
    admit.
-  by reflexivity.
 qed.
 
 
@@ -610,7 +607,7 @@ lemma Equivalence_Game4_Aux &m  (A <: Adversary) :
       =
       `| Pr[Auxiliary_Game(A).main() @ &m : res] - 1%r / 2%r |.
 proof.
-  have ->: Pr[Game4(A).main() @ &m : res] = Pr[Auxiliary_Game(A).main() @ &m : res].
+  have -> //: Pr[Game4(A).main() @ &m : res] = Pr[Auxiliary_Game(A).main() @ &m : res].
    byequiv => //. 
    proc; inline *.
    swap {2} 7 -6.
@@ -625,15 +622,14 @@ proof.
     have xx_0 : forall (x : Rp), x - x = Rp.poly0.
      by move=> x0; rewrite -(Rp.PolyRing.addrN x0).
     by rewrite -Rp.PolyRing.addrA xx_0 Rp.PolyRing.addrC Rp.PolyRing.add0r.
-    by rewrite scale_Rp_Rp_id H7.
-  by reflexivity.    
+    by rewrite scale_Rp_Rp_id H7.  
 qed.
 
 (* Game4 Analysis *)
 lemma Game4_Prob_Half &m (A <: Adversary) :
       Pr[Game4(A).main() @ &m : res] = 1%r / 2%r. 
 proof.
-  rewrite -(Real.RField.subr_eq0  Pr[Game4(A).main() @ &m : res]  (1%r / 2%r)) -RealOrder.normr0P.
+  rewrite -(Real.RField.subr_eq0 Pr[Game4(A).main() @ &m : res] (1%r / 2%r)) -RealOrder.normr0P.
   by rewrite (Equivalence_Game4_Aux &m A) (Aux_Prob_Half &m A).
 qed.
 
@@ -656,16 +652,7 @@ lemma Saber_INDCPA_Security_Theorem &m (A <: Adversary) :
       `| Pr[XMLWR( B1(A3(A2(A))) ).main(true) @ &m : res] - Pr[XMLWR( B1(A3(A2(A))) ).main(false) @ &m : res] |. 
 proof.
   rewrite (Equivalence_SaberINDCPA_Game0 &m A) -(Game4_Prob_Half &m (A3(A2(A)))).
-
-  have triangle_inequality: 
-       `| Pr[Game0(A).main() @ &m : res] - Pr[Game4( A3(A2(A)) ).main() @ &m : res] |  
-       <=
-       `| Pr[Game0(A).main() @ &m : res] - Pr[Game1(A).main() @ &m : res] |
-       +
-       `| Pr[Game1(A).main() @ &m : res] - Pr[Game4( A3(A2(A)) ).main() @ &m : res] |.
-   by apply RealOrder.ler_dist_add.
-
-  have intermediate_result:
+  have:
        `| Pr[Game0(A).main() @ &m : res] - Pr[Game1(A).main() @ &m : res] |
        +
        `| Pr[Game1(A).main() @ &m : res] - Pr[Game4( A3(A2(A)) ).main() @ &m : res] |
@@ -673,8 +660,10 @@ proof.
        `|Pr[GMLWR(B0(A)).main(true) @ &m : res] - Pr[GMLWR(B0(A)).main(false) @ &m : res]| 
        +
        `|Pr[XMLWR(B1(A3(A2(A)))).main(true) @ &m : res] - Pr[XMLWR(B1(A3(A2(A)))).main(false) @ &m : res]|.
-   by apply /RealOrder.ler_add; [ rewrite (Distinguish_Game0_Game1_To_GMLWR &m A) |
-                                  rewrite -(Difference_Game1_Game4_To_XMLWR &m A) ].
-
-  by move: triangle_inequality intermediate_result; apply RealOrder.ler_trans.
+   by apply /RealOrder.ler_add; [rewrite (Distinguish_Game0_Game1_To_GMLWR &m A) |
+                                 rewrite -(Difference_Game1_Game4_To_XMLWR &m A) ].
+  move: (RealOrder.ler_dist_add (Pr[Game1(A).main() @ &m : res]) 
+                                (Pr[Game0(A).main() @ &m : res])
+                                (Pr[Game4( A3(A2(A)) ).main() @ &m : res])).
+  by apply RealOrder.ler_trans.  
 qed.
