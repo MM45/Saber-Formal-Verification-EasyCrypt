@@ -1,20 +1,18 @@
-(*
------------------------------------ 
- Require/Import Theories
------------------------------------
-*)
+(* ----------------------------------- *)
+(*  Require/Import Theories            *)
+(* ----------------------------------- *)
+
 (* --- Built-in --- *)
 require import AllCore Distr ZModP IntDiv StdOrder.
 require (*--*) Matrix.
 
 (* --- Local --- *)
-require (*--*) SaberPolyQuotientRing.
+require (*--*) SaberPolyQuotientRing SaberMatrix.
 
-(*
---------------------------------
- Preliminaries
---------------------------------
-*)
+(* ----------------------------------- *)
+(*  Preliminaries                      *)
+(* ----------------------------------- *)
+
 (* --- Constants --- *)
 (* -- Exponents -- *)
 const eq: int.
@@ -117,24 +115,22 @@ qed.
 type Zq.
 type Rq.
 
-clone import SaberPolyQuotientRing as Rq with 
-    op p <- q,
-    op en <- en,
-    type coeff <- Zq,
-    type poly <- Rq
-  proof ge2_coeffp by apply /(lez_trans 8 2 q) /ge8_q
-  proof ge0_en by apply ge0_en
-
-  rename [theory] "Coeff" as "Zq".
-
 clone import MFinite as DRq with
     type t <- Rq,
     op Support.card <- q ^ n.
     
-clone Matrix as Mat_Rq with
-    type R <- Rq,
+clone SaberMatrix as Mat_Rq with
+    op p <- q,
+    op en <- en,
+    type coeff <- Zq,
+    type poly <- Rq,
     op size <- l
-  proof ge0_size by apply /(lez_trans 1 0 l) /ge1_l.
+  proof ge2_coeffp by apply /(lez_trans 8 2 q) /ge8_q
+  proof ge0_en by apply ge0_en
+  proof ge0_size by apply /(lez_trans 1 0 l) /ge1_l
+
+  rename [theory] "PolyQuotientRing" as "Rq"
+  rename [theory] "Coeff" as "Zq".
 
 type Rq_vec = Mat_Rq.vector.
 type Rq_mat = Mat_Rq.Matrix.matrix.
@@ -150,24 +146,22 @@ op dsmallRq_vec : Rq_vec distr = Mat_Rq.Matrix.dvector dsmallRq.
 type Zp.
 type Rp.
 
-clone import SaberPolyQuotientRing as Rp with 
-    op p <- p,
-    op en <- en,
-    type coeff <- Zp,
-    type poly <- Rp
-  proof ge2_coeffp by apply /(lez_trans 4 2 p) /ge4_p
-  proof ge0_en by apply ge0_en
-
-  rename [theory] "Coeff" as "Zp".
-
 clone import MFinite as DRp with
     type t <- Rp,
     op Support.card <- p ^ n.
 
-clone Matrix as Mat_Rp with
-    type R <- Rp,
+clone SaberMatrix as Mat_Rp with
+    op p <- p,
+    op en <- en,
+    type coeff <- Zp,
+    type poly <- Rp,
     op size <- l
-  proof ge0_size by apply /(lez_trans 1 0 l) /ge1_l.  
+  proof ge2_coeffp by apply /(lez_trans 4 2 p) /ge4_p
+  proof ge0_en by apply ge0_en
+  proof ge0_size by apply /(lez_trans 1 0 l) /ge1_l
+
+  rename [theory] "PolyQuotientRing" as "Rp"
+  rename [theory] "Coeff" as "Zp".  
 
 type Rp_vec = Mat_Rp.vector.
 
@@ -217,7 +211,7 @@ clone import SaberPolyQuotientRing as R2 with
   rename [theory] "Coeff" as "Z2".
 
 (* - Properties - *)
-(* Vector distribution has same properties as the distribution of the vector's elements *)
+(* Vector Distribution Has Same Properties as the Distribution of the Vector's Elements *)
 lemma dRq_vec_ll: is_lossless dRq_vec.
 proof. by apply Mat_Rq.Matrix.dvector_ll; rewrite /dRq; apply /DRq.dunifin_ll. qed.
 
@@ -239,7 +233,7 @@ proof. by apply /Mat_Rp.Matrix.dvector_uni; rewrite /dRp; apply /DRp.dunifin_uni
 lemma dsmallRq_vec_ll: is_lossless dsmallRq_vec.
 proof. by apply /Mat_Rq.Matrix.dvector_ll /dsmallRq_ll. qed.
 
-(* Matrix Distribution has same properties as the distribution of the matrix's elements *)
+(* Matrix Distribution Has Same Properties as the Distribution of the Matrix's Elements *)
 lemma dRq_mat_ll: is_lossless dRq_mat.
 proof. apply /Mat_Rq.Matrix.dmatrix_ll; rewrite /dRq; apply /DRq.dunifin_ll. qed.
 
@@ -250,13 +244,13 @@ lemma dRq_mat_uni: is_uniform dRq_mat.
 proof. apply /Mat_Rq.Matrix.dmatrix_uni; rewrite /dRq; apply /DRq.dunifin_uni. qed.
 
 (* - Imports - *)
-import Zq Zp.
-import Rq Rp.
 import Mat_Rq Mat_Rp.
+import Rq Rp.
+import Zq Zp.
 
 (* - Constants - *)
-const h1 : Rq = to_polyd (fun _ => Zq.inzmod (2^(eq - ep - 1))).
-const h2 : Rq = to_polyd (fun _ => Zq.inzmod (2^(ep - 2) - 2^(ep - et - 2))).
+const h1 : Rq = to_polyd (fun _ => Zq.inzmod (2 ^ (eq - ep - 1))).
+const h2 : Rq = to_polyd (fun _ => Zq.inzmod (2 ^ (ep - 2) - 2 ^ (ep - et - 2))).
 const h : Rq_vec = vectc h1.
  
 (* -- Cryptographic Types and Distributions  -- *)
@@ -324,7 +318,7 @@ lemma scale_comp (x ea eab eb : int):
       0 <= x => 0 <= eb => eb <= eab => eab <= ea =>
       scale x ea eb = scale (scale x ea eab) eab eb. 
 proof. 
-  (* Context and readability *)
+  (* Context *)
   move=> ge0_x ge0_eb geeb_eab geeab_ea; rewrite /scale /shr. 
   move: (divz_eq x (2^(ea - eb))) 
         (divz_eq x (2^(ea - eab))) 
@@ -393,7 +387,7 @@ lemma scale_comp_Rp_Rppq_R2t (x : Rp):
 proof. 
   rewrite /scale_Rp_R2t /scale_Rppq_R2t /scale_Rp_Rppq. 
   congr; rewrite fun_ext /(==) => i. 
-  rewrite coeffE /=; first split; [| exists (deg x - 1); split] => [c0 gt0_c /= | |  c0 ltc_deg /= ];
+  rewrite coeffE /=; first split; [| exists (deg x - 1); split] => [c0 gt0_c /= | | c0 ltc_deg /= ];
           1, 3: rewrite /scale_Zp_Zppq /scale /shr /Zppq.zero -Zppq.eq_inzmod; 
           1, 3: have ->: (Zp.asint x.[c0] = 0);
           [by rewrite -Zp.zeroE Zp.asint_eq lt0_coeff | | | 

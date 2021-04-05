@@ -1,24 +1,20 @@
-pragma Goals:printall.
+(* ----------------------------------- *)
+(*  Require/Import Theories            *)
+(* ----------------------------------- *)
 
-(*
------------------------------------ 
- Require/Import EasyCrypt Theories
------------------------------------
-*)
 (* --- Built-in --- *)
 require import AllCore Distr DBool ZModP IntDiv StdOrder.
 require (*--*) Matrix PKE.
 
 (* --- Local --- *)
 require import SaberRqPreliminaries.
-(*---*) import Rq Rp Rppq R2t R2.
 (*---*) import Mat_Rq Mat_Rp.
+(*---*) import Rq Rp Rppq R2t R2.
 
-(*
-----------------------------------
- Saber PKE Scheme
-----------------------------------
-*)
+(* ----------------------------------- *)
+(*  Saber's PKE Scheme                 *)
+(* ----------------------------------- *)
+
 (* --- General --- *)
 clone import PKE as Saber_PKE with
   type pkey <- pkey,
@@ -85,11 +81,10 @@ module Saber_PKE_Scheme : Scheme = {
    }
 }.
 
-(*
---------------------------------
- Adversary Prototypes
---------------------------------
-*)
+(* ----------------------------------- *)
+(*  Adversary Prototypes               *)
+(* ----------------------------------- *)
+
 module type Adv_GMLWR = {
    proc guess(sd : seed, b : Rp_vec) : bool
 }.
@@ -98,13 +93,12 @@ module type Adv_XMLWR = {
    proc guess(sd : seed, b : Rp_vec, a : Rq_vec, d : Rp) : bool
 }.
 
-(*
---------------------------------
- Games
---------------------------------
-*)
+(* ----------------------------------- *)
+(*  Games                              *)
+(* ----------------------------------- *)
 
-(* --- LWR-Related Games --- *)
+(* --- MLWR-Related Games --- *)
+(* GMLWR Game *)
 module GMLWR(A : Adv_GMLWR) = {
    proc main(u : bool) : bool = {
       var u' : bool;
@@ -129,6 +123,7 @@ module GMLWR(A : Adv_GMLWR) = {
    }
 }.
 
+(* XMLWR Game *)
 module XMLWR(A : Adv_XMLWR) = {
    proc main(u : bool) : bool = {
       var u' : bool;
@@ -358,13 +353,12 @@ module Auxiliary_Game(A : Adversary) = {
   }
 }.
 
-(*
---------------------------------
- Adversaries
---------------------------------
-*)
-(* --- LWR-Related Adversaries --- *)
-(* Adversary B0 against GMLWR constructed from adversary A distinguishing between Game0 and Game1 *)
+(* ----------------------------------- *)
+(*  Adversaries                        *)
+(* ----------------------------------- *)
+
+(* --- MLWR-Related Adversaries --- *)
+(* Adversary B0 Against GMLWR, Constructed from Adversary A Distinguishing Between Game0 and Game1 *)
 module B0(A : Adversary) : Adv_GMLWR = {
    proc guess(sd : seed, b : Rp_vec) : bool = {
       var w, w' : bool;
@@ -393,7 +387,7 @@ module B0(A : Adversary) : Adv_GMLWR = {
    }
 }.
 
-(* Adversary B1 against XMLWR constructed from adversary A distinguishing between Game3 and Game4 *)
+(* Adversary B1 Against XMLWR, Constructed from Adversary A Distinguishing between Game3 and Game4 *)
 module B1(A : Adversary) : Adv_XMLWR = {
    proc guess(sd : seed, b : Rp_vec, a : Rq_vec, d : Rp) : bool =  {
       var w, w' : bool;
@@ -414,7 +408,7 @@ module B1(A : Adversary) : Adv_XMLWR = {
 }.
 
 (* --- Other Adversaries --- *)
-(* Adversary A2 against Game2 constructed from adversary A1 against Game1 *)
+(* Adversary A2 Against Game2, Constructed from Adversary A1 Against Game1 *)
 module A2(A1 : Adversary) : Adversary = {
    proc choose(pk : pkey) : plaintext * plaintext = {
       var m0, m1 : plaintext;
@@ -444,7 +438,7 @@ module A2(A1 : Adversary) : Adversary = {
    }
 }.
 
-(* Adversary A3 against Game3 constructed from adversary A2 against Game2 *)
+(* Adversary A3 Against Game3, Constructed from Adversary A2 Against Game2 *)
 module A3(A2 : Adversary) : Adversary = {
    proc choose(pk : pkey) : plaintext * plaintext = {
       var pk_dec : seed * Rq_vec;
@@ -489,11 +483,10 @@ axiom Adv_CPA_guess_ll (A <: Adversary) : islossless A.guess.
 axiom Adv_GMLWR_ll (A <: Adv_GMLWR) : islossless A.guess.
 axiom Adv_XMLWR_ll (A <: Adv_XMLWR) : islossless A.guess.
 
-(*
---------------------------------
- Game-Based Security Proof 
---------------------------------
-*)
+(* ----------------------------------- *)
+(*  Game-Based Security Proof          *)
+(* ----------------------------------- *)
+
 (* Saber's INDCPA == Game 0 *)
 lemma Equivalence_SaberINDCPA_Game0 &m (A <: Adversary) :
       `| Pr[CPA(Saber_PKE_Scheme, A).main() @ &m : res] - 1%r / 2%r |
@@ -533,7 +526,6 @@ proof.
   by apply RealOrder.distrC.
 qed.
 
-
 (* Game1 ==> Game2 *)
 lemma Game1_To_Game2 &m (A <: Adversary) :
       `| Pr[Game1(A).main() @ &m : res] - 1%r / 2%r |
@@ -560,7 +552,6 @@ proof.
    (* What functions to use here... *)
    admit.
 qed.
-
 
 (* Game3 <> Game4 ==> XMLWR *)
 lemma Distinguish_Game3_Game4_To_XMLWR &m (A <: Adversary) :

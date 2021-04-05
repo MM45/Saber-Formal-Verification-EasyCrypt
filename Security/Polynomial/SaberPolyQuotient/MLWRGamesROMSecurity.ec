@@ -1,35 +1,28 @@
-pragma Goals:printall.
+(* ----------------------------------- *)
+(*  Require/Import Theories            *)
+(* ----------------------------------- *)
 
-(*
------------------------------------ 
- Require/Import EasyCrypt Theories
------------------------------------
-*)
 (* --- Built-in --- *)
 require import AllCore Distr DBool PROM.
 require (*--*) Matrix.
 
 (* --- Local --- *)
 require import SaberRqPreliminaries.
+(*---*) import Mat_Rq Mat_Rp.
 (*---*) import Rq Rp.
 (*---*) import Zq Zp.
-(*---*) import Mat_Rq Mat_Rp.
 
-(*
------------------------------------ 
- ROM
------------------------------------
-*)
+(* ----------------------------------- *)
+(*  ROM                                *)
+(* ----------------------------------- *)
 clone import FullRO as ROl with
   type in_t <- seed,
   type out_t <- Rq_mat,
   op dout <- (fun (sd : seed) => dRq_mat).
 
-(*
---------------------------------
- Adversary Prototypes
---------------------------------
-*)
+(* ----------------------------------- *)
+(*  Adversary Prototypes               *)
+(* ----------------------------------- *)
 module type Adv_MLWR = {
   proc guess(_A : Rq_mat, b : Rp_vec) : bool
 }.
@@ -46,13 +39,11 @@ module type Adv_XMLWR_RO(Gen : RO) = {
    proc guess(sd : seed, b : Rp_vec, a : Rq_vec, d : Rp) : bool { Gen.get }
 }.
 
-(*
---------------------------------
- Games
---------------------------------
-*)
+(* ----------------------------------- *)
+(*  Games                              *)
+(* ----------------------------------- *)
 
-(* --- Original MLWR Game (l samples) --- *)
+(* Original MLWR Game (l samples) *)
 module MLWR(A : Adv_MLWR) = {
     proc main(u : bool) : bool = {
        var u' : bool;
@@ -75,7 +66,7 @@ module MLWR(A : Adv_MLWR) = {
     }
 }.
 
-(* --- Original MLWR Game (l + 1 samples) --- *)
+(* Original MLWR Game (l + 1 samples) *)
 module MLWR1(A : Adv_MLWR1) = {
     proc main(u : bool) : bool = {
        var u' : bool;
@@ -104,7 +95,7 @@ module MLWR1(A : Adv_MLWR1) = {
     }
 }.
 
-(* --- MLWR-Related Games in ROM --- *)
+(* GMLWR in ROM *)
 module GMLWR_RO(A : Adv_GMLWR_RO) = {
    module A = A(RO)
 
@@ -133,6 +124,7 @@ module GMLWR_RO(A : Adv_GMLWR_RO) = {
    }
 }.
 
+(* XMLWR in ROM *)
 module XMLWR_RO(A : Adv_XMLWR_RO) = {
    module A = A(RO)
 
@@ -171,11 +163,11 @@ module XMLWR_RO(A : Adv_XMLWR_RO) = {
    }
 }.
 
-(*
---------------------------------
- Adversaries
---------------------------------
-*)
+(* ----------------------------------- *)
+(*  Reduction Adversaries              *)
+(* ----------------------------------- *)
+
+(* Adversary Against MLWR (l samples) Game, Constructed From Adversary Against GMLWR_RO Game *)
 module AGM(AG : Adv_GMLWR_RO) : Adv_MLWR = {
    module AG = AG(RO)
 
@@ -195,6 +187,7 @@ module AGM(AG : Adv_GMLWR_RO) : Adv_MLWR = {
    } 
 }.
 
+(* Adversary Against MLWR1 (l + 1 samples) Game, Constructed From Adversary Against XMLWR_RO Game *)
 module AXM(AX : Adv_XMLWR_RO) : Adv_MLWR1 = {
    module AX = AX(RO)
 
@@ -214,11 +207,11 @@ module AXM(AX : Adv_XMLWR_RO) : Adv_MLWR1 = {
    } 
 }.
 
-(*
---------------------------------
- Reductions
---------------------------------
-*)
+(* ----------------------------------- *)
+(*  Reductions                         *)
+(* ----------------------------------- *)
+
+(* Reduction From GMLWR_RO to MLWR *)
 lemma GMLWR_RO_to_MLWR &m (A <: Adv_GMLWR_RO{RO}) :
   `| Pr[GMLWR_RO(A).main(true) @ &m : res] - Pr[GMLWR_RO(A).main(false) @ &m : res] |
    =
@@ -241,6 +234,7 @@ proof.
    progress; smt.
 qed.  
 
+(* Reduction From XMLWR_RO to MLWR1 *)
 lemma XMLWR_RO_to_MLWR1 &m (A <: Adv_XMLWR_RO{RO}) :
   `| Pr[XMLWR_RO(A).main(true) @ &m : res] - Pr[XMLWR_RO(A).main(false) @ &m : res] |
    =
