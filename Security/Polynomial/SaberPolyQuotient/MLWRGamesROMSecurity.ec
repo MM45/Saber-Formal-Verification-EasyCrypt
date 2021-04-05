@@ -14,40 +14,6 @@ require import SaberRqPreliminaries.
 (*---*) import Rq Rp.
 (*---*) import Zq Zp.
 (*---*) import Mat_Rq Mat_Rp.
-(*
------------------------------------ 
- Additional Preliminaries
------------------------------------
-
-(* --- Matrices and Vectors with Dimension(s) l + 1 --- *)
-clone Matrix as Mat_Rql1 with
-    type R <- Rq,
-    op size <- l + 1
-  proof ge0_size by rewrite (lez_trans l _ _ (lez_trans 1 0 l _ ge1_l)) 2:lez_addl.
-
-type Rq_vecl1 = Mat_Rql1.vector.
-type Rq_matl1 = Mat_Rql1.Matrix.matrix.
-
-op dRq_vecl1 = Mat_Rql1.Matrix.dvector dRq.
-op dRq_matl1 = Mat_Rql1.Matrix.dmatrix dRq.
-op dsmallRq_vecl1 = Mat_Rql1.Matrix.dvector dsmallRq.
-
-clone Matrix as Mat_Rpl1 with
-    type R <- Rp,
-    op size <- l + 1
-  proof ge0_size by rewrite (lez_trans l _ _ (lez_trans 1 0 l _ ge1_l)) 2:lez_addl.
-
-type Rp_vecl1 = Mat_Rpl1.vector.
-
-op dRp_vecl1 = Mat_Rpl1.Matrix.dvector dRp.
-
-const hl1 : Rq_vecl1 = Mat_Rql1.Vector.vectc h1.
-
-import Mat_Rq Mat_Rp Mat_Rql1 Mat_Rpl1.
-
-(* -- Operations -- *)
-op scale_vecl1_Rq_Rp (v : Rq_vecl1) : Rp_vecl1 = Mat_Rpl1.Vector.offunv (fun (i : int) => scale_Rq_Rp v.[i]). 
-*)
 
 (*
 ----------------------------------- 
