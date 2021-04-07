@@ -7,7 +7,6 @@ require import AllCore List Ring Bigalg StdBigop StdOrder IntDiv ZModP.
 require (*--*) Subtype.
 (*---*) import Bigint IntID IntOrder.
 
-
 (* ----------------------------------- *)
 (*  Saber's Polynomial Quotient Rings  *)
 (*  Rp = Zp [X] / X ^ n + 1            *)

@@ -4,82 +4,12 @@
 
 (* --- Built-in --- *)
 require import AllCore Distr DBool ZModP IntDiv StdOrder.
-require (*--*) Matrix PKE.
 
 (* --- Local --- *)
 require import SaberRqPreliminaries.
 (*---*) import Mat_Rq Mat_Rp.
 (*---*) import Rq Rp Rppq R2t R2.
-
-(* ----------------------------------- *)
-(*  Saber's PKE Scheme                 *)
-(* ----------------------------------- *)
-
-(* --- General --- *)
-clone import PKE as Saber_PKE with
-  type pkey <- pkey,
-  type skey <- skey,
-  type plaintext <- plaintext,
-  type ciphertext <- ciphertext.
-
-(* --- Actual --- *)
-module Saber_PKE_Scheme : Scheme = {
-   proc kg() : pkey * skey = {
-      var sd: seed;
-      var _A: Rq_mat;
-      var s: Rq_vec;
-      var b: Rp_vec;
-      
-      sd <$ dseed;
-      _A <- gen sd;
-      s <$ dsmallRq_vec;
-      b <- scale_vec_Rq_Rp (_A *^ s + h);
-      
-      return (pk_encode (sd, b), sk_encode s);
-   }
-
-   proc enc(pk: pkey, m: plaintext) : ciphertext = {
-      var pk_dec: seed * Rp_vec;
-      var m_dec: R2;
-
-      var sd: seed;
-      var _A: Rq_mat;
-      var s': Rq_vec;
-      var b, b': Rp_vec;
-      var v': Rp;
-      var cm: R2t;
-      
-      m_dec <- m_decode m;
-      pk_dec <- pk_decode pk;
-      sd <- pk_dec.`1;
-      b <- pk_dec.`2;
-      _A <- gen sd;
-      s' <$ dsmallRq_vec;
-      b' <- scale_vec_Rq_Rp ((trmx _A) *^ s' + h);
-      v' <- (dotp b (mod_p_Rq_vec s')) + (mod_p_Rq h1);
-      cm <- scale_Rp_R2t (v' + (shl_enc m_dec (ep - 1)));
-      
-      return c_encode (cm, b');
-   }
-
-   proc dec(sk: skey, c: ciphertext) : plaintext option = {
-      var c_dec: R2t * Rp_vec;
-      var cm: R2t;
-      var b': Rp_vec;
-      var v: Rp;
-      var s: Rq_vec;
-      var m': R2;
-
-      c_dec <- c_decode c;
-      s <- sk_decode sk;
-      cm <- c_dec.`1;
-      b' <- c_dec.`2;
-      v <- (dotp b' (mod_p_Rq_vec s)) + (mod_p_Rq h1);
-      m' <- scale_Rp_R2 (v - (shl_dec cm) + (mod_p_Rq h2));
-      
-      return Some (m_encode m');
-   }
-}.
+(*---*) import Saber_PKE.
 
 (* ----------------------------------- *)
 (*  Adversary Prototypes               *)

@@ -15,7 +15,7 @@ require import SaberRqPreliminaries.
 (* ----------------------------------- *)
 (*  ROM                                *)
 (* ----------------------------------- *)
-clone import FullRO as ROl with
+clone import FullRO as PRO with
   type in_t <- seed,
   type out_t <- Rq_mat,
   op dout <- (fun (sd : seed) => dRq_mat).

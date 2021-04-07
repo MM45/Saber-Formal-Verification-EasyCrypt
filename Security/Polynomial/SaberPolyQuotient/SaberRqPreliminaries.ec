@@ -4,13 +4,13 @@
 
 (* --- Built-in --- *)
 require import AllCore Distr ZModP IntDiv StdOrder.
-require (*--*) Matrix.
+require (*--*) Matrix PKE.
 
 (* --- Local --- *)
 require (*--*) SaberPolyQuotientRing SaberMatrix.
 
 (* ----------------------------------- *)
-(*  Preliminaries                      *)
+(*  General Preliminaries              *)
 (* ----------------------------------- *)
 
 (* --- Constants --- *)
@@ -115,10 +115,6 @@ qed.
 type Zq.
 type Rq.
 
-clone import MFinite as DRq with
-    type t <- Rq,
-    op Support.card <- q ^ n.
-    
 clone SaberMatrix as Mat_Rq with
     op p <- q,
     op en <- en,
@@ -132,6 +128,10 @@ clone SaberMatrix as Mat_Rq with
   rename [theory] "PolyQuotientRing" as "Rq"
   rename [theory] "Coeff" as "Zq".
 
+clone import MFinite as DRq with
+    type t <- Rq,
+    op Support.card <- q ^ n.
+    
 type Rq_vec = Mat_Rq.vector.
 type Rq_mat = Mat_Rq.Matrix.matrix.
 
@@ -146,10 +146,6 @@ op dsmallRq_vec : Rq_vec distr = Mat_Rq.Matrix.dvector dsmallRq.
 type Zp.
 type Rp.
 
-clone import MFinite as DRp with
-    type t <- Rp,
-    op Support.card <- p ^ n.
-
 clone SaberMatrix as Mat_Rp with
     op p <- p,
     op en <- en,
@@ -161,7 +157,11 @@ clone SaberMatrix as Mat_Rp with
   proof ge0_size by apply /(lez_trans 1 0 l) /ge1_l
 
   rename [theory] "PolyQuotientRing" as "Rp"
-  rename [theory] "Coeff" as "Zp".  
+  rename [theory] "Coeff" as "Zp".
+
+clone import MFinite as DRp with
+    type t <- Rp,
+    op Support.card <- p ^ n.  
 
 type Rp_vec = Mat_Rp.vector.
 
@@ -413,10 +413,30 @@ proof.
    by rewrite -lez_add1r addzC /= Rp.len_deg.
 qed.
 
+lemma mod_p_Zq_h1_id : Zp.asint (Zp.inzmod (2 ^ (eq - ep - 1))) = Zq.asint (Zq.inzmod (2 ^ (eq - ep - 1))).
+proof.
+  rewrite Zp.inzmodK Zq.inzmodK ?modz_small /p /q //; first 2 split => [| ?];
+          [by apply IntOrder.expr_ge0 |
+           rewrite IntOrder.ger0_norm ?IntOrder.expr_ge0 // ltz_def IntOrder.ler_weexpn2l // ?andbT; 
+           first split => [| ?]; 1: rewrite -(lez_add2r 1) /= -(lez_add2r ep) -addzA addzC /= geep1_eq].
+   by rewrite -(lez_add2r ep) addzAC addzC -addzA /= addzC -mulr2z intmulz mulzC (lez_trans (eq + 1)) // 
+           1:-(lez_add2r 1) /= 1:lez_addl // geeq1_2ep.
+   move: (IntOrder.ieexprIn 2 _ _ ep (eq - ep - 1) (lez_trans 2 0 ep _ ge2_ep) _) => //.
+    by rewrite -(lez_add2r 1) /= -(lez_add2r ep) -addzA /= addzC geep1_eq.   
+    move /(contra); apply; rewrite neq_ltz; right.
+     by rewrite -(ltz_add2l ep) /= addzCA addzC addzA addzC 2!addzA addzC /= -mulr2z intmulz mulzC 
+             (IntOrder.ltr_le_trans (eq + 1)) 1: ltz_add2l 2: geeq1_2ep.
+    by rewrite -(lez_add2l (-eq)) 2!addzA /= -(lez_add2l ep) addzA /= (lez_trans 2) // ge2_ep.
+   move: (IntOrder.ieexprIn 2 _ _ eq (eq - ep - 1) (lez_trans 3 0 eq _ ge3_eq) _) => //.
+    by rewrite -(lez_add2r 1) /= -(lez_add2r ep) -addzA /= addzC geep1_eq.
+    move /(contra); apply; rewrite neq_ltz; right.
+     by rewrite -(ltz_add2l (-eq)) 2!addzA /= -(ltz_add2l ep) addzA /= (IntOrder.ltr_le_trans 2) 2:ge2_ep.
+qed.
+
 lemma eq_scaleZqZp_modZppq_scaleZpZppq (x : Zq) (m : Z2) :
-  Zppq.inzmod (Zp.asint ( (scale_Zq_Zp x) + (Zp.inzmod (shl (Z2.asint m) (2 * ep - eq - 1)))))
-  =
-  scale_Zp_Zppq ((Zp.inzmod (Zq.asint x)) + Zp.inzmod (shl (Z2.asint m) (ep - 1))).
+      Zppq.inzmod (Zp.asint ( (scale_Zq_Zp x) + (Zp.inzmod (shl (Z2.asint m) (2 * ep - eq - 1)))))
+      =
+      scale_Zp_Zppq ((Zp.inzmod (Zq.asint x)) + Zp.inzmod (shl (Z2.asint m) (ep - 1))).
 proof.
   rewrite /scale_Zq_Zp /scale_Zp_Zppq /scale /shr /shl !Zp.inzmodK !modzDm. 
   rewrite {2}(mulzC 2) -(intmulz ep) mulr2z !opprD !addzA /= (addzC _ eq).
@@ -445,9 +465,9 @@ proof.
 qed. 
 
 lemma eq_scaleRqRp_modRppq_scale_Rppq (x : Rq) (m : R2) :
-  mod_ppq_Rp ( (scale_Rq_Rp x) + (shl_enc m (2 * ep - eq - 1)))
-  =
-  scale_Rp_Rppq ((mod_p_Rq x) + (shl_enc m (ep - 1))).
+      mod_ppq_Rp ((scale_Rq_Rp x) + (shl_enc m (2 * ep - eq - 1)))
+      =
+      scale_Rp_Rppq ((mod_p_Rq x) + (shl_enc m (ep - 1))).
 proof.
   rewrite /mod_ppq_Rp /scale_Rp_Rppq; congr; rewrite fun_ext /(==) => i. 
   rewrite !polyDE /mod_p_Rq /scale_Rq_Rp /shl_enc /"_.[_]" !to_polydK //=; first 4 split => [c lt0_c |]; 
@@ -467,3 +487,73 @@ proof.
               last rewrite /scale_Zq_Zp /scale /shr Z2.zeroE.
  by apply eq_scaleZqZp_modZppq_scaleZpZppq.
 qed.  
+
+(* ----------------------------------- *)
+(*  Saber's PKE Scheme                 *)
+(* ----------------------------------- *)
+
+(* --- General --- *)
+clone import PKE as Saber_PKE with
+  type pkey <- pkey,
+  type skey <- skey,
+  type plaintext <- plaintext,
+  type ciphertext <- ciphertext.
+
+(* --- Actual --- *)
+module Saber_PKE_Scheme : Scheme = {
+   proc kg() : pkey * skey = {
+      var sd: seed;
+      var _A: Rq_mat;
+      var s: Rq_vec;
+      var b: Rp_vec;
+      
+      sd <$ dseed;
+      _A <- gen sd;
+      s <$ dsmallRq_vec;
+      b <- scale_vec_Rq_Rp (_A *^ s + h);
+      
+      return (pk_encode (sd, b), sk_encode s);
+   }
+
+   proc enc(pk: pkey, m: plaintext) : ciphertext = {
+      var pk_dec: seed * Rp_vec;
+      var m_dec: R2;
+
+      var sd: seed;
+      var _A: Rq_mat;
+      var s': Rq_vec;
+      var b, b': Rp_vec;
+      var v': Rp;
+      var cm: R2t;
+      
+      m_dec <- m_decode m;
+      pk_dec <- pk_decode pk;
+      sd <- pk_dec.`1;
+      b <- pk_dec.`2;
+      _A <- gen sd;
+      s' <$ dsmallRq_vec;
+      b' <- scale_vec_Rq_Rp ((trmx _A) *^ s' + h);
+      v' <- (dotp b (mod_p_Rq_vec s')) + (mod_p_Rq h1);
+      cm <- scale_Rp_R2t (v' + (shl_enc m_dec (ep - 1)));
+      
+      return c_encode (cm, b');
+   }
+
+   proc dec(sk: skey, c: ciphertext) : plaintext option = {
+      var c_dec: R2t * Rp_vec;
+      var cm: R2t;
+      var b': Rp_vec;
+      var v: Rp;
+      var s: Rq_vec;
+      var m': R2;
+
+      c_dec <- c_decode c;
+      s <- sk_decode sk;
+      cm <- c_dec.`1;
+      b' <- c_dec.`2;
+      v <- (dotp b' (mod_p_Rq_vec s)) + (mod_p_Rq h1);
+      m' <- scale_Rp_R2 (v - (shl_dec cm) + (mod_p_Rq h2));
+      
+      return Some (m_encode m');
+   }
+}.
