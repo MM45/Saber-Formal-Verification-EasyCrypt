@@ -1,5 +1,5 @@
 (* ==================================================================== *)
-require import AllCore List Ring StdOrder IntDiv Ideal Poly.
+require import AllCore Finite List Ring StdOrder IntDiv Ideal Poly.
 (*---*) import IntOrder.
 
 (* ==================================================================== *)
@@ -7,7 +7,7 @@ require import AllCore List Ring StdOrder IntDiv Ideal Poly.
 
 (* -------------------------------------------------------------------- *)
 clone import Poly as BasePoly.
-(*-*) import Coeff PolyRing BigPoly.
+(*-*) import Coeff PolyRing BigPoly BigCf.
 
 (* -------------------------------------------------------------------- *)
 clone import Ideal as PIdeal with
@@ -98,11 +98,26 @@ op reduce (p : poly) : poly =
 op reduced (p : poly) = (reduce p = p).
 
 (* -------------------------------------------------------------------- *)
+lemma reducewE k (p : poly) : deg p <= k =>
+  reduce p = PCA.bigi predT
+    (fun i => (exp (-Coeff.oner) (i %/ n) * p.[i]) ** exp X (i %% n))
+    0 k.
+proof.
+move=> len; rewrite (PCA.big_cat_int (deg p)) ?ge0_deg // /reduce.
+pose c := big _ _ _; rewrite PCA.big_seq PCA.big1 /= ?addr0 //.
+by move=> i /mem_range [gei _]; rewrite gedeg_coeff // mulr0 scale0p.
+qed.
+
+(* -------------------------------------------------------------------- *)
 lemma deg_reduce p : deg (reduce p) <= n.
 proof.
 apply: deg_sum => //= i _; apply: (ler_trans _ _ _ (degZle _ _)).
 by rewrite deg_polyXn ?(modz_ge0, gtr_eqF) // -ltzE ltz_pmod.
 qed.
+
+(* -------------------------------------------------------------------- *)
+lemma deg_reduced p : reduced p => deg p <= n.
+proof. by move=> @/reduced => <-; rewrite deg_reduce. qed.
 
 (* -------------------------------------------------------------------- *)
 lemma eqv_reduce (p : poly) : eqv p (reduce p).
@@ -146,9 +161,110 @@ by rewrite nz_r /= ltrNge ge0_deg.
 qed.
 
 (* -------------------------------------------------------------------- *)
-op reprrd (p : polyXnD1) = reduce (repr p).
-
-lemma piK p : reduced p => reprrd (pi p) = p.
+lemma reducedP p : (reduced p) <=> (deg p <= n).
 proof.
-by move=> red_p @/reprrd; rewrite -{2}red_p; apply/reduce_eqP/eqv_repr.
+split; first by move=> @/reduced <-; apply/deg_reduce.
+move=> led; rewrite /reduced {2}polyE /reduce.
+rewrite !big_seq &(eq_bigr) => /= i /mem_range rg_i.
+by rewrite pmod_small 1:/# pdiv_small 1:/# expr0 mul1r.
+qed.
+
+(* -------------------------------------------------------------------- *)
+lemma reduced_reduce p : reduced (reduce p).
+proof. by rewrite reducedP &(deg_reduce). qed.
+
+(* -------------------------------------------------------------------- *)
+lemma reduceK p : reduce (reduce p) = reduce p.
+proof. by apply: reduced_reduce. qed.
+
+(* -------------------------------------------------------------------- *)
+lemma reduce_reduced p : reduced p => reduce p = p.
+proof. by []. qed.
+
+(* -------------------------------------------------------------------- *)
+lemma polyXnD1W P :
+  (forall p, reduced p => P (pi p)) => forall p, P p.
+proof. admitted.
+
+(* -------------------------------------------------------------------- *)
+op crepr (p : polyXnD1) = reduce (repr p).
+
+abbrev "_.[_]" p i = (crepr p).[i].
+
+lemma reduced_crepr p : reduced (crepr p).
+proof. by apply: reduced_reduce. qed.
+
+lemma piK p : reduced p => crepr (pi p) = p.
+proof.
+move=> red_p @/crepr; rewrite -{2}red_p.
+by apply/reduce_eqP/eqv_repr.
+qed.
+
+(* -------------------------------------------------------------------- *)
+lemma reduceD (p q : poly) : reduced p => reduced q => reduced (p + q).
+proof.
+rewrite !reducedP => dgp dgq;
+  apply: (ler_trans _ _ _ (degD _ _ ));
+  by rewrite ler_maxrP.
+qed.
+
+(* -------------------------------------------------------------------- *)
+lemma reducedD (p q : polyXnD1) k : (p + q).[k] = p.[k] + q.[k].
+proof.
+elim/polyXnD1W: p => p rdp; elim/polyXnD1W: q => q rdq.
+by rewrite addE !piK 1:&(reduceD) // polyDE.
+qed.
+
+(* -------------------------------------------------------------------- *)
+lemma reducedM (p q : polyXnD1) k : 0 <= k < n => (p * q).[k] =
+    BCA.bigi predT (fun i =>
+       p.[i] * q.[k - i] - p.[i] * q.[n + k - i]) 0 n.
+proof.
+case=> ge0_k le_kn; elim/polyXnD1W: p => p rdp; elim/polyXnD1W: q => q rdq.
+rewrite mulE {1}/crepr; pose r := reduce _; have ->: r = reduce (p * q).
+- by apply/reduce_eqP/eqv_repr.
+rewrite (polywE n (reduce (p * q))) 1:&(deg_reduce).
+rewrite (PCA.bigD1 _ _ k) ?(mem_range, range_uniq) /= 1:/#.
+rewrite polyDE; pose c := (bigi _ _ _ _); have ->: c.[k] = Coeff.zeror.
+- rewrite /c polysumE BCA.big_seq_cond BCA.big1 ?addr0 //=.
+  move=> i [/mem_range [ge0_i lt_in] @/predC1 ne_ik].
+  by rewrite polyZE polyXnE // (eq_sym k i) ne_ik /= mulr0.
+rewrite addr0 polyZE polyXnE //= mulr1 (reducewE (2 * n)).
+- case: (p = poly0) => [->|nz_p]; first by rewrite mul0r deg0 /#.
+  case: (q = poly0) => [->|nz_q]; first by rewrite mulr0 deg0 /#.
+  by rewrite degMr //; smt(deg_reduced).
+rewrite (PCA.bigD1 _ _ k) /= ?(mem_range, range_uniq) 1:/#.
+rewrite (PCA.bigD1_cond _ _ _ (n+k)) /= ?(mem_range, range_uniq) 1,2://#.
+rewrite PCA.big_seq_cond !polyDE polysumE BCA.big1 /= => [i|].
+- case=> [/mem_range [ge0_i lei] [@/predC1 ne_ik ne_i_nDk]].
+  rewrite polyZE polyXnE; first by rewrite modz_ge0 gtr_eqF.
+  case: (k = i %% n) => [kE|]; last by rewrite mulr0.
+  suff //: false; move: ne_ik ne_i_nDk.
+  have rg_in: 0 <= i %/ n < 2 by rewrite divz_ge0 // ltz_divLR.
+  by rewrite (divz_eq i n) kE /#.
+rewrite !polyZE !polyXnE; 1,2: by rewrite modz_ge0 gtr_eqF.
+rewrite modzDl pmod_small // /= !mulr1 addr0.
+rewrite pdiv_small // expr0 mul1r divzDl ?dvdzz divzz.
+rewrite (gtr_eqF n) // pdiv_small //= expr1 mulN1r.
+rewrite -BCA.sumrB; do 2? congr.
+- by rewrite (polyMEw (n-1)) 1:/# /= &(BCA.eq_bigr) /= => i; rewrite !piK.
+rewrite polyME (BCA.big_cat_int n) 1,2://#.
+rewrite addrC BCA.big_seq BCA.big1 ?addr0 /=.
+- move=> i /mem_range [??]; rewrite gedeg_coeff ?mul0r //.
+  by apply: (ler_trans n) => //; apply/deg_reduced.
+by rewrite add0r &(BCA.eq_bigr) => i; rewrite !piK.
+qed.
+
+(* -------------------------------------------------------------------- *)
+lemma finite_for_polyXnD1 s :
+     is_finite_for predT s
+  => is_finite_for predT (map (pi \o polyL) (alltuples n s)).
+proof.
+move=> fin_coeff; pose P p := (deg p <= n); rewrite map_comp.
+apply: (is_finite_for_bij _ P) => [|p q|q].
+- have := finite_for_poly_ledeg n predT s fin_coeff.
+  - by apply/eq_is_finite_for => q; rewrite /max /P /predT gt0_n.
+- by move=> @/P dgp dgq /(congr1 crepr); rewrite !piK ?reducedP.
+- exists (crepr q); rewrite /P deg_reduced ?reduced_crepr //=.
+  by have /eqv_pi := eqv_reduce (repr q) => @/crepr <-; rewrite reprK.
 qed.
