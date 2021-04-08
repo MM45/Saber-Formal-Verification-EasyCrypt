@@ -1,0 +1,154 @@
+(* ==================================================================== *)
+require import AllCore List Ring StdOrder IntDiv Ideal Poly.
+(*---*) import IntOrder.
+
+(* ==================================================================== *)
+(* This file constructs the ring k[x]/<X^n + 1>                         *)
+
+(* -------------------------------------------------------------------- *)
+clone import Poly as BasePoly.
+(*-*) import Coeff PolyRing BigPoly.
+
+(* -------------------------------------------------------------------- *)
+clone import Ideal as PIdeal with
+  type t <- poly,
+    op Domain.zeror    <- BasePoly.poly0,
+    op Domain.oner     <- BasePoly.poly1,
+    op Domain.( + )    <- BasePoly.( + ),
+    op Domain.([-])    <- BasePoly.([-]),
+    op Domain.( * )    <- BasePoly.( * ),
+    op Domain.invr     <- BasePoly.polyV,
+  pred Domain.unit     <- BasePoly.unitp,
+    op BigDom.BAdd.big <- BasePoly.BigPoly.PCA.big<:'a>,
+    op BigDom.BMul.big <- BasePoly.BigPoly.PCM.big<:'a>
+
+  proof Domain.addrA     by exact: PolyRing.addrA    ,
+        Domain.addrC     by exact: PolyRing.addrC    ,
+        Domain.add0r     by exact: PolyRing.add0r    ,
+        Domain.addNr     by exact: PolyRing.addNr    ,
+        Domain.oner_neq0 by exact: PolyRing.oner_neq0,
+        Domain.mulrA     by exact: PolyRing.mulrA    ,
+        Domain.mulrC     by exact: PolyRing.mulrC    ,
+        Domain.mul1r     by exact: PolyRing.mul1r    ,
+        Domain.mulrDl    by exact: PolyRing.mulrDl   ,
+        Domain.mulVr     by exact: PolyRing.mulVr    ,
+        Domain.unitP     by exact: PolyRing.unitP    ,
+        Domain.unitout   by exact: PolyRing.unitout  ,
+        Domain.mulf_eq0  by exact: PolyRing.mulf_eq0
+
+  remove abbrev Domain.(-)
+  remove abbrev Domain.(/)
+
+  remove abbrev BigDom.BAdd.bigi
+  remove abbrev BigDom.BMul.bigi.
+
+import PCA.
+
+(* -------------------------------------------------------------------- *)
+op n : { int | 0 < n } as gt0_n.
+
+lemma ge0_n: 0 <= n by apply/ltrW/gt0_n.
+
+hint exact : gt0_n ge0_n.
+
+(* -------------------------------------------------------------------- *)
+lemma deg_XnD1 : deg (exp X n + poly1) = n + 1.
+proof. by rewrite deg_polyXnDC. qed.
+
+lemma nz_XnD1 : exp X n + poly1 <> poly0.
+proof. by rewrite -deg_eq0 deg_XnD1 addz1_neq0. qed.
+
+hint exact : nz_XnD1.
+
+(* -------------------------------------------------------------------- *)
+op I = idgen [exp X n + poly1].
+
+lemma idI : ideal I by apply: ideal_idgen.
+
+hint exact : idI.
+
+(* -------------------------------------------------------------------- *)
+type polyXnD1.
+
+clone import RingQuotient
+  with type qT <- polyXnD1, op p <- I proof IdealAxioms.*.
+
+realize IdealAxioms.ideal_p by apply/idI.
+
+realize IdealAxioms.ideal_Ntriv.
+proof.
+move=> p un_p; rewrite ideal_eq1P 1:&(idI) //; apply/negP.
+move/fun_ext => /(_ poly1); rewrite mem_idT /I mem_idgen1.
+case/eqT=> q /(congr1 deg); rewrite deg1 => /eq_sym.
+case: (q = poly0) => [->|nz_q]; first by rewrite mul0r deg0.
+rewrite degMr // deg_polyXnDC // -!addrA /= gtr_eqF //.
+by rewrite (_ : 1 = 1 + 0) 1:// ler_lt_add // deg_ge1.
+qed.
+
+(* -------------------------------------------------------------------- *)
+lemma eqv_Xn : eqv (exp X n) (-poly1).
+proof. by rewrite eqv_sym /eqv opprK /I mem_idgen1_gen. qed.
+
+(* -------------------------------------------------------------------- *)
+op reduce (p : poly) : poly =
+  PCA.bigi predT
+    (fun i => (exp (-Coeff.oner) (i %/ n) * p.[i]) ** exp X (i %% n))
+    0 (deg p).
+
+op reduced (p : poly) = (reduce p = p).
+
+(* -------------------------------------------------------------------- *)
+lemma deg_reduce p : deg (reduce p) <= n.
+proof.
+apply: deg_sum => //= i _; apply: (ler_trans _ _ _ (degZle _ _)).
+by rewrite deg_polyXn ?(modz_ge0, gtr_eqF) // -ltzE ltz_pmod.
+qed.
+
+(* -------------------------------------------------------------------- *)
+lemma eqv_reduce (p : poly) : eqv p (reduce p).
+proof.
+rewrite {1}(polyE p) /reduce !PCA.big_seq &(eqv_sum) /=.
+move=> i /mem_range [rg_i _]; rewrite mulrC -scalepA.
+pose q := exp X (i %/ n * n) * exp X (i %% n).
+rewrite !scalepE &(eqvMl) &(eqv_trans q).
+- rewrite (_ : q = exp X i) // /q -exprD_nneg // -?divz_eq //.
+  - by rewrite mulr_ge0 // divz_ge0.
+  - by rewrite modz_ge0 gtr_eqF.
+apply/eqvMr; rewrite -polyCX ?divz_ge0 // (IntID.mulrC _ n).
+by rewrite exprM eqvX polyCN eqv_Xn.
+qed.
+
+(* -------------------------------------------------------------------- *)
+lemma eqv_reducel (p q : poly) : eqv p (reduce q) <=> eqv p q.
+proof. split.
+- by move/eqv_trans; apply; rewrite eqv_sym &(eqv_reduce).
+- by move/(eqv_trans _ _ (reduce q))/(_ (eqv_reduce q)).
+qed.
+
+(* -------------------------------------------------------------------- *)
+lemma eqv_reducer (p q : poly) : eqv (reduce p) q <=> eqv p q.
+proof. by rewrite eqv_sym eqv_reducel eqv_sym. qed.
+
+(* -------------------------------------------------------------------- *)
+lemma reduce_eqP (p q : poly) : (reduce p = reduce q) <=> (eqv p q).
+proof.
+split=> [eq_rd|eqv_pq].
+- by rewrite -eqv_reducel -eqv_reducer eq_rd eqvxx.
+have @/eqv @/I: eqv (reduce p) (reduce q).
+- by rewrite !(eqv_reducel, eqv_reducer).
+case/mem_idgen1=> r /(congr1 deg); case: (r = poly0) => [->>|nz_r].
+- by rewrite mul0r deg0 deg_eq0 subr_eq0 => ->.
+have: deg (reduce q - reduce p) <= n.
+- by rewrite &(ler_trans _ _ _ (degB _ _)) ler_maxrP !deg_reduce.
+rewrite degMr // => + eqd; rewrite eqd deg_XnD1 -!addrA /=.
+rewrite addrC -ler_subr_addl /= ler_eqVlt deg_eq0.
+by rewrite nz_r /= ltrNge ge0_deg.
+qed.
+
+(* -------------------------------------------------------------------- *)
+op reprrd (p : polyXnD1) = reduce (repr p).
+
+lemma piK p : reduced p => reprrd (pi p) = p.
+proof.
+by move=> red_p @/reprrd; rewrite -{2}red_p; apply/reduce_eqP/eqv_repr.
+qed.
