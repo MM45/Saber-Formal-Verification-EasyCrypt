@@ -1,5 +1,5 @@
 (* ==================================================================== *)
-require import AllCore List Ring StdOrder IntDiv Ideal Poly.
+require import AllCore Finite List Ring StdOrder IntDiv Ideal Poly.
 (*---*) import IntOrder.
 
 (* ==================================================================== *)
@@ -105,6 +105,10 @@ by rewrite deg_polyXn ?(modz_ge0, gtr_eqF) // -ltzE ltz_pmod.
 qed.
 
 (* -------------------------------------------------------------------- *)
+lemma deg_reduced p : reduced p => deg p <= n.
+proof. by move=> @/reduced => <-; rewrite deg_reduce. qed.
+
+(* -------------------------------------------------------------------- *)
 lemma eqv_reduce (p : poly) : eqv p (reduce p).
 proof.
 rewrite {1}(polyE p) /reduce !PCA.big_seq &(eqv_sum) /=.
@@ -146,9 +150,40 @@ by rewrite nz_r /= ltrNge ge0_deg.
 qed.
 
 (* -------------------------------------------------------------------- *)
+lemma reducedP p : (reduced p) <=> (deg p <= n).
+proof.
+split; first by move=> @/reduced <-; apply/deg_reduce.
+move=> led; rewrite /reduced {2}polyE /reduce.
+rewrite !big_seq &(eq_bigr) => /= i /mem_range rg_i.
+by rewrite pmod_small 1:/# pdiv_small 1:/# expr0 mul1r.
+qed.
+
+(* -------------------------------------------------------------------- *)
+lemma reduced_reduce p : reduced (reduce p).
+proof. by rewrite reducedP &(deg_reduce). qed.
+
+(* -------------------------------------------------------------------- *)
 op reprrd (p : polyXnD1) = reduce (repr p).
+
+lemma reduced_reprrd p : reduced (reprrd p).
+proof. by apply: reduced_reduce. qed.
 
 lemma piK p : reduced p => reprrd (pi p) = p.
 proof.
-by move=> red_p @/reprrd; rewrite -{2}red_p; apply/reduce_eqP/eqv_repr.
+move=> red_p @/reprrd; rewrite -{2}red_p.
+by apply/reduce_eqP/eqv_repr.
+qed.
+
+(* -------------------------------------------------------------------- *)
+lemma finite_for_polyXnD1 s :
+     is_finite_for predT s
+  => is_finite_for predT (map (pi \o polyL) (alltuples n s)).
+proof.
+move=> fin_coeff; pose P p := (deg p <= n); rewrite map_comp.
+apply: (is_finite_for_bij _ P) => [|p q|q].
+- have := finite_for_poly_ledeg n predT s fin_coeff.
+  - by apply/eq_is_finite_for => q; rewrite /max /P /predT gt0_n.
+- by move=> @/P dgp dgq /(congr1 reprrd); rewrite !piK ?reducedP.
+- exists (reprrd q); rewrite /P deg_reduced ?reduced_reprrd //=.
+  by have /eqv_pi := eqv_reduce (repr q) => @/reprrd <-; rewrite reprK.
 qed.
