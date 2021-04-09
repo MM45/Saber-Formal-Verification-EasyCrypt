@@ -507,7 +507,7 @@ proof.
     by move => &m0; auto.
    swap {2} 11 -10; swap {1} 5 2; swap {2} 6 -1; wp.
    sim; rnd {2}; auto.
-   by  progress; apply dsmallRq_vec_ll.
+   by progress; apply dsmallRq_vec_ll.
   by apply RealOrder.distrC.
 qed.
 

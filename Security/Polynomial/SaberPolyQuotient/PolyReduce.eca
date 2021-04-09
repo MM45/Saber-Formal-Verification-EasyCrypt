@@ -200,6 +200,13 @@ move=> red_p @/crepr; rewrite -{2}red_p.
 by apply/reduce_eqP/eqv_repr.
 qed.
 
+lemma creprK p : pi (crepr p) = p.
+proof.
+rewrite /crepr; have ->: pi (reduce (repr p)) = pi (repr p).
+  rewrite -eqv_pi eqv_sym eqv_reduce.
+  by apply reprK.
+qed.
+ 
 (* -------------------------------------------------------------------- *)
 lemma reduceD (p q : poly) : reduced p => reduced q => reduced (p + q).
 proof.
