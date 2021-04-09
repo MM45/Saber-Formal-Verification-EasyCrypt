@@ -184,11 +184,6 @@ lemma reduce_reduced p : reduced p => reduce p = p.
 proof. by []. qed.
 
 (* -------------------------------------------------------------------- *)
-lemma polyXnD1W P :
-  (forall p, reduced p => P (pi p)) => forall p, P p.
-proof. admitted.
-
-(* -------------------------------------------------------------------- *)
 op crepr (p : polyXnD1) = reduce (repr p).
 
 abbrev "_.[_]" p i = (crepr p).[i].
@@ -209,6 +204,15 @@ rewrite /crepr; have ->: pi (reduce (repr p)) = pi (repr p).
   by apply reprK.
 qed.
  
+(* -------------------------------------------------------------------- *)
+lemma polyXnD1W P :
+  (forall p, reduced p => P (pi p)) => forall p, P p.
+proof.
+move=> ih p; rewrite (_ : p = pi (crepr p)).
+- by rewrite -{1}(reprK p) &(eqv_pi) eqv_reduce.
+- by apply/ih/reduced_reduce.
+qed.
+
 (* -------------------------------------------------------------------- *)
 lemma reduceD (p q : poly) : reduced p => reduced q => reduced (p + q).
 proof.
