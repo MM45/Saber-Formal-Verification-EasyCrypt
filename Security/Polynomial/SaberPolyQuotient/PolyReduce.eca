@@ -6,38 +6,37 @@ require import AllCore Finite List Ring StdOrder IntDiv Ideal Poly.
 (* This file constructs the ring k[x]/<X^n + 1>                         *)
 
 (* -------------------------------------------------------------------- *)
-clone import Poly as BasePoly.
-(*-*) import Coeff PolyRing BigPoly BigCf.
+clone import PolyComRing as BasePoly.
+(*-*) import Coeff PolyComRing BigPoly BigCf.
 
 (* -------------------------------------------------------------------- *)
-clone import Ideal as PIdeal with
-  type t <- poly,
-    op Domain.zeror    <- BasePoly.poly0,
-    op Domain.oner     <- BasePoly.poly1,
-    op Domain.( + )    <- BasePoly.( + ),
-    op Domain.([-])    <- BasePoly.([-]),
-    op Domain.( * )    <- BasePoly.( * ),
-    op Domain.invr     <- BasePoly.polyV,
-  pred Domain.unit     <- BasePoly.unitp,
+clone import IdealComRing as PIdeal with
+  type t               <- poly,
+    op IComRing.zeror  <- BasePoly.poly0,
+    op IComRing.oner   <- BasePoly.poly1,
+    op IComRing.( + )  <- BasePoly.( + ),
+    op IComRing.([-])  <- BasePoly.([-]),
+    op IComRing.( * )  <- BasePoly.( * ),
+    op IComRing.invr   <- PolyComRing.invr,
+  pred IComRing.unit   <- PolyComRing.unit,
     op BigDom.BAdd.big <- BasePoly.BigPoly.PCA.big<:'a>,
     op BigDom.BMul.big <- BasePoly.BigPoly.PCM.big<:'a>
 
-  proof Domain.addrA     by exact: PolyRing.addrA    ,
-        Domain.addrC     by exact: PolyRing.addrC    ,
-        Domain.add0r     by exact: PolyRing.add0r    ,
-        Domain.addNr     by exact: PolyRing.addNr    ,
-        Domain.oner_neq0 by exact: PolyRing.oner_neq0,
-        Domain.mulrA     by exact: PolyRing.mulrA    ,
-        Domain.mulrC     by exact: PolyRing.mulrC    ,
-        Domain.mul1r     by exact: PolyRing.mul1r    ,
-        Domain.mulrDl    by exact: PolyRing.mulrDl   ,
-        Domain.mulVr     by exact: PolyRing.mulVr    ,
-        Domain.unitP     by exact: PolyRing.unitP    ,
-        Domain.unitout   by exact: PolyRing.unitout  ,
-        Domain.mulf_eq0  by exact: PolyRing.mulf_eq0
+  proof IComRing.addrA     by exact: PolyComRing.addrA    ,
+        IComRing.addrC     by exact: PolyComRing.addrC    ,
+        IComRing.add0r     by exact: PolyComRing.add0r    ,
+        IComRing.addNr     by exact: PolyComRing.addNr    ,
+        IComRing.oner_neq0 by exact: PolyComRing.oner_neq0,
+        IComRing.mulrA     by exact: PolyComRing.mulrA    ,
+        IComRing.mulrC     by exact: PolyComRing.mulrC    ,
+        IComRing.mul1r     by exact: PolyComRing.mul1r    ,
+        IComRing.mulrDl    by exact: PolyComRing.mulrDl   ,
+        IComRing.mulVr     by exact: PolyComRing.mulVr    ,
+        IComRing.unitP     by exact: PolyComRing.unitP    ,
+        IComRing.unitout   by exact: PolyComRing.unitout
 
-  remove abbrev Domain.(-)
-  remove abbrev Domain.(/)
+  remove abbrev IComRing.(-)
+  remove abbrev IComRing.(/)
 
   remove abbrev BigDom.BAdd.bigi
   remove abbrev BigDom.BMul.bigi.
@@ -81,7 +80,8 @@ move=> p un_p; rewrite ideal_eq1P 1:&(idI) //; apply/negP.
 move/fun_ext => /(_ poly1); rewrite mem_idT /I mem_idgen1.
 case/eqT=> q /(congr1 deg); rewrite deg1 => /eq_sym.
 case: (q = poly0) => [->|nz_q]; first by rewrite mul0r deg0.
-rewrite degMr // deg_polyXnDC // -!addrA /= gtr_eqF //.
+rewrite degM_proper; 1: by rewrite lc_polyXnDC // mulr1 lc_eq0.
+rewrite deg_polyXnDC // -!addrA /= gtr_eqF //.
 by rewrite (_ : 1 = 1 + 0) 1:// ler_lt_add // deg_ge1.
 qed.
 
@@ -111,7 +111,7 @@ qed.
 (* -------------------------------------------------------------------- *)
 lemma deg_reduce p : deg (reduce p) <= n.
 proof.
-apply: deg_sum => //= i _; apply: (ler_trans _ _ _ (degZle _ _)).
+apply: deg_sum => //= i _; apply: (ler_trans _ _ _ (degZ_le _ _)).
 by rewrite deg_polyXn ?(modz_ge0, gtr_eqF) // -ltzE ltz_pmod.
 qed.
 
@@ -155,7 +155,9 @@ case/mem_idgen1=> r /(congr1 deg); case: (r = poly0) => [->>|nz_r].
 - by rewrite mul0r deg0 deg_eq0 subr_eq0 => ->.
 have: deg (reduce q - reduce p) <= n.
 - by rewrite &(ler_trans _ _ _ (degB _ _)) ler_maxrP !deg_reduce.
-rewrite degMr // => + eqd; rewrite eqd deg_XnD1 -!addrA /=.
+rewrite degM_proper.
+- by rewrite mulrC mulrI_eq0 ?lc_eq0 // lc_polyXnDC // &(Coeff.lreg1).
+move=> + eqd; rewrite eqd deg_XnD1 -!addrA /=.
 rewrite addrC -ler_subr_addl /= ler_eqVlt deg_eq0.
 by rewrite nz_r /= ltrNge ge0_deg.
 qed.
@@ -239,7 +241,9 @@ rewrite polyDE; pose c := (bigi _ _ _ _); have ->: c.[k] = Coeff.zeror.
 rewrite addr0 polyZE polyXnE //= mulr1 (reducewE (2 * n)).
 - case: (p = poly0) => [->|nz_p]; first by rewrite mul0r deg0 /#.
   case: (q = poly0) => [->|nz_q]; first by rewrite mulr0 deg0 /#.
-  by rewrite degMr //; smt(deg_reduced).
+  apply: (ler_trans (deg p + deg q)); last first.
+  - by rewrite (_ : 2 * n = n + n) 1:#ring ler_add &(deg_reduced).
+  by rewrite &(ler_trans (deg (p * q) + 1)) ?ler_addl // &(degM_le).
 rewrite (PCA.bigD1 _ _ k) /= ?(mem_range, range_uniq) 1:/#.
 rewrite (PCA.bigD1_cond _ _ _ (n+k)) /= ?(mem_range, range_uniq) 1,2://#.
 rewrite PCA.big_seq_cond !polyDE polysumE BCA.big1 /= => [i|].
