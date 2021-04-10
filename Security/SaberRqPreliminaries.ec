@@ -8,7 +8,7 @@ require (*--*) Matrix PKE.
 (*---*) import IntOrder.
 
 (* --- Local --- *)
-require (*--*) SaberPolyQuotientRing SaberMatrix PolyReduce.
+require (*--*) PolyReduce.
 
 (* ----------------------------------- *)
 (*  General Preliminaries              *)

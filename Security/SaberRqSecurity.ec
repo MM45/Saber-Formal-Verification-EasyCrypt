@@ -4,6 +4,7 @@
 
 (* --- Built-in --- *)
 require import AllCore Distr DBool ZModP IntDiv StdOrder.
+(*---*) import RealOrder.
 
 (* --- Local --- *)
 require import SaberRqPreliminaries.
@@ -455,7 +456,7 @@ proof.
    + swap {2} 7 -6; wp.
    + call (_ : true); auto; call (_: true); auto; rnd {2}; auto.
    + by progress; apply dsmallRq_vec_ll.
-  by apply RealOrder.distrC.
+  by apply distrC.
 qed.
 
 (* Game1 ==> Game2 *)
@@ -510,7 +511,7 @@ proof.
   + swap {2} 11 -10; swap {1} 5 2; swap {2} 6 -1; wp.
   + sim; rnd {2}; auto.
   + by progress; apply dsmallRq_vec_ll.
-  by apply RealOrder.distrC.
+  by apply distrC.
 qed.
 
 (* Auxiliary_Game Analysis *)
@@ -520,9 +521,13 @@ proof.
   byphoare => //.
   proc.
   rnd. 
-  call (_: true); [ apply (Adv_CPA_guess_ll A) | auto ].
-  call(_ : true); [ apply (Adv_CPA_choose_ll A) | auto ].
-  by progress; [ apply dseed_ll | apply dRq_vec_ll | apply dRp_vec_ll | apply DRp.dunifin_ll | apply dbool1E ].
+  call (_: true); [apply (Adv_CPA_guess_ll A) | auto].
+  call(_ : true); [apply (Adv_CPA_choose_ll A) | auto].
+  by progress; [apply dseed_ll       |
+                apply dRq_vec_ll     |
+                apply dRp_vec_ll     |
+                apply DRp.dunifin_ll |
+                apply dbool1E].
 qed.
 
 lemma Equivalence_Game4_Aux &m  (A <: Adversary) :
@@ -540,12 +545,12 @@ proof.
   + auto; call(_ : true); auto.
   + progress.
     - pose x := shl_enc (m_decode (if uL then result_R.`2 else result_R.`1)) (2 * ep - eq - 1).
-    - by rewrite -addrA addNr addrC add0r.
+      by rewrite -addrA addNr addrC add0r.
     - pose x := shl_enc (m_decode (if uL then result_R.`2 else result_R.`1)) (2 * ep - eq - 1).
-    - have xx_0 : forall (x : Rp), x + (- x) = Rp.RingQuotient.zeror.
+      have xx_0: forall (x : Rp), x + (- x) = Rp.RingQuotient.zeror.
       * by move => x0; rewrite -(addrN x0).
-    - by rewrite -addrA (xx_0 x) addrC add0r.
-    -by rewrite scale_Rp_Rp_id H7.  
+      by rewrite -addrA (xx_0 x) addrC add0r.
+    - by rewrite scale_Rp_Rp_id H7.  
 qed.
 
 (* Game4 Analysis *)
@@ -583,10 +588,10 @@ proof.
        `| Pr[GMLWR(B0(A)).main(true) @ &m : res] - Pr[GMLWR(B0(A)).main(false) @ &m : res] | 
        +
        `| Pr[XMLWR(B1(A3(A2(A)))).main(true) @ &m : res] - Pr[XMLWR(B1(A3(A2(A)))).main(false) @ &m : res] |.
-  + by apply /RealOrder.ler_add; [rewrite (Distinguish_Game0_Game1_To_GMLWR &m A) |
-                                   rewrite -(Difference_Game1_Game4_To_XMLWR &m A) ].
-  move: (RealOrder.ler_dist_add (Pr[Game1(A).main() @ &m : res]) 
-                                (Pr[Game0(A).main() @ &m : res])
-                                (Pr[Game4( A3(A2(A)) ).main() @ &m : res])).
-  by apply RealOrder.ler_trans.  
+  + by apply ler_add; [rewrite (Distinguish_Game0_Game1_To_GMLWR &m A) |
+                       rewrite -(Difference_Game1_Game4_To_XMLWR &m A) ].
+  move: (ler_dist_add (Pr[Game1(A).main() @ &m : res]) 
+                      (Pr[Game0(A).main() @ &m : res])
+                      (Pr[Game4( A3(A2(A)) ).main() @ &m : res])).
+  by apply ler_trans.  
 qed.
