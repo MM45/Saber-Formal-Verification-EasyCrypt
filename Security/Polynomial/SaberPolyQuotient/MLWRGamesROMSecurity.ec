@@ -10,7 +10,7 @@ require (*--*) Matrix.
 require import SaberRqPreliminaries.
 (*---*) import Mat_Rq Mat_Rp.
 (*---*) import Rq Rp.
-(*---*) import Zq Zp.
+(*---*) import Rq.RingQuotient Rp.RingQuotient.
 
 (* ----------------------------------- *)
 (*  ROM                                *)
@@ -218,20 +218,20 @@ lemma GMLWR_RO_to_MLWR &m (A <: Adv_GMLWR_RO{RO}) :
   `| Pr[MLWR( AGM(A) ).main(true) @ &m : res] - Pr[MLWR( AGM(A) ).main(false) @ &m : res] |.
 proof.
   have ->: Pr[GMLWR_RO(A).main(true) @ &m : res] =  Pr[MLWR( AGM(A) ).main(true) @ &m : res].
-   byequiv => //.
-   proc; inline *.
-   rcondt {1} 8; 2: rcondt {2} 3; first 2 auto.
-   rcondt {1} 5; first auto; progress; smt.
-   swap {1} [7..8] -2; swap {1} [4..6] -2.
-   by wp; call (_ : ={RO.m}); 1: proc; auto.
+  + byequiv => //.
+  + proc; inline *.
+  + rcondt {1} 8; 2: rcondt {2} 3; first 2 auto.
+  + rcondt {1} 5; first auto; progress; smt.
+  + swap {1} [7..8] -2; swap {1} [4..6] -2.
+  + by wp; call (_ : ={RO.m}); 1: proc; auto.
   have -> //: Pr[GMLWR_RO(A).main(false) @ &m : res] =  Pr[MLWR( AGM(A) ).main(false) @ &m : res].
-   byequiv => //.
-   proc; inline *.
-   rcondf {1} 8; 2: rcondf {2} 3; first 2 auto.
-   rcondt {1} 5; first auto; progress; smt.
-   swap {1} 4 -3; swap {1} 7 -5. 
-   wp; call (_ : ={RO.m}); 1: proc; auto.
-   progress; smt.
+  + byequiv => //.
+  + proc; inline *.
+  + rcondf {1} 8; 2: rcondf {2} 3; first 2 auto.
+  + rcondt {1} 5; first auto; progress; smt.
+  + swap {1} 4 -3; swap {1} 7 -5. 
+  + wp; call (_ : ={RO.m}); 1: proc; auto.
+  + progress; smt.
 qed.  
 
 (* Reduction From XMLWR_RO to MLWR1 *)
@@ -241,21 +241,21 @@ lemma XMLWR_RO_to_MLWR1 &m (A <: Adv_XMLWR_RO{RO}) :
   `| Pr[MLWR1( AXM(A) ).main(true) @ &m : res] - Pr[MLWR1( AXM(A) ).main(false) @ &m : res] |.
 proof.
   have ->: Pr[XMLWR_RO(A).main(true) @ &m : res] =  Pr[MLWR1( AXM(A) ).main(true) @ &m : res].
-   byequiv => //.
-   proc; inline *.
-   rcondt {1} 8; 2: rcondt {1} 10; 3: rcondt {2} 4; first 3 auto.
-   rcondt {1} 5; first auto; progress; smt.
-   swap {1} [7..10] -2; swap {1} [4..8] - 3; swap {1} 4 -2.
-   wp; call (_ : ={RO.m}); first proc; auto. 
-   wp; rnd; wp; do 4! rnd; rnd (fun (m : Rq_mat) => trmx m). 
-   skip; progress; smt.
+  + byequiv => //.
+  + proc; inline *.
+  + rcondt {1} 8; 2: rcondt {1} 10; 3: rcondt {2} 4; first 3 auto.
+  + rcondt {1} 5; first auto; progress; smt.
+  + swap {1} [7..10] -2; swap {1} [4..8] - 3; swap {1} 4 -2.
+  + wp; call (_ : ={RO.m}); first proc; auto. 
+  + wp; rnd; wp; do 4! rnd; rnd (fun (m : Rq_mat) => trmx m). 
+  + skip; progress; smt.
   have -> //:  Pr[XMLWR_RO(A).main(false) @ &m : res] =  Pr[MLWR1( AXM(A) ).main(false) @ &m : res].
-   byequiv => //.
-   proc; inline *.
-   rcondf {1} 8; 2: rcondf {1} 10; 3: rcondf {2} 4; first 3 auto.
-   rcondt {1} 5; first auto; progress; smt.
-   swap {1} 9 -2; swap {1} [7..8] -2; swap {1} [4..6] -2.
-   wp; call (_ : ={RO.m}); first proc; auto.  
-   wp; rnd; wp; do 2! rnd; rnd (fun (m : Rq_mat) => trmx m). 
-   auto; progress; smt.
+  + byequiv => //.
+  + proc; inline *.
+  + rcondf {1} 8; 2: rcondf {1} 10; 3: rcondf {2} 4; first 3 auto.
+  + rcondt {1} 5; first auto; progress; smt.
+  + swap {1} 9 -2; swap {1} [7..8] -2; swap {1} [4..6] -2.
+  + wp; call (_ : ={RO.m}); first proc; auto.  
+  + wp; rnd; wp; do 2! rnd; rnd (fun (m : Rq_mat) => trmx m). 
+  + auto; progress; smt.
 qed.

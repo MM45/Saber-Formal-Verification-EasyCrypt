@@ -9,8 +9,8 @@ require import AllCore Distr DBool ZModP IntDiv StdOrder.
 require import SaberRqPreliminaries.
 (*---*) import Mat_Rq Mat_Rp.
 (*---*) import Rq Rp.
-(*---*) import Rq.BasePoly Rp.BasePoly.
 (*---*) import Rq.RingQuotient Rp.RingQuotient.
+(*---*) import Rq.RingQuotient.ComRing Rp.RingQuotient.ComRing.
 (*---*) import Saber_PKE.
 
 (* ----------------------------------- *)
@@ -441,20 +441,20 @@ lemma Distinguish_Game0_Game1_To_GMLWR &m  (A <: Adversary) :
       `| Pr[GMLWR( B0(A) ).main(true) @ &m : res] - Pr[GMLWR( B0(A) ).main(false) @ &m : res] |. 
 proof.
   have ->: Pr[Game0(A).main() @ &m : res] =  Pr[GMLWR( B0(A) ).main(false) @ &m : res].
-   byequiv => //.
-   proc; inline *.
-   rcondf {2} 4.
-    by move=> &m0; auto.
-   swap {2} 7 -6; wp.
-   by call (_ : true); auto; call (_: true); auto.
+   + byequiv => //.
+   + proc; inline *.
+   + rcondf {2} 4.
+     - by move=> &m0; auto.
+   + swap {2} 7 -6; wp.
+   + by call (_ : true); auto; call (_: true); auto.
   have ->: Pr[Game1(A).main() @ &m : res] =  Pr[GMLWR( B0(A) ).main(true) @ &m : res].
-   byequiv => //.
-   proc; inline *.
-   rcondt {2} 4.
-    by move=> &m0; auto.
-   swap {2} 7 -6; wp.
-   call (_ : true); auto; call (_: true); auto; rnd {2}; auto.
-   by progress; apply dsmallRq_vec_ll.
+   + byequiv => //.
+   + proc; inline *.
+   + rcondt {2} 4.
+     - by move=> &m0; auto.
+   + swap {2} 7 -6; wp.
+   + call (_ : true); auto; call (_: true); auto; rnd {2}; auto.
+   + by progress; apply dsmallRq_vec_ll.
   by apply RealOrder.distrC.
 qed.
 
@@ -465,10 +465,10 @@ lemma Game1_To_Game2 &m (A <: Adversary) :
       `| Pr[Game2( A2(A) ).main() @ &m : res] - 1%r / 2%r |.
 proof.
   have -> //: Pr[Game1(A).main() @ &m : res] = Pr[Game2( A2(A) ).main() @ &m : res].
-   byequiv => //.
-   proc; inline *.
-   wp; call (_ : true); auto; call (_ : true); auto.
-   by progress; do! congr; rewrite c_enc_dec_inv; first rewrite scale_comp_Rp_Rppq_R2t.  
+  + byequiv => //.
+  + proc; inline *.
+  + wp; call (_ : true); auto; call (_ : true); auto.
+  + by progress; do! congr; rewrite c_enc_dec_inv; 1: rewrite scale_comp_Rp_Rppq_R2t.  
 qed.
 
 (* Game2 ==> Game3 *)
@@ -478,11 +478,11 @@ lemma Game2_To_Game3 &m (A <: Adversary) :
       `| Pr[Game3( A3(A) ).main() @ &m : res] - 1%r / 2%r |.
 proof.
   have -> //: Pr[Game2(A).main() @ &m : res] = Pr[Game3( A3(A) ).main() @ &m : res].
-   byequiv => //.
-   proc; inline *.
-   wp; call (_ : true); auto; call (_ : true); wp.
-   (* What functions to use here... *)
-   admit.
+  + byequiv => //.
+  + proc; inline *.
+  + wp; call (_ : true); auto; call (_ : true); wp.
+  (* What functions to use here... *)
+  admit.
 qed.
 
 (* Game3 <> Game4 ==> XMLWR *)
@@ -492,24 +492,24 @@ lemma Distinguish_Game3_Game4_To_XMLWR &m (A <: Adversary) :
       `| Pr[XMLWR( B1(A) ).main(true) @ &m : res] - Pr[XMLWR( B1(A) ).main(false) @ &m : res] |. 
 proof.
   have ->: Pr[Game3(A).main() @ &m : res] =  Pr[XMLWR( B1(A) ).main(false) @ &m : res].
-   byequiv => //.
-   proc; inline *.
-   rcondf {2} 4.
-    by move => &m0; auto.
-   rcondf {2} 6.
-    by move => &m0; auto.
-   swap {2} 11 -10; swap {1} 5 3; swap {2} 6 -2; wp.
-   by sim.
+  + byequiv => //.
+  + proc; inline *.
+  + rcondf {2} 4.
+    - by move => &m0; auto.
+  + rcondf {2} 6.
+    - by move => &m0; auto.
+  + swap {2} 11 -10; swap {1} 5 3; swap {2} 6 -2; wp.
+  + by sim.
   have ->: Pr[Game4(A).main() @ &m : res] =  Pr[XMLWR( B1(A) ).main(true) @ &m : res].
-   byequiv => //.
-   proc; inline *.
-   rcondt {2} 4.
-    by move => &m0; auto.
-   rcondt {2} 6.
-    by move => &m0; auto.
-   swap {2} 11 -10; swap {1} 5 2; swap {2} 6 -1; wp.
-   sim; rnd {2}; auto.
-   by progress; apply dsmallRq_vec_ll.
+  + byequiv => //.
+  + proc; inline *.
+  + rcondt {2} 4.
+    - by move => &m0; auto.
+  + rcondt {2} 6.
+    - by move => &m0; auto.
+  + swap {2} 11 -10; swap {1} 5 2; swap {2} 6 -1; wp.
+  + sim; rnd {2}; auto.
+  + by progress; apply dsmallRq_vec_ll.
   by apply RealOrder.distrC.
 qed.
 
@@ -531,21 +531,21 @@ lemma Equivalence_Game4_Aux &m  (A <: Adversary) :
       `| Pr[Auxiliary_Game(A).main() @ &m : res] - 1%r / 2%r |.
 proof.
   have -> //: Pr[Game4(A).main() @ &m : res] = Pr[Auxiliary_Game(A).main() @ &m : res].
-   byequiv => //. 
-   proc; inline *.
-   swap {2} 7 -6.
-   call (_ : true); wp.
-   rnd (fun (x : Rp) => x + (shl_enc (m_decode (if u{1} then m1{1} else m0{1})) (2 * ep - eq - 1)))  
-       (fun (x : Rp) => x + (- (shl_enc (m_decode (if u{1} then m1{1} else m0{1})) (2 * ep - eq - 1)))).
-   auto; call(_ : true); auto.
-   progress.
-    pose x := shl_enc (m_decode (if uL then result_R.`2 else result_R.`1)) (2 * ep - eq - 1).
-    by rewrite -Rp.RingQuotient.ComRing.addrA Rp.RingQuotient.ComRing.addNr Rp.RingQuotient.ComRing.addrC Rp.RingQuotient.ComRing.add0r.
-    pose x := shl_enc (m_decode (if uL then result_R.`2 else result_R.`1)) (2 * ep - eq - 1).
-    have xx_0 : forall (x : Rp), x + (- x) = Rp.RingQuotient.zeror.
-     by move => x0; rewrite -(Rp.RingQuotient.ComRing.addrN x0).
-    by rewrite -Rp.RingQuotient.ComRing.addrA (xx_0 x) Rp.RingQuotient.ComRing.addrC Rp.RingQuotient.ComRing.add0r.
-    by rewrite scale_Rp_Rp_id H7.  
+  + byequiv => //. 
+  + proc; inline *.
+  + swap {2} 7 -6.
+  + call (_ : true); wp.
+  + rnd (fun (x : Rp) => x + (shl_enc (m_decode (if u{1} then m1{1} else m0{1})) (2 * ep - eq - 1)))  
+        (fun (x : Rp) => x + (- (shl_enc (m_decode (if u{1} then m1{1} else m0{1})) (2 * ep - eq - 1)))).
+  + auto; call(_ : true); auto.
+  + progress.
+    - pose x := shl_enc (m_decode (if uL then result_R.`2 else result_R.`1)) (2 * ep - eq - 1).
+    - by rewrite -addrA addNr addrC add0r.
+    - pose x := shl_enc (m_decode (if uL then result_R.`2 else result_R.`1)) (2 * ep - eq - 1).
+    - have xx_0 : forall (x : Rp), x + (- x) = Rp.RingQuotient.zeror.
+      * by move => x0; rewrite -(addrN x0).
+    - by rewrite -addrA (xx_0 x) addrC add0r.
+    -by rewrite scale_Rp_Rp_id H7.  
 qed.
 
 (* Game4 Analysis *)
@@ -583,8 +583,8 @@ proof.
        `| Pr[GMLWR(B0(A)).main(true) @ &m : res] - Pr[GMLWR(B0(A)).main(false) @ &m : res] | 
        +
        `| Pr[XMLWR(B1(A3(A2(A)))).main(true) @ &m : res] - Pr[XMLWR(B1(A3(A2(A)))).main(false) @ &m : res] |.
-   by apply /RealOrder.ler_add; [rewrite (Distinguish_Game0_Game1_To_GMLWR &m A) |
-                                 rewrite -(Difference_Game1_Game4_To_XMLWR &m A) ].
+  + by apply /RealOrder.ler_add; [rewrite (Distinguish_Game0_Game1_To_GMLWR &m A) |
+                                   rewrite -(Difference_Game1_Game4_To_XMLWR &m A) ].
   move: (RealOrder.ler_dist_add (Pr[Game1(A).main() @ &m : res]) 
                                 (Pr[Game0(A).main() @ &m : res])
                                 (Pr[Game4( A3(A2(A)) ).main() @ &m : res])).

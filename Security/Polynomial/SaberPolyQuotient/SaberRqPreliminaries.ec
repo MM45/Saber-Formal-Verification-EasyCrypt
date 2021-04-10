@@ -251,7 +251,6 @@ clone import PolyReduce as Rppq with
   proof BasePoly.Coeff.unitP     by exact Zppq.ZModpRing.unitP
   proof BasePoly.Coeff.unitout   by exact Zppq.ZModpRing.unitout.
 
-
 (* -- R2t = Z/2tZ [X] / (X^n + 1)  -- *)
 type Z2t.
 type R2t.
@@ -289,7 +288,6 @@ clone import PolyReduce as R2t with
   proof BasePoly.Coeff.unitP     by exact Z2t.ZModpRing.unitP
   proof BasePoly.Coeff.unitout   by exact Z2t.ZModpRing.unitout.
 
-
 (* -- R2 = Z/2Z [X] / (X^n + 1) -- *)
 type Z2.
 type R2.
@@ -326,7 +324,6 @@ clone import PolyReduce as R2 with
   proof BasePoly.Coeff.mulVr     by exact Z2.ZModpRing.mulVr
   proof BasePoly.Coeff.unitP     by exact Z2.ZModpRing.unitP
   proof BasePoly.Coeff.unitout   by exact Z2.ZModpRing.unitout.
-
 
 (* - Properties - *)
 (* Vector Distribution Has Same Properties as the Distribution of the Vector's Elements *)
@@ -451,91 +448,42 @@ proof.
   move=> divmain div0 div1.
   
   have gt0_d0: 0 < d0.
-   by apply expr_gt0.
+  + by apply expr_gt0.
   have gt0_d1: 0 < d1.
-   by apply expr_gt0.
+  + by apply expr_gt0.
 
   have eq_dmain_d0d1: dmain = d0 * d1.
-   rewrite /dmain /d0 /d1 -exprD_nneg. 
-    by rewrite -(lez_add2r eab 0 (ea - eab)) -addrA /= geeab_ea.
-    by rewrite -(lez_add2r eb 0 (eab - eb)) -addrA /= geeb_eab.
-    by congr; rewrite -addzA addKz.
+  + rewrite /dmain /d0 /d1 -exprD_nneg. 
+    - by rewrite -(lez_add2r eab 0 (ea - eab)) -addrA /= geeab_ea.
+    - by rewrite -(lez_add2r eb 0 (eab - eb)) -addrA /= geeb_eab.
+    - by congr; rewrite -addzA addKz.
 
-  (* Main Result *)
+  (* Main Proof *)
   move: (euclideU dmain qmain (q0 %/ d1) rmain (q0 %% d1 * d0 + r0)).
-   have <-: x = q0 %/ d1 * dmain + (q0 %% d1 * d0 + r0).
-    by rewrite eq_dmain_d0d1 (mulzC d0 d1) -(mulzA (q0 %/ d1) _ _) addzA -(mulzDl _ _ d0) -div1.
-   rewrite -divmain /=.  
-   have ->: 0 <= rmain && rmain < `| dmain |.
-    split; [by apply /modn_ge0 /ge0_x | move => ge0_rmain].
-     by rewrite ltz_mod neq_ltz; right; apply expr_gt0.
-   have ->:  0 <= q0 %% d1 * d0 + r0 && q0 %% d1 * d0 + r0 < `| dmain |.
-    split; [by apply /addz_ge0 /modn_ge0 /ge0_x /mulr_ge0 /ltzW /gt0_d0 /modz_ge0 /neq_ltz; right | move=> ?].
-     rewrite ger0_norm eq_dmain_d0d1; first by apply /mulr_ge0; apply /ltzW.
-     apply (ltr_le_trans ((d1 - 1) * d0 + d0) (q0 %% d1 * d0 + r0) (d0 * d1)). 
-      apply (ler_lt_add (q0 %% d1 * d0) ((d1 - 1) * d0) r0 d0); last by apply ltz_pmod.
-       apply /(ler_pmul (q0 %% d1) (d1 - 1) d0 d0) /lezz; 
-             [by apply /modz_ge0 /neq_ltz; right | by apply ltzW |].
-       by apply (lez_add2l 1 _ _); rewrite lez_add1r -addzCA /= ltz_pmod.
-       by rewrite mulzDl mulNr /= -addzA addNz /= mulzC; apply lezz.
+  + have <-: x = q0 %/ d1 * dmain + (q0 %% d1 * d0 + r0).
+    - by rewrite eq_dmain_d0d1 (mulzC d0 d1) -(mulzA (q0 %/ d1)) addzA -(mulzDl _ _ d0) -div1.
+  rewrite -divmain /=.  
+  + have -> /=: 0 <= rmain && rmain < `| dmain |.
+    - split; [by apply /modn_ge0 /ge0_x | move => ge0_rmain].
+      * by rewrite ltz_mod neq_ltz; right; apply expr_gt0.
+  + have -> /=:  0 <= q0 %% d1 * d0 + r0 && q0 %% d1 * d0 + r0 < `| dmain |.
+    - split; 1: by apply /addz_ge0 /modn_ge0 /ge0_x /mulr_ge0 /ltzW /gt0_d0 /modz_ge0 /neq_ltz; right.
+      * rewrite ger0_norm eq_dmain_d0d1; first by rewrite mulr_ge0 ltzW.
+        rewrite (ltr_le_trans ((d1 - 1) * d0 + d0) _ (d0 * d1)) 3://.
+        + apply (ler_lt_add _ _ r0 d0); last by apply ltz_pmod.
+          apply /(ler_pmul _ _ d0 d0) /lezz; [by apply /modz_ge0 /neq_ltz; right | by apply ltzW |].
+          by apply (lez_add2l 1); rewrite lez_add1r -addzCA /= ltz_pmod.
+        + by rewrite mulzDl mulNr /= -addzA addNz /= mulzC; apply lezz.
    by case.
 qed.
-
-pragma Goals:printall.
-(*
-lemma reduced_topolyd_id_Rq (x : Rq) : reduced (to_polyd (fun (i : int) => x.[i])).
-proof.
-  rewrite reducedP deg_leP 1:ge0_n => i gen_i; rewrite /Rq.BasePoly."_.[_]" to_polydK 2:/=.
-   split; [| exists (deg (crepr x) - 1)] => [c lt0_c | c gtdeg1_c] /=.
-    by apply Rq.BasePoly.lt0_coeff.
-    by apply Rq.BasePoly.gedeg_coeff; rewrite -lez_add1r addzC /= in gtdeg1_c.
-   by rewrite Rq.BasePoly.gedeg_coeff 1:(lez_trans n) // /crepr deg_reduce.
-qed.
-
-lemma reduced_topolyd_id_Rp (x : Rp) : reduced (to_polyd (fun (i : int) => x.[i])).
-proof.
-  rewrite reducedP deg_leP 1:ge0_n => i gen_i; rewrite /Rp.BasePoly."_.[_]" to_polydK 2:/=.
-   split; [| exists (deg (crepr x) - 1)] => [c lt0_c | c gtdeg1_c] /=.
-    by apply Rp.BasePoly.lt0_coeff.
-    by apply Rp.BasePoly.gedeg_coeff; rewrite -lez_add1r addzC /= in gtdeg1_c.
-   by rewrite Rp.BasePoly.gedeg_coeff 1:(lez_trans n) // /crepr deg_reduce.
-qed.
-
-lemma reduced_topolyd_id_Rppq (x : Rppq) : reduced (to_polyd (fun (i : int) => x.[i])).
-proof.
-  rewrite reducedP deg_leP 1:ge0_n => i gen_i; rewrite /Rppq.BasePoly."_.[_]" to_polydK 2:/=.
-   split; [| exists (deg (crepr x) - 1)] => [c lt0_c | c gtdeg1_c] /=.
-    by apply Rppq.BasePoly.lt0_coeff.
-    by apply Rppq.BasePoly.gedeg_coeff; rewrite -lez_add1r addzC /= in gtdeg1_c.
-   by rewrite Rppq.BasePoly.gedeg_coeff 1:(lez_trans n) // /crepr deg_reduce.
-qed.
-
-lemma reduced_topolyd_id_R2t (x : R2t) : reduced (to_polyd (fun (i : int) => x.[i])).
-proof.
-  rewrite reducedP deg_leP 1:ge0_n => i gen_i; rewrite /R2t.BasePoly."_.[_]" to_polydK 2:/=.
-   split; [| exists (deg (crepr x) - 1)] => [c lt0_c | c gtdeg1_c] /=.
-    by apply R2t.BasePoly.lt0_coeff.
-    by apply R2t.BasePoly.gedeg_coeff; rewrite -lez_add1r addzC /= in gtdeg1_c.
-   by rewrite R2t.BasePoly.gedeg_coeff 1:(lez_trans n) // /crepr deg_reduce.
-qed.
-
-lemma reduced_topolyd_id_R2 (x : R2) : reduced (to_polyd (fun (i : int) => x.[i])).
-proof.
-  rewrite reducedP deg_leP 1:ge0_n => i gen_i; rewrite /R2.BasePoly."_.[_]" to_polydK 2:/=.
-   split; [| exists (deg (crepr x) - 1)] => [c lt0_c | c gtdeg1_c] /=.
-    by apply R2.BasePoly.lt0_coeff.
-    by apply R2.BasePoly.gedeg_coeff; rewrite -lez_add1r addzC /= in gtdeg1_c.
-   by rewrite R2.BasePoly.gedeg_coeff 1:(lez_trans n) // /crepr deg_reduce.
-qed.
-*)
 
 lemma ispoly_fun_scale_Zq_Zp (x : Rq) : ispoly (fun i => scale_Zq_Zp x.[i]).
 proof.
   split; [| exists (deg (crepr x) - 1)] => [c lt0_c | c gtdeg1_c] /=;
          rewrite /scale_Zq_Zp /scale /shr; have ->: asint x.[c] = 0; 
          2, 4: by rewrite div0z -Zp.zeroE asintK. 
-   by rewrite lt0_coeff 2:-Zq.zeroE.
-   by rewrite gedeg_coeff 2:-Zq.zeroE; rewrite -lez_add1r addzC /= in gtdeg1_c.
+  + by rewrite lt0_coeff 2:-Zq.zeroE.
+  + by rewrite gedeg_coeff 2:-Zq.zeroE; rewrite -lez_add1r addzC /= in gtdeg1_c.
 qed.
 
 lemma ispoly_fun_scale_Zp_Zppq (x : Rp) : ispoly (fun i => scale_Zp_Zppq x.[i]).
@@ -543,8 +491,8 @@ proof.
   split; [| exists (deg (crepr x) - 1)] => [c lt0_c | c gtdeg1_c] /=;
          rewrite /scale_Zp_Zppq /scale /shr; have ->: asint x.[c] = 0; 
          2, 4: by rewrite div0z -Zppq.zeroE asintK. 
-   by rewrite lt0_coeff 2:-Zp.zeroE.
-   by rewrite gedeg_coeff 2:-Zp.zeroE; rewrite -lez_add1r addzC /= in gtdeg1_c.
+  + by rewrite lt0_coeff 2:-Zp.zeroE.
+  + by rewrite gedeg_coeff 2:-Zp.zeroE; rewrite -lez_add1r addzC /= in gtdeg1_c.
 qed.
 
 lemma ispoly_fun_scale_Zp_Zp (x : Rp) : ispoly (fun i => scale_Zp_Zp x.[i]).
@@ -552,24 +500,24 @@ proof.
   split; [| exists (deg (crepr x) - 1)] => [c lt0_c | c gtdeg1_c] /=;
          rewrite /scale_Zp_Zp /scale /shr; have ->: asint x.[c] = 0; 
          2, 4: by rewrite div0z -Zp.zeroE asintK. 
-   by rewrite lt0_coeff 2:-Zp.zeroE.
-   by rewrite gedeg_coeff 2:-Zp.zeroE; rewrite -lez_add1r addzC /= in gtdeg1_c.
+  + by rewrite lt0_coeff 2:-Zp.zeroE.
+  + by rewrite gedeg_coeff 2:-Zp.zeroE; rewrite -lez_add1r addzC /= in gtdeg1_c.
 qed.
 
 lemma reduced_topolyd_scale_Zq_Zp (x : Rq): 
       reduced (to_polyd (fun i => scale_Zq_Zp x.[i])).
 proof.
   rewrite reducedP deg_leP 1:ge0_n => i gen_i; rewrite coeffE 2:/= 1:ispoly_fun_scale_Zq_Zp.
-   rewrite /scale_Zq_Zp /scale /shr; have ->: asint x.[i] = 0; 2: by rewrite div0z -Zp.zeroE asintK.
-   by rewrite -Zq.zeroE Zq.asint_eq gedeg_coeff 1:(lez_trans n) /crepr 1:deg_reduce.
+  rewrite /scale_Zq_Zp /scale /shr; have ->: asint x.[i] = 0; 2: by rewrite div0z -Zp.zeroE asintK.
+  by rewrite -Zq.zeroE Zq.asint_eq gedeg_coeff 1:(lez_trans n) /crepr 1:deg_reduce.
 qed.
 
 lemma reduced_topolyd_scale_Zp_Zppq (x : Rp): 
       reduced (to_polyd (fun i => scale_Zp_Zppq x.[i])).
 proof.
   rewrite reducedP deg_leP 1:ge0_n => i gen_i; rewrite coeffE 2:/= 1:ispoly_fun_scale_Zp_Zppq.
-   rewrite /scale_Zp_Zppq /scale /shr; have ->: asint x.[i] = 0; 2: by rewrite div0z -Zppq.zeroE asintK.
-   by rewrite -Zp.zeroE Zp.asint_eq gedeg_coeff 1:(lez_trans n) /crepr 1:deg_reduce.
+  rewrite /scale_Zp_Zppq /scale /shr; have ->: asint x.[i] = 0; 2: by rewrite div0z -Zppq.zeroE asintK.
+  by rewrite -Zp.zeroE Zp.asint_eq gedeg_coeff 1:(lez_trans n) /crepr 1:deg_reduce.
 qed.
 
 lemma scale_comp_Zp_Zppq_Z2t (x : Zp):
@@ -577,19 +525,18 @@ lemma scale_comp_Zp_Zppq_Z2t (x : Zp):
 proof. 
   rewrite /scale_Zp_Z2t /scale_Zppq_Z2t /scale_Zp_Zppq Zppq.inzmodK -Z2t.eq_inzmod; do 2! congr.
   have ge2epeq_ep: 2 * ep - eq <= ep.
-   by rewrite mulzC -intmulz mulr2z -(lez_add2l (-ep) _ _) -addzA addzCA addzA /= subz_le0 (lez_trans (ep + 1) ep eq);
-              [rewrite (lez_addl _ 1) | apply geep1_eq ].
+  + by rewrite mulzC -intmulz mulr2z -(lez_add2l (-ep)) -addzA addzCA addzA /= 
+               subz_le0 (lez_trans (ep + 1)); [rewrite (lez_addl _ 1) | apply geep1_eq].
   rewrite (modz_small (scale (Zp.asint x) ep (2 * ep - eq)) (p * p %/ q)); first split; 
-          rewrite /scale /shr; last move => ?.
-   by apply /divz_ge0 /Zp.ge0_asint /expr_gt0.
-   rewrite ger0_norm; first by apply /(lez_trans 2 0 (p * p %/ q)) /ge2_ppq. 
-   apply ltz_divLR; first by apply expr_gt0. 
-    rewrite -eq_22epeq_ppq -exprD_nneg; first by rewrite subz_ge0 (lez_trans (eq + 1) eq (2 * ep)); 
+          rewrite /scale /shr => [| ?].
+  + by apply /divz_ge0 /Zp.ge0_asint /expr_gt0.
+  + rewrite ger0_norm; first by apply /(lez_trans 2) /ge2_ppq. 
+    apply ltz_divLR; first by apply expr_gt0. 
+    rewrite -eq_22epeq_ppq -exprD_nneg; first by rewrite subz_ge0 (lez_trans (eq + 1)); 
             [rewrite (lez_addl _ 1) | apply geeq1_2ep].
-     by rewrite subz_ge0.
-     by rewrite mulzC -intmulz mulr2z addzCA /=; apply /(ltr_le_trans p (Zp.asint x) p) /lezz /Zp.gtp_asint.
-  apply /(scale_comp (Zp.asint x) ep (2 * ep - eq) (et + 1)) /ge2epeq_ep; 
-        [apply Zp.ge0_asint | by apply /(lez_trans 1 0 (et + 1)) /ge1_et1 |].
+    - by rewrite subz_ge0.
+    - by rewrite mulzC -intmulz mulr2z addzCA /= (ltr_le_trans p) 2:lezz Zp.gtp_asint.
+  apply /(scale_comp (Zp.asint x)) /ge2epeq_ep; [apply Zp.ge0_asint | by apply /(lez_trans 1) /ge1_et1 |].
   rewrite mulzC -intmulz mulr2z -(lez_add2r (-(et + 1))) /= -(lez_add2l (eq)) addzAC addzCA /= 
           -(lez_add2r (-ep)) addzAC (subrK ep (-ep)) opprD addzA.
   by apply sec_assumption.
@@ -599,7 +546,8 @@ lemma scale_comp_Rp_Rppq_R2t (x : Rp):
       scale_Rp_R2t x = scale_Rppq_R2t (scale_Rp_Rppq x).
 proof.
   rewrite /scale_Rp_R2t /scale_Rppq_R2t /scale_Rp_Rppq; do 2! congr; rewrite fun_ext /(==) => i. 
-  by rewrite piK 1:reduced_topolyd_scale_Zp_Zppq coeffE 1:ispoly_fun_scale_Zp_Zppq /= scale_comp_Zp_Zppq_Z2t.
+  by rewrite piK 1:reduced_topolyd_scale_Zp_Zppq coeffE 
+             1:ispoly_fun_scale_Zp_Zppq /= scale_comp_Zp_Zppq_Z2t.
 qed.
 
 lemma scale_id (x ea eb : int) : ea = eb => scale x ea eb = x.
@@ -614,24 +562,27 @@ proof.
   rewrite poly_eqP => c ge0_c; rewrite coeffE /= 1:ispoly_fun_scale_Zp_Zp &(scale_Zp_Zp_id). 
 qed.
 
-lemma mod_p_Zq_h1_id : Zp.asint (Zp.inzmod (2 ^ (eq - ep - 1))) = Zq.asint (Zq.inzmod (2 ^ (eq - ep - 1))).
+lemma mod_p_Zq_h1_id : 
+      Zp.asint (Zp.inzmod (2 ^ (eq - ep - 1))) 
+      = 
+      Zq.asint (Zq.inzmod (2 ^ (eq - ep - 1))).
 proof.
   rewrite Zp.inzmodK Zq.inzmodK ?modz_small /p /q //; first 2 split => [| ?];
           [by apply expr_ge0 |
-           rewrite ger0_norm ?expr_ge0 // ltz_def ler_weexpn2l // ?andbT; 
-           first split => [| ?]; 1: rewrite -(lez_add2r 1) /= -(lez_add2r ep) -addzA addzC /= geep1_eq].
-   by rewrite -(lez_add2r ep) addzAC addzC -addzA /= addzC -mulr2z intmulz mulzC (lez_trans (eq + 1)) // 
+           rewrite ger0_norm ?expr_ge0 // ltz_def ler_weexpn2l // ?andbT; first split => [| ?]; 
+           1: rewrite -(lez_add2r 1) /= -(lez_add2r ep) -addzA addzC /= geep1_eq].
+  + by rewrite -(lez_add2r ep) addzAC addzC -addzA addzC -mulr2z intmulz mulzC (lez_trans (eq + 1)) 
            1:-(lez_add2r 1) /= 1:lez_addl // geeq1_2ep.
-   move: (ieexprIn 2 _ _ ep (eq - ep - 1) (lez_trans 2 0 ep _ ge2_ep) _) => //.
-    by rewrite -(lez_add2r 1) /= -(lez_add2r ep) -addzA /= addzC geep1_eq.   
-    move /(contra); apply; rewrite neq_ltz; right.
-     by rewrite -(ltz_add2l ep) /= addzCA addzC addzA addzC 2!addzA addzC /= -mulr2z intmulz mulzC 
+  + move: (ieexprIn 2 _ _ ep (eq - ep - 1) (lez_trans 2 0 ep _ ge2_ep) _) => //.
+    - by rewrite -(lez_add2r 1) /= -(lez_add2r ep) -addzA /= addzC geep1_eq.   
+    move /contra; apply; rewrite neq_ltz; right.
+    by rewrite -(ltz_add2l ep) /= addzCA addzC addzA addzC 2!addzA addzC /= -mulr2z intmulz mulzC 
                 (ltr_le_trans (eq + 1)) 1: ltz_add2l 2: geeq1_2ep.
-    by rewrite -(lez_add2l (-eq)) 2!addzA /= -(lez_add2l ep) addzA /= (lez_trans 2) // ge2_ep.
-   move: (ieexprIn 2 _ _ eq (eq - ep - 1) (lez_trans 3 0 eq _ ge3_eq) _) => //.
-    by rewrite -(lez_add2r 1) /= -(lez_add2r ep) -addzA /= addzC geep1_eq.
+  + by rewrite -(lez_add2l (-eq)) 2!addzA /= -(lez_add2l ep) addzA /= (lez_trans 2) // ge2_ep.
+  + move: (ieexprIn 2 _ _ eq (eq - ep - 1) (lez_trans 3 0 eq _ ge3_eq) _) => //.
+    - by rewrite -(lez_add2r 1) /= -(lez_add2r ep) -addzA /= addzC geep1_eq.
     move /(contra); apply; rewrite neq_ltz; right.
-     by rewrite -(ltz_add2l (-eq)) 2!addzA /= -(ltz_add2l ep) addzA /= (ltr_le_trans 2) 2:ge2_ep.
+   by rewrite -(ltz_add2l (-eq)) 2!addzA /= -(ltz_add2l ep) addzA /= (ltr_le_trans 2) 2:ge2_ep.
 qed.
 
 lemma eq_scaleZqZp_modZppq_scaleZpZppq (x : Zq) (m : Z2) :
@@ -639,30 +590,38 @@ lemma eq_scaleZqZp_modZppq_scaleZpZppq (x : Zq) (m : Z2) :
       =
       scale_Zp_Zppq ((Zp.inzmod (Zq.asint x)) + Zp.inzmod (shl (Z2.asint m) (ep - 1))).
 proof.
-  rewrite /scale_Zq_Zp /scale_Zp_Zppq /scale /shr /shl !Zp.inzmodK !modzDm. 
-  rewrite {2}(mulzC 2) -(intmulz ep) mulr2z !opprD !addzA /= (addzC _ eq).
-  have ge0_eqep: 0 <= eq - ep; 1: by apply /(lez_trans 1) /(lez_add2l ep); 2: rewrite addzCA /= geep1_eq.
-  have leep_eq_ep: eq - ep <= ep; 1: by rewrite -(lez_add2r ep) -addzA /= -mulr2z intmulz mulzC (lez_trans (eq + 1)) 2:geeq1_2ep lez_addl.
-  have ge0_2epeq: 0 <= 2 * ep - eq; 1: by rewrite -(lez_add2r eq) -addzA /= (lez_trans (eq + 1)) 2:geeq1_2ep lez_addl.
-  have leep_2epeq: 2 * ep - eq <= ep; first rewrite mulzC -intmulz mulr2z -(lez_add2l (-ep)) 2!addzA /=;
+  rewrite /scale_Zq_Zp /scale_Zp_Zppq /scale /shr /shl !Zp.inzmodK !modzDm 
+          {2}(mulzC 2) -(intmulz ep) mulr2z !opprD !addzA /= (addzC _ eq).
+  have ge0_eqep: 0 <= eq - ep; 1: by apply /(lez_trans 1) /(lez_add2l ep); 
+       2: rewrite addzCA /= geep1_eq.
+  have leep_eq_ep: eq - ep <= ep; 1: by rewrite -(lez_add2r ep) -addzA /= -mulr2z intmulz mulzC 
+                                                 (lez_trans (eq + 1)) 2:geeq1_2ep lez_addl.
+  have ge0_2epeq: 0 <= 2 * ep - eq; 1: by rewrite -(lez_add2r eq) -addzA /= (lez_trans (eq + 1)) 
+                                                  2:geeq1_2ep lez_addl.
+  have leep_2epeq: 2 * ep - eq <= ep; first rewrite mulzC -intmulz mulr2z -(lez_add2l (-ep)) 2!addzA;
        move: (oppz_le0 (eq - ep)); rewrite ge0_eqep opprD /= addzC => -> //.
-  case: (Z2.asint m = 0) => [-> /= | /neq_ltz]; last case => [lt0_m | gt0_m]; move: (Z2.Sub.valP m) => [ge0_m lt2_m].
-   by rewrite -Zppq.eq_inzmod -eq_22epeq_ppq /p /q (modz_pow2_div); 
-              [apply Zq.ge0_asint | split | rewrite opprD (addzC _ ep) addzA -mulr2z intmulz (mulzC ep) modz_mod modz_dvd_pow //].
-   by rewrite -/Z2.asint lezNgt in ge0_m.
-   have -> /= {gt0_m ge0_m lt2_m}: Z2.asint m = 1; first rewrite eqz_leq; split. 
-    by rewrite -/Z2.asint -lez_add1r -(lez_add2l (-1)) /= in lt2_m.
-    by rewrite -lez_add1r in gt0_m.
-   rewrite -Zppq.eq_inzmod -eq_22epeq_ppq /p modz_dvd_pow; 1: by split.
-   rewrite modz_pow2_div; [by apply /addz_ge0 /expr_ge0; 1: apply Zq.ge0_asint | by split |]. 
-   rewrite opprD (addzC (-eq)) addzA /= -mulr2z intmulz (mulzC ep) modz_mod divzDr 1: dvdz_exp2l. 
-    by split => [| ?]; last rewrite -(lez_add2r 1) -(lez_add2l ep) -!addzA /= !addzA addzAC addzC !addzA /= -mulr2z intmulz mulzC geeq1_2ep.
-   have -> //: 2 ^ (ep - 1) %/ 2 ^ (eq - ep) = 2 ^ (2 * ep - eq - 1).
-    rewrite eq_sym eqz_div 2:dvdz_exp2l 3: -exprD_nneg; last congr; rewrite //#. 
-     by rewrite neq_ltz; right; apply expr_gt0.
-     by split => [| ?]; last rewrite -(lez_add2r 1) -(lez_add2l ep) -!addzA /= !addzA addzAC addzC !addzA /= -mulr2z intmulz mulzC geeq1_2ep.
-     by rewrite -(lez_add2r 1) -addzA /= -(lez_add2r eq) -addzA addzC /= geeq1_2ep.
-     by apply /(lez_trans 1) /(lez_add2l ep); 2: rewrite addzCA /= geep1_eq.
+  case: (Z2.asint m = 0) => [-> /= | /neq_ltz]; last case => [lt0_m | gt0_m]; 
+        move: (Z2.Sub.valP m) => [ge0_m lt2_m].
+  + by rewrite -Zppq.eq_inzmod -eq_22epeq_ppq /p /q (modz_pow2_div); 
+               [apply Zq.ge0_asint | 
+                split | 
+                rewrite opprD (addzC _ ep) addzA -mulr2z intmulz (mulzC ep) modz_mod modz_dvd_pow].
+  + by rewrite -/Z2.asint lezNgt in ge0_m.
+  have -> /= {gt0_m ge0_m lt2_m}: Z2.asint m = 1; first rewrite eqz_leq; split. 
+  + by rewrite -/Z2.asint -lez_add1r -(lez_add2l (-1)) /= in lt2_m.
+  + by rewrite -lez_add1r in gt0_m.
+  rewrite -Zppq.eq_inzmod -eq_22epeq_ppq /p modz_dvd_pow; 1: by split.
+  rewrite modz_pow2_div; [by apply /addz_ge0 /expr_ge0; 1: apply Zq.ge0_asint | by split |]. 
+  rewrite opprD (addzC (-eq)) addzA /= -mulr2z intmulz (mulzC ep) modz_mod divzDr 1: dvdz_exp2l. 
+  + by split => [| ?]; last rewrite -(lez_add2r 1) -(lez_add2l ep) -!addzA /= !addzA addzAC 
+                                     addzC !addzA /= -mulr2z intmulz mulzC geeq1_2ep.
+  have -> //: 2 ^ (ep - 1) %/ 2 ^ (eq - ep) = 2 ^ (2 * ep - eq - 1).
+  rewrite eq_sym eqz_div 2:dvdz_exp2l 3: -exprD_nneg; last congr; rewrite //#. 
+  + by rewrite neq_ltz; right; apply expr_gt0.
+  + by split => [| ?]; last rewrite -(lez_add2r 1) -(lez_add2l ep) -!addzA /= !addzA 
+                                     addzAC addzC !addzA /= -mulr2z intmulz mulzC geeq1_2ep.
+  + by rewrite -(lez_add2r 1) -addzA /= -(lez_add2r eq) -addzA addzC /= geeq1_2ep.
+  + by apply /(lez_trans 1) /(lez_add2l ep); 2: rewrite addzCA /= geep1_eq.
 qed. 
 
 lemma eq_scaleRqRp_modRppq_scale_Rppq (x : Rq) (m : R2) :
@@ -671,7 +630,8 @@ lemma eq_scaleRqRp_modRppq_scale_Rppq (x : Rq) (m : R2) :
       scale_Rp_Rppq ((mod_p_Rq x) + (shl_enc m (ep - 1))).
 proof.
   (* Re-occuring Goals *)
-  have ispoly_shlm_pp2q: ispoly (fun (i0 : int) => (Zp.inzmod (shl (Z2.asint m.[i0]) (2 * ep - eq - 1)))).
+  have ispoly_shlm_pp2q: 
+       ispoly (fun (i0 : int) => (Zp.inzmod (shl (Z2.asint m.[i0]) (2 * ep - eq - 1)))).
   + split; [| exists (deg (crepr m) - 1)] => [c lt0_c | c gtdeg1_c] /=; have ->: asint m.[c] = 0;
            2, 4: rewrite /shl mul0r //; 1, 2: rewrite -Z2.zeroE asint_eq. 
     - by apply R2.BasePoly.lt0_coeff. 
@@ -698,7 +658,8 @@ proof.
   + have ->: asint m.[j] = 0; 2: rewrite /shl mul0r //.
     - by rewrite -Z2.zeroE asint_eq gedeg_coeff 1:(lez_trans n) 1:&(R2.deg_crepr).
   + by apply ispoly_xmodp.
-  + by have ->: asint x.[j] = 0; rewrite // -Zq.zeroE asint_eq gedeg_coeff // (lez_trans n) ?deg_crepr.
+  + by have ->: asint x.[j] = 0; rewrite // -Zq.zeroE asint_eq gedeg_coeff // 
+                                         (lez_trans n) ?deg_crepr.
   + by apply ispoly_shlm_p2.
   + have ->: asint m.[j] = 0; 2: rewrite /shl mul0r //.
     - by rewrite -Z2.zeroE asint_eq gedeg_coeff 1:(lez_trans n) 1:&(R2.deg_crepr).
