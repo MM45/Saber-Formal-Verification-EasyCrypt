@@ -131,12 +131,21 @@ clone import PolyReduce as Rq with
     op BasePoly.Coeff.([-])  <- Zq.([-]),
     op BasePoly.Coeff.( * )  <- Zq.( * ),
     op BasePoly.Coeff.invr   <- Zq.inv,
-    op BasePoly.Coeff.intmul <- Zq.ZModpRing.intmul,
-    op BasePoly.Coeff.ofint  <- Zq.ZModpRing.ofint,
-    op BasePoly.Coeff.exp    <- Zq.ZModpRing.exp,
     type polyXnD1            <- Rq,
     op n                     <- n
-  proof gt0_n by rewrite -lez_add1r /= ge1_n.
+  proof gt0_n                    by rewrite -lez_add1r /= ge1_n
+  proof BasePoly.Coeff.addrA     by exact Zq.ZModpRing.addrA
+  proof BasePoly.Coeff.addrC     by exact Zq.ZModpRing.addrC
+  proof BasePoly.Coeff.add0r     by exact Zq.ZModpRing.add0r
+  proof BasePoly.Coeff.addNr     by exact Zq.ZModpRing.addNr
+  proof BasePoly.Coeff.oner_neq0 by exact Zq.ZModpRing.oner_neq0
+  proof BasePoly.Coeff.mulrA     by exact Zq.ZModpRing.mulrA
+  proof BasePoly.Coeff.mulrC     by exact Zq.ZModpRing.mulrC
+  proof BasePoly.Coeff.mul1r     by exact Zq.ZModpRing.mul1r
+  proof BasePoly.Coeff.mulrDl    by exact Zq.ZModpRing.mulrDl
+  proof BasePoly.Coeff.mulVr     by exact Zq.ZModpRing.mulVr
+  proof BasePoly.Coeff.unitP     by exact Zq.ZModpRing.unitP
+  proof BasePoly.Coeff.unitout   by exact Zq.ZModpRing.unitout.
 
 clone Matrix as Mat_Rq with 
     type R <- Rq,
@@ -167,7 +176,7 @@ clone import ZModRing as Zp with
   proof ge2_p by apply (lez_trans 4 _ _ _ ge4_p).
 
 clone import PolyReduce as Rp with
-    type BasePoly.coeff <- Zp,
+    type BasePoly.coeff      <- Zp,
     pred BasePoly.Coeff.unit <- Zp.unit,
     op BasePoly.Coeff.zeror  <- Zp.zero,
     op BasePoly.Coeff.oner   <- Zp.one,
@@ -175,12 +184,21 @@ clone import PolyReduce as Rp with
     op BasePoly.Coeff.([-])  <- Zp.([-]),
     op BasePoly.Coeff.( * )  <- Zp.( * ),
     op BasePoly.Coeff.invr   <- Zp.inv,
-    op BasePoly.Coeff.intmul <- Zp.ZModpRing.intmul,
-    op BasePoly.Coeff.ofint  <- Zp.ZModpRing.ofint,
-    op BasePoly.Coeff.exp    <- Zp.ZModpRing.exp,
-    type polyXnD1 <- Rp,
-    op n <- n
-  proof gt0_n by rewrite -lez_add1r /= ge1_n.
+    type polyXnD1            <- Rp,
+    op n                     <- n
+  proof gt0_n                    by rewrite -lez_add1r /= ge1_n
+  proof BasePoly.Coeff.addrA     by exact Zp.ZModpRing.addrA
+  proof BasePoly.Coeff.addrC     by exact Zp.ZModpRing.addrC
+  proof BasePoly.Coeff.add0r     by exact Zp.ZModpRing.add0r
+  proof BasePoly.Coeff.addNr     by exact Zp.ZModpRing.addNr
+  proof BasePoly.Coeff.oner_neq0 by exact Zp.ZModpRing.oner_neq0
+  proof BasePoly.Coeff.mulrA     by exact Zp.ZModpRing.mulrA
+  proof BasePoly.Coeff.mulrC     by exact Zp.ZModpRing.mulrC
+  proof BasePoly.Coeff.mul1r     by exact Zp.ZModpRing.mul1r
+  proof BasePoly.Coeff.mulrDl    by exact Zp.ZModpRing.mulrDl
+  proof BasePoly.Coeff.mulVr     by exact Zp.ZModpRing.mulVr
+  proof BasePoly.Coeff.unitP     by exact Zp.ZModpRing.unitP
+  proof BasePoly.Coeff.unitout   by exact Zp.ZModpRing.unitout.
 
 clone Matrix as Mat_Rp with 
     type R <- Rp,
@@ -202,11 +220,11 @@ type Rppq.
 
 clone import ZModRing as Zppq with
     type zmod <- Zppq,
-    op p <- (p * p) %/ q
+    op p      <- (p * p) %/ q
   proof ge2_p by apply ge2_ppq.
 
 clone import PolyReduce as Rppq with
-    type BasePoly.coeff <- Zppq,
+    type BasePoly.coeff      <- Zppq,
     pred BasePoly.Coeff.unit <- Zppq.unit,
     op BasePoly.Coeff.zeror  <- Zppq.zero,
     op BasePoly.Coeff.oner   <- Zppq.one,
@@ -217,9 +235,22 @@ clone import PolyReduce as Rppq with
     op BasePoly.Coeff.intmul <- Zppq.ZModpRing.intmul,
     op BasePoly.Coeff.ofint  <- Zppq.ZModpRing.ofint,
     op BasePoly.Coeff.exp    <- Zppq.ZModpRing.exp,
-    type polyXnD1 <- Rppq,
-    op n <- n
-  proof gt0_n by rewrite -lez_add1r /= ge1_n.
+    type polyXnD1            <- Rppq,
+    op n                     <- n
+  proof gt0_n                    by rewrite -lez_add1r /= ge1_n
+  proof BasePoly.Coeff.addrA     by exact Zppq.ZModpRing.addrA
+  proof BasePoly.Coeff.addrC     by exact Zppq.ZModpRing.addrC
+  proof BasePoly.Coeff.add0r     by exact Zppq.ZModpRing.add0r
+  proof BasePoly.Coeff.addNr     by exact Zppq.ZModpRing.addNr
+  proof BasePoly.Coeff.oner_neq0 by exact Zppq.ZModpRing.oner_neq0
+  proof BasePoly.Coeff.mulrA     by exact Zppq.ZModpRing.mulrA
+  proof BasePoly.Coeff.mulrC     by exact Zppq.ZModpRing.mulrC
+  proof BasePoly.Coeff.mul1r     by exact Zppq.ZModpRing.mul1r
+  proof BasePoly.Coeff.mulrDl    by exact Zppq.ZModpRing.mulrDl
+  proof BasePoly.Coeff.mulVr     by exact Zppq.ZModpRing.mulVr
+  proof BasePoly.Coeff.unitP     by exact Zppq.ZModpRing.unitP
+  proof BasePoly.Coeff.unitout   by exact Zppq.ZModpRing.unitout.
+
 
 (* -- R2t = Z/2tZ [X] / (X^n + 1)  -- *)
 type Z2t.
@@ -231,7 +262,7 @@ clone import ZModRing as Z2t with
   proof ge2_p by apply ge2_2t.
 
 clone import PolyReduce as R2t with
-    type BasePoly.coeff <- Z2t,
+    type BasePoly.coeff      <- Z2t,
     pred BasePoly.Coeff.unit <- Z2t.unit,
     op BasePoly.Coeff.zeror  <- Z2t.zero,
     op BasePoly.Coeff.oner   <- Z2t.one,
@@ -242,9 +273,22 @@ clone import PolyReduce as R2t with
     op BasePoly.Coeff.intmul <- Z2t.ZModpRing.intmul,
     op BasePoly.Coeff.ofint  <- Z2t.ZModpRing.ofint,
     op BasePoly.Coeff.exp    <- Z2t.ZModpRing.exp,
-    type polyXnD1 <- R2t,
-    op n <- n
-  proof gt0_n by rewrite -lez_add1r /= ge1_n.
+    type polyXnD1            <- R2t,
+    op n                     <- n
+  proof gt0_n                    by rewrite -lez_add1r /= ge1_n
+  proof BasePoly.Coeff.addrA     by exact Z2t.ZModpRing.addrA
+  proof BasePoly.Coeff.addrC     by exact Z2t.ZModpRing.addrC
+  proof BasePoly.Coeff.add0r     by exact Z2t.ZModpRing.add0r
+  proof BasePoly.Coeff.addNr     by exact Z2t.ZModpRing.addNr
+  proof BasePoly.Coeff.oner_neq0 by exact Z2t.ZModpRing.oner_neq0
+  proof BasePoly.Coeff.mulrA     by exact Z2t.ZModpRing.mulrA
+  proof BasePoly.Coeff.mulrC     by exact Z2t.ZModpRing.mulrC
+  proof BasePoly.Coeff.mul1r     by exact Z2t.ZModpRing.mul1r
+  proof BasePoly.Coeff.mulrDl    by exact Z2t.ZModpRing.mulrDl
+  proof BasePoly.Coeff.mulVr     by exact Z2t.ZModpRing.mulVr
+  proof BasePoly.Coeff.unitP     by exact Z2t.ZModpRing.unitP
+  proof BasePoly.Coeff.unitout   by exact Z2t.ZModpRing.unitout.
+
 
 (* -- R2 = Z/2Z [X] / (X^n + 1) -- *)
 type Z2.
@@ -256,7 +300,7 @@ clone import ZModRing as Z2 with
   proof ge2_p by apply lezz.
 
 clone import PolyReduce as R2 with
-    type BasePoly.coeff <- Z2,
+    type BasePoly.coeff      <- Z2,
     pred BasePoly.Coeff.unit <- Z2.unit,
     op BasePoly.Coeff.zeror  <- Z2.zero,
     op BasePoly.Coeff.oner   <- Z2.one,
@@ -267,9 +311,22 @@ clone import PolyReduce as R2 with
     op BasePoly.Coeff.intmul <- Z2.ZModpRing.intmul,
     op BasePoly.Coeff.ofint  <- Z2.ZModpRing.ofint,
     op BasePoly.Coeff.exp    <- Z2.ZModpRing.exp,
-    type polyXnD1 <- R2,
-    op n <- n
-  proof gt0_n by rewrite -lez_add1r /= ge1_n.
+    type polyXnD1            <- R2,
+    op n                     <- n
+  proof gt0_n                    by rewrite -lez_add1r /= ge1_n
+  proof BasePoly.Coeff.addrA     by exact Z2.ZModpRing.addrA
+  proof BasePoly.Coeff.addrC     by exact Z2.ZModpRing.addrC
+  proof BasePoly.Coeff.add0r     by exact Z2.ZModpRing.add0r
+  proof BasePoly.Coeff.addNr     by exact Z2.ZModpRing.addNr
+  proof BasePoly.Coeff.oner_neq0 by exact Z2.ZModpRing.oner_neq0
+  proof BasePoly.Coeff.mulrA     by exact Z2.ZModpRing.mulrA
+  proof BasePoly.Coeff.mulrC     by exact Z2.ZModpRing.mulrC
+  proof BasePoly.Coeff.mul1r     by exact Z2.ZModpRing.mul1r
+  proof BasePoly.Coeff.mulrDl    by exact Z2.ZModpRing.mulrDl
+  proof BasePoly.Coeff.mulVr     by exact Z2.ZModpRing.mulVr
+  proof BasePoly.Coeff.unitP     by exact Z2.ZModpRing.unitP
+  proof BasePoly.Coeff.unitout   by exact Z2.ZModpRing.unitout.
+
 
 (* - Properties - *)
 (* Vector Distribution Has Same Properties as the Distribution of the Vector's Elements *)
@@ -329,11 +386,11 @@ op [lossless full uniform] dseed : seed distr.
 (* -- Operations -- *)
 op gen : seed -> Rq_mat.
 
-op shl (x : int, ex : int) : int = x * 2^ex.
+op shl (x : int, ex : int) : int = x * 2 ^ ex.
 op shl_enc (x : R2, ex : int) : Rp = pi (to_polyd (fun i => Zp.inzmod (shl (Z2.asint x.[i]) ex))).
 op shl_dec (x : R2t) : Rp = pi (to_polyd (fun i => Zp.inzmod (shl (Z2t.asint x.[i]) (ep - et - 1)))).
 
-op shr (x : int, ex : int) : int = x %/ 2^ex.
+op shr (x : int, ex : int) : int = x %/ 2 ^ ex.
 
 op scale (x : int, ea : int, eb : int) : int = shr x (ea - eb).
 
@@ -471,7 +528,8 @@ proof.
    by rewrite R2.BasePoly.gedeg_coeff 1:(lez_trans n) // /crepr deg_reduce.
 qed.
 *)
-lemma ispoly_topolyd_scale_Zq_Zp (x : Rq) : ispoly (fun i => scale_Zq_Zp x.[i]).
+
+lemma ispoly_fun_scale_Zq_Zp (x : Rq) : ispoly (fun i => scale_Zq_Zp x.[i]).
 proof.
   split; [| exists (deg (crepr x) - 1)] => [c lt0_c | c gtdeg1_c] /=;
          rewrite /scale_Zq_Zp /scale /shr; have ->: asint x.[c] = 0; 
@@ -480,7 +538,7 @@ proof.
    by rewrite gedeg_coeff 2:-Zq.zeroE; rewrite -lez_add1r addzC /= in gtdeg1_c.
 qed.
 
-lemma ispoly_topolyd_scale_Zp_Zppq (x : Rp) : ispoly (fun i => scale_Zp_Zppq x.[i]).
+lemma ispoly_fun_scale_Zp_Zppq (x : Rp) : ispoly (fun i => scale_Zp_Zppq x.[i]).
 proof.
   split; [| exists (deg (crepr x) - 1)] => [c lt0_c | c gtdeg1_c] /=;
          rewrite /scale_Zp_Zppq /scale /shr; have ->: asint x.[c] = 0; 
@@ -489,7 +547,7 @@ proof.
    by rewrite gedeg_coeff 2:-Zp.zeroE; rewrite -lez_add1r addzC /= in gtdeg1_c.
 qed.
 
-lemma ispoly_topolyd_scale_Zp_Zp (x : Rp) : ispoly (fun i => scale_Zp_Zp x.[i]).
+lemma ispoly_fun_scale_Zp_Zp (x : Rp) : ispoly (fun i => scale_Zp_Zp x.[i]).
 proof.
   split; [| exists (deg (crepr x) - 1)] => [c lt0_c | c gtdeg1_c] /=;
          rewrite /scale_Zp_Zp /scale /shr; have ->: asint x.[c] = 0; 
@@ -501,7 +559,7 @@ qed.
 lemma reduced_topolyd_scale_Zq_Zp (x : Rq): 
       reduced (to_polyd (fun i => scale_Zq_Zp x.[i])).
 proof.
-  rewrite reducedP deg_leP 1:ge0_n => i gen_i; rewrite coeffE 2:/= 1:ispoly_topolyd_scale_Zq_Zp.
+  rewrite reducedP deg_leP 1:ge0_n => i gen_i; rewrite coeffE 2:/= 1:ispoly_fun_scale_Zq_Zp.
    rewrite /scale_Zq_Zp /scale /shr; have ->: asint x.[i] = 0; 2: by rewrite div0z -Zp.zeroE asintK.
    by rewrite -Zq.zeroE Zq.asint_eq gedeg_coeff 1:(lez_trans n) /crepr 1:deg_reduce.
 qed.
@@ -509,7 +567,7 @@ qed.
 lemma reduced_topolyd_scale_Zp_Zppq (x : Rp): 
       reduced (to_polyd (fun i => scale_Zp_Zppq x.[i])).
 proof.
-  rewrite reducedP deg_leP 1:ge0_n => i gen_i; rewrite coeffE 2:/= 1:ispoly_topolyd_scale_Zp_Zppq.
+  rewrite reducedP deg_leP 1:ge0_n => i gen_i; rewrite coeffE 2:/= 1:ispoly_fun_scale_Zp_Zppq.
    rewrite /scale_Zp_Zppq /scale /shr; have ->: asint x.[i] = 0; 2: by rewrite div0z -Zppq.zeroE asintK.
    by rewrite -Zp.zeroE Zp.asint_eq gedeg_coeff 1:(lez_trans n) /crepr 1:deg_reduce.
 qed.
@@ -541,7 +599,7 @@ lemma scale_comp_Rp_Rppq_R2t (x : Rp):
       scale_Rp_R2t x = scale_Rppq_R2t (scale_Rp_Rppq x).
 proof.
   rewrite /scale_Rp_R2t /scale_Rppq_R2t /scale_Rp_Rppq; do 2! congr; rewrite fun_ext /(==) => i. 
-  by rewrite piK 1:reduced_topolyd_scale_Zp_Zppq coeffE 1:ispoly_topolyd_scale_Zp_Zppq /= scale_comp_Zp_Zppq_Z2t.
+  by rewrite piK 1:reduced_topolyd_scale_Zp_Zppq coeffE 1:ispoly_fun_scale_Zp_Zppq /= scale_comp_Zp_Zppq_Z2t.
 qed.
 
 lemma scale_id (x ea eb : int) : ea = eb => scale x ea eb = x.
@@ -553,7 +611,7 @@ proof. by rewrite /scale_Zp_Zp scale_id 2: Zp.asintK. qed.
 lemma scale_Rp_Rp_id (x : Rp) : scale_Rp_Rp x = x.
 proof. 
   rewrite /scale_Rp_Rp -{2}creprK; congr.
-  rewrite poly_eqP => c ge0_c; rewrite coeffE /= 1:ispoly_topolyd_scale_Zp_Zp &(scale_Zp_Zp_id). 
+  rewrite poly_eqP => c ge0_c; rewrite coeffE /= 1:ispoly_fun_scale_Zp_Zp &(scale_Zp_Zp_id). 
 qed.
 
 lemma mod_p_Zq_h1_id : Zp.asint (Zp.inzmod (2 ^ (eq - ep - 1))) = Zq.asint (Zq.inzmod (2 ^ (eq - ep - 1))).
@@ -612,29 +670,44 @@ lemma eq_scaleRqRp_modRppq_scale_Rppq (x : Rq) (m : R2) :
       =
       scale_Rp_Rppq ((mod_p_Rq x) + (shl_enc m (ep - 1))).
 proof.
+  (* Re-occuring Goals *)
+  have ispoly_shlm_pp2q: ispoly (fun (i0 : int) => (Zp.inzmod (shl (Z2.asint m.[i0]) (2 * ep - eq - 1)))).
+  + split; [| exists (deg (crepr m) - 1)] => [c lt0_c | c gtdeg1_c] /=; have ->: asint m.[c] = 0;
+           2, 4: rewrite /shl mul0r //; 1, 2: rewrite -Z2.zeroE asint_eq. 
+    - by apply R2.BasePoly.lt0_coeff. 
+    - by apply R2.BasePoly.gedeg_coeff; rewrite -lez_add1r addzC /= in gtdeg1_c. 
+
+  have ispoly_xmodp : ispoly (fun (i0 : int) => (Zp.inzmod (Zq.asint x.[i0]))).
+  + split; [| exists (deg (crepr x) - 1)] => [c lt0_c | c gtdeg1_c] /=; have ->: asint x.[c] = 0;
+           rewrite // -Zq.zeroE asint_eq.
+    - by apply Rq.BasePoly.lt0_coeff.
+    - by apply Rq.BasePoly.gedeg_coeff; rewrite -lez_add1r addzC /= in gtdeg1_c.
+
+  have ispoly_shlm_p2 : ispoly (fun (i0 : int) => (Zp.inzmod (shl (Z2.asint m.[i0]) (ep - 1)))).
+  + split; [| exists (deg (crepr m) - 1)] => [c lt0_c | c gtdeg1_c] /=; have ->: asint m.[c] = 0;
+           2, 4: rewrite /shl mul0r //; 1, 2: rewrite -Z2.zeroE asint_eq. 
+    - by apply R2.BasePoly.lt0_coeff. 
+    - by apply R2.BasePoly.gedeg_coeff; rewrite -lez_add1r addzC /= in gtdeg1_c.
+
+  (* Main Proof *)
   rewrite /mod_ppq_Rp /scale_Rp_Rppq; do 2! congr; rewrite fun_ext /(==) => i.
-  rewrite /mod_p_Rq /scale_Rq_Rp /shl_enc !addE !piK. admit. admit. 
- rewrite !polyDE !coeffE /=; first 4 admit.
-by apply eq_scaleZqZp_modZppq_scaleZpZppq.
-(*
-rewrite /"_.[_]" -creprK_Rp. rewrite -polyDE. rewrite coeffE. reducedD.
-  rewrite !polyDE /mod_p_Rq /scale_Rq_Rp /shl_enc /"_.[_]" !to_polydK //=; first 4 split => [c lt0_c |]; 
-          rewrite -/R2."_.[_]" -/Rq."_.[_]" //=; 2: exists (Rp.n - 1); 2: split => [| c gtn1_c]; 
-          2: by rewrite -lez_add1r. 
-   by rewrite lt0_coeff; 2: rewrite /scale_Zq_Zp /scale /shr Zq.zeroE.
-   by rewrite gedeg_coeff 1:(lez_trans Rq.n) 1:Rq.len_deg; 1: rewrite -lez_add1r in gtn1_c;
-              last rewrite /scale_Zq_Zp /scale /shr Zq.zeroE.
-   by rewrite lt0_coeff 2:Z2.zeroE.
-   by rewrite gedeg_coeff 1:(lez_trans Rq.n) 1:R2.len_deg; 1: rewrite -lez_add1r in gtn1_c;
-              last rewrite /scale_Zq_Zp /scale /shr Z2.zeroE.
-   by rewrite lt0_coeff 2:Zq.zeroE.
-   by rewrite gedeg_coeff 1:(lez_trans Rq.n) 1:Rq.len_deg; 1: rewrite -lez_add1r in gtn1_c;
-              last rewrite /scale_Zq_Zp /scale /shr Zq.zeroE.
-   by rewrite lt0_coeff 2:Z2.zeroE.
-   by rewrite gedeg_coeff 1:(lez_trans Rq.n) 1:R2.len_deg; 1: rewrite -lez_add1r in gtn1_c;
-              last rewrite /scale_Zq_Zp /scale /shr Z2.zeroE.
- by apply eq_scaleZqZp_modZppq_scaleZpZppq.
-*)
+  rewrite /mod_p_Rq /scale_Rq_Rp /shl_enc !addE !piK; 1, 2: apply Rp.reduceD;
+          2, 3, 4: rewrite reducedP deg_leP 1:ge0_n => j gen_j; 2, 3, 4: rewrite coeffE /=.
+  + by apply reduced_topolyd_scale_Zq_Zp.
+  + by apply ispoly_shlm_pp2q.
+  + have ->: asint m.[j] = 0; 2: rewrite /shl mul0r //.
+    - by rewrite -Z2.zeroE asint_eq gedeg_coeff 1:(lez_trans n) 1:&(R2.deg_crepr).
+  + by apply ispoly_xmodp.
+  + by have ->: asint x.[j] = 0; rewrite // -Zq.zeroE asint_eq gedeg_coeff // (lez_trans n) ?deg_crepr.
+  + by apply ispoly_shlm_p2.
+  + have ->: asint m.[j] = 0; 2: rewrite /shl mul0r //.
+    - by rewrite -Z2.zeroE asint_eq gedeg_coeff 1:(lez_trans n) 1:&(R2.deg_crepr).
+  rewrite !polyDE !coeffE.
+  + by apply ispoly_fun_scale_Zq_Zp.
+  + by apply ispoly_shlm_pp2q.
+  + by apply ispoly_xmodp.
+  + by apply ispoly_shlm_p2.
+  by apply eq_scaleZqZp_modZppq_scaleZpZppq.
 qed.  
 
 (* ----------------------------------- *)

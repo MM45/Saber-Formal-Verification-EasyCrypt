@@ -8,7 +8,9 @@ require import AllCore Distr DBool ZModP IntDiv StdOrder.
 (* --- Local --- *)
 require import SaberRqPreliminaries.
 (*---*) import Mat_Rq Mat_Rp.
-(*---*) import Rq Rp Rppq R2t R2.
+(*---*) import Rq Rp.
+(*---*) import Rq.BasePoly Rp.BasePoly.
+(*---*) import Rq.RingQuotient Rp.RingQuotient.
 (*---*) import Saber_PKE.
 
 (* ----------------------------------- *)
@@ -424,12 +426,12 @@ lemma Equivalence_SaberINDCPA_Game0 &m (A <: Adversary) :
       `| Pr[Game0(A).main() @ &m : res] - 1%r /2%r |.
 proof.
   have -> //: Pr[CPA(Saber_PKE_Scheme, A).main() @ &m : res] = Pr[Game0(A).main() @ &m : res].
-   byequiv => //.
-   proc; inline *. 
-   swap {1} 7 -6.
-   call (_ : true); auto; call (_: true); auto.
-   progress; first do! congr; by rewrite pk_enc_dec_inv.
-    by rewrite (eq_sym result_R0 bL).
+  + byequiv => //.
+  + proc; inline *. 
+  + swap {1} 7 -6.
+  + call (_ : true); auto; call (_: true); auto.
+  + progress; first do! congr; by rewrite pk_enc_dec_inv.
+    - by rewrite (eq_sym result_R0 bL).
 qed.
 
 (* Game0 <> Game1 ==> GMLWR *)
@@ -534,15 +536,15 @@ proof.
    swap {2} 7 -6.
    call (_ : true); wp.
    rnd (fun (x : Rp) => x + (shl_enc (m_decode (if u{1} then m1{1} else m0{1})) (2 * ep - eq - 1)))  
-       (fun (x : Rp) => x - (shl_enc (m_decode (if u{1} then m1{1} else m0{1})) (2 * ep - eq - 1))).
+       (fun (x : Rp) => x + (- (shl_enc (m_decode (if u{1} then m1{1} else m0{1})) (2 * ep - eq - 1)))).
    auto; call(_ : true); auto.
    progress.
     pose x := shl_enc (m_decode (if uL then result_R.`2 else result_R.`1)) (2 * ep - eq - 1).
-    by rewrite -Rp.PolyRing.addrA Rp.PolyRing.addNr Rp.PolyRing.addrC Rp.PolyRing.add0r.
+    by rewrite -Rp.RingQuotient.ComRing.addrA Rp.RingQuotient.ComRing.addNr Rp.RingQuotient.ComRing.addrC Rp.RingQuotient.ComRing.add0r.
     pose x := shl_enc (m_decode (if uL then result_R.`2 else result_R.`1)) (2 * ep - eq - 1).
-    have xx_0 : forall (x : Rp), x - x = Rp.poly0.
-     by move => x0; rewrite -(Rp.PolyRing.addrN x0).
-    by rewrite -Rp.PolyRing.addrA xx_0 Rp.PolyRing.addrC Rp.PolyRing.add0r.
+    have xx_0 : forall (x : Rp), x + (- x) = Rp.RingQuotient.zeror.
+     by move => x0; rewrite -(Rp.RingQuotient.ComRing.addrN x0).
+    by rewrite -Rp.RingQuotient.ComRing.addrA (xx_0 x) Rp.RingQuotient.ComRing.addrC Rp.RingQuotient.ComRing.add0r.
     by rewrite scale_Rp_Rp_id H7.  
 qed.
 

@@ -200,8 +200,13 @@ qed.
 lemma creprK p : pi (crepr p) = p.
 proof.
 rewrite /crepr; have ->: pi (reduce (repr p)) = pi (repr p).
-  rewrite -eqv_pi eqv_sym eqv_reduce.
-  by apply reprK.
+- by rewrite -eqv_pi eqv_sym eqv_reduce.
+- by apply reprK.
+qed.
+
+lemma deg_crepr p : deg (crepr p) <= n.
+proof.
+by apply deg_reduce.
 qed.
  
 (* -------------------------------------------------------------------- *)
