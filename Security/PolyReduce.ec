@@ -1,11 +1,13 @@
 (* ==================================================================== *)
-require import AllCore Finite List Ring StdOrder IntDiv Ideal Poly.
+require import AllCore Finite List Distr.
+require import Ring StdOrder IntDiv ZModP Ideal Poly.
 (*---*) import IntOrder.
 
 (* ==================================================================== *)
 (* This file constructs the ring k[x]/<X^n + 1>                         *)
 
-(* -------------------------------------------------------------------- *)
+(* ==================================================================== *)
+abstract theory PolyReduce.
 clone import PolyComRing as BasePoly.
 (*-*) import Coeff PolyComRing BigPoly BigCf.
 
@@ -69,7 +71,7 @@ hint exact : idI.
 (* -------------------------------------------------------------------- *)
 type polyXnD1.
 
-clone import RingQuotient
+clone include RingQuotient
   with type qT <- polyXnD1, op p <- I proof IdealAxioms.*.
 
 realize IdealAxioms.ideal_p by apply/idI.
@@ -84,6 +86,10 @@ rewrite degM_proper; 1: by rewrite lc_polyXnDC // mulr1 lc_eq0.
 rewrite deg_polyXnDC // -!addrA /= gtr_eqF //.
 by rewrite (_ : 1 = 1 + 0) 1:// ler_lt_add // deg_ge1.
 qed.
+
+(* -------------------------------------------------------------------- *)
+abbrev pinject = pi.
+abbrev prepr   = repr.
 
 (* -------------------------------------------------------------------- *)
 lemma eqv_Xn : eqv (exp X n) (-poly1).
@@ -288,3 +294,80 @@ apply: (is_finite_for_bij _ P) => [|p q|q].
 - exists (crepr q); rewrite /P deg_reduced ?reduced_crepr //=.
   by have /eqv_pi := eqv_reduce (repr q) => @/crepr <-; rewrite reprK.
 qed.
+end PolyReduce.
+
+(* ==================================================================== *)
+abstract theory PolyReduceZp.
+type Zp.
+
+op p : { int | 2 <= p } as ge2_p.
+
+clone import ZModRing as Zp with
+    type  zmod  <- Zp,
+    op    p     <- p
+    proof ge2_p by exact/ge2_p.
+
+clone include PolyReduce with
+    type BasePoly.coeff        <- Zp,
+    pred BasePoly.Coeff.unit   <- Zp.unit,
+    op   BasePoly.Coeff.zeror  <- Zp.zero,
+    op   BasePoly.Coeff.oner   <- Zp.one,
+    op   BasePoly.Coeff.( + )  <- Zp.( + ),
+    op   BasePoly.Coeff.([-])  <- Zp.([-]),
+    op   BasePoly.Coeff.( * )  <- Zp.( * ),
+    op   BasePoly.Coeff.invr   <- Zp.inv,
+    op   BasePoly.Coeff.ofint  <- Zp.ZModpRing.ofint,
+    op   BasePoly.Coeff.exp    <- Zp.ZModpRing.exp,
+    op   BasePoly.Coeff.intmul <- Zp.ZModpRing.intmul,
+    op   BasePoly.Coeff.lreg   <- Zp.ZModpRing.lreg
+
+  proof BasePoly.Coeff.addrA     by exact Zp.ZModpRing.addrA
+  proof BasePoly.Coeff.addrC     by exact Zp.ZModpRing.addrC
+  proof BasePoly.Coeff.add0r     by exact Zp.ZModpRing.add0r
+  proof BasePoly.Coeff.addNr     by exact Zp.ZModpRing.addNr
+  proof BasePoly.Coeff.oner_neq0 by exact Zp.ZModpRing.oner_neq0
+  proof BasePoly.Coeff.mulrA     by exact Zp.ZModpRing.mulrA
+  proof BasePoly.Coeff.mulrC     by exact Zp.ZModpRing.mulrC
+  proof BasePoly.Coeff.mul1r     by exact Zp.ZModpRing.mul1r
+  proof BasePoly.Coeff.mulrDl    by exact Zp.ZModpRing.mulrDl
+  proof BasePoly.Coeff.mulVr     by exact Zp.ZModpRing.mulVr
+  proof BasePoly.Coeff.unitP     by exact Zp.ZModpRing.unitP
+  proof BasePoly.Coeff.unitout   by exact Zp.ZModpRing.unitout
+  proof BasePoly.Coeff.*
+
+  remove abbrev BasePoly.Coeff.(-)
+  remove abbrev BasePoly.Coeff.(/).
+
+clear [BasePoly.Coeff.*].
+clear [BasePoly.Coeff.AddMonoid.*].
+clear [BasePoly.Coeff.MulMonoid.*].
+
+(* -------------------------------------------------------------------- *)
+import BasePoly.
+
+(* ==================================================================== *)
+(* We already know that polyX1nD is finite. However, we prove here that *)
+(* we can build the full-uniform distribution over polyX1nD by sampling *)
+(* uniformly each coefficient in the reduced form representation.       *)
+
+op dpolyX1nD = dmap (dpoly n Zp.DZmodP.dunifin) pinject.
+
+lemma dpolyX1nD_uni : is_uniform dpolyX1nD.
+proof.
+apply/dmap_uni_in_inj/dpoly_uni/DZmodP.dunifin_uni => //.
+move=> p q; rewrite !supp_dpoly //; case=> [degp _] [deqq _].
+by move/eqv_pi/reduce_eqP; rewrite !reduce_reduced // !reducedP.
+qed.
+
+lemma dpolyX1nD_fu : is_full dpolyX1nD.
+proof.
+apply/dmap_fu_in=> p; exists (crepr p); rewrite creprK /=.
+by apply/dpoly_fu/deg_crepr => //; rewrite DZmodP.dunifin_fu.
+qed.
+
+lemma dpolyX1nD_ll : is_lossless dpolyX1nD.
+proof. by apply/dmap_ll/dpoly_ll/DZmodP.dunifin_ll. qed.
+
+lemma dpolyX1nD_funi : is_funiform dpolyX1nD.
+proof. by apply/is_full_funiform/dpolyX1nD_uni/dpolyX1nD_fu. qed.
+end PolyReduceZp.

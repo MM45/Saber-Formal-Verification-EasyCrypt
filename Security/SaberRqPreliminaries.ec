@@ -113,39 +113,58 @@ proof.
 qed.
 
 (* --- Types, Operators and Distributions --- *)
-(* -- Rq = Z/qZ[X] / (X^n + 1) -- *)
-type Zq.
-type Rq.
+abstract theory PolyZ.
+clone import ZModRing as Zmod.
 
-clone import ZModRing as Zq with
-    type zmod <- Zq,
-    op p <- q
-  proof ge2_p by apply (lez_trans 8 _ _ _ ge8_q).
+clone import PolyReduce.PolyReduceZp as Rmod with
+  type Zp <- Zmod.zmod,
+    op  p <- Zmod.p,
+    op  n <- n,
 
-clone import PolyReduce as Rq with
-    type BasePoly.coeff      <- Zq,
-    pred BasePoly.Coeff.unit <- Zq.unit,
-    op BasePoly.Coeff.zeror  <- Zq.zero,
-    op BasePoly.Coeff.oner   <- Zq.one,
-    op BasePoly.Coeff.( + )  <- Zq.( + ),
-    op BasePoly.Coeff.([-])  <- Zq.([-]),
-    op BasePoly.Coeff.( * )  <- Zq.( * ),
-    op BasePoly.Coeff.invr   <- Zq.inv,
-    type polyXnD1            <- Rq,
-    op n                     <- n
-  proof gt0_n                    by rewrite -lez_add1r /= ge1_n
-  proof BasePoly.Coeff.addrA     by exact Zq.ZModpRing.addrA
-  proof BasePoly.Coeff.addrC     by exact Zq.ZModpRing.addrC
-  proof BasePoly.Coeff.add0r     by exact Zq.ZModpRing.add0r
-  proof BasePoly.Coeff.addNr     by exact Zq.ZModpRing.addNr
-  proof BasePoly.Coeff.oner_neq0 by exact Zq.ZModpRing.oner_neq0
-  proof BasePoly.Coeff.mulrA     by exact Zq.ZModpRing.mulrA
-  proof BasePoly.Coeff.mulrC     by exact Zq.ZModpRing.mulrC
-  proof BasePoly.Coeff.mul1r     by exact Zq.ZModpRing.mul1r
-  proof BasePoly.Coeff.mulrDl    by exact Zq.ZModpRing.mulrDl
-  proof BasePoly.Coeff.mulVr     by exact Zq.ZModpRing.mulVr
-  proof BasePoly.Coeff.unitP     by exact Zq.ZModpRing.unitP
-  proof BasePoly.Coeff.unitout   by exact Zq.ZModpRing.unitout.
+  op   Zp.unit   <- Zmod.unit  ,
+  op   Zp.zero   <- Zmod.zero  ,
+  op   Zp.one    <- Zmod.one   ,
+  op   Zp.( + )  <- Zmod.( + ) ,
+  op   Zp.([-])  <- Zmod.([-]) ,
+  op   Zp.( * )  <- Zmod.( * ) ,
+  op   Zp.inv    <- Zmod.inv   ,
+  op   Zp.inzmod <- Zmod.inzmod,
+  op   Zp.asint  <- Zmod.asint ,
+
+  op   Zp.ZModpRing.ofint  <- Zmod.ZModpRing.ofint ,
+  op   Zp.ZModpRing.intmul <- Zmod.ZModpRing.intmul,
+  op   Zp.ZModpRing.exp    <- Zmod.ZModpRing.exp   ,
+  op   Zp.ZModpRing.lreg   <- Zmod.ZModpRing.lreg
+
+  proof gt0_n by smt(ge1_n)
+  proof ge2_p by apply/Zmod.ge2_p
+
+  remove abbrev Zp.zmodcgr
+  remove abbrev Zp.(-)
+  remove abbrev Zp.(/)
+
+  remove abbrev Zp.ZModpRing.(-)
+  remove abbrev Zp.ZModpRing.(/)
+
+  rename [theory] "Zp" as "Zrmod".
+
+clear [Rmod.Zrmod.* Rmod.Zrmod.DZmodP.* Rmod.Zrmod.DZmodP.Support.*].
+clear [Rmod.Zrmod.ZModule.* Rmod.Zrmod.ComRing.* Rmod.Zrmod.ZModpRing.*].
+clear [Rmod.Zrmod.ZModpRing.AddMonoid.* Rmod.Zrmod.ZModpRing.MulMonoid.*].
+end PolyZ.
+
+(* -- Rmod = Z/qZ[X] / (X^n + 1) -- *)
+type Zq, Rq.
+
+clone include PolyZ with
+    type Zmod.zmod     <- Zq,
+    type Rmod.polyXnD1 <- Rq,
+    op   Zmod.p        <- q
+
+  proof  Zmod.ge2_p by smt(ge8_q)
+
+  rename [theory] "Zmod" as "Zq"
+  rename [theory] "Rmod" as "Rq".
 
 clone Matrix as Mat_Rq with 
     type R <- Rq,
@@ -167,38 +186,17 @@ op dRq_mat : Rq_mat distr = Mat_Rq.Matrix.dmatrix dRq.
 op dsmallRq_vec : Rq_vec distr = Mat_Rq.Matrix.dvector dsmallRq.
 
 (* -- Rp = Z/pZ[X] / (X^n + 1) -- *)
-type Zp.
-type Rp.
+type Zp, Rp.
 
-clone import ZModRing as Zp with
-    type zmod <- Zp,
-    op p <- p
-  proof ge2_p by apply (lez_trans 4 _ _ _ ge4_p).
+clone include PolyZ with
+    type Zmod.zmod     <- Zp,
+    type Rmod.polyXnD1 <- Rp,
+    op   Zmod.p        <- p
 
-clone import PolyReduce as Rp with
-    type BasePoly.coeff      <- Zp,
-    pred BasePoly.Coeff.unit <- Zp.unit,
-    op BasePoly.Coeff.zeror  <- Zp.zero,
-    op BasePoly.Coeff.oner   <- Zp.one,
-    op BasePoly.Coeff.( + )  <- Zp.( + ),
-    op BasePoly.Coeff.([-])  <- Zp.([-]),
-    op BasePoly.Coeff.( * )  <- Zp.( * ),
-    op BasePoly.Coeff.invr   <- Zp.inv,
-    type polyXnD1            <- Rp,
-    op n                     <- n
-  proof gt0_n                    by rewrite -lez_add1r /= ge1_n
-  proof BasePoly.Coeff.addrA     by exact Zp.ZModpRing.addrA
-  proof BasePoly.Coeff.addrC     by exact Zp.ZModpRing.addrC
-  proof BasePoly.Coeff.add0r     by exact Zp.ZModpRing.add0r
-  proof BasePoly.Coeff.addNr     by exact Zp.ZModpRing.addNr
-  proof BasePoly.Coeff.oner_neq0 by exact Zp.ZModpRing.oner_neq0
-  proof BasePoly.Coeff.mulrA     by exact Zp.ZModpRing.mulrA
-  proof BasePoly.Coeff.mulrC     by exact Zp.ZModpRing.mulrC
-  proof BasePoly.Coeff.mul1r     by exact Zp.ZModpRing.mul1r
-  proof BasePoly.Coeff.mulrDl    by exact Zp.ZModpRing.mulrDl
-  proof BasePoly.Coeff.mulVr     by exact Zp.ZModpRing.mulVr
-  proof BasePoly.Coeff.unitP     by exact Zp.ZModpRing.unitP
-  proof BasePoly.Coeff.unitout   by exact Zp.ZModpRing.unitout.
+  proof  Zmod.ge2_p by smt(ge4_p)
+
+  rename [theory] "Zmod" as "Zp"
+  rename [theory] "Rmod" as "Rp".
 
 clone Matrix as Mat_Rp with 
     type R <- Rp,
@@ -215,115 +213,43 @@ op dRp : Rp distr = DRp.dunifin.
 op dRp_vec : Rp_vec distr = Mat_Rp.Matrix.dvector dRp.
 
 (* -- Rppq = Z/ppqZ [X] / (X^n + 1) -- *)
-type Zppq.
-type Rppq.
+type Zppq, Rppq.
 
-clone import ZModRing as Zppq with
-    type zmod <- Zppq,
-    op p      <- (p * p) %/ q
-  proof ge2_p by apply ge2_ppq.
+clone include PolyZ with
+    type Zmod.zmod     <- Zppq,
+    type Rmod.polyXnD1 <- Rppq,
+    op   Zmod.p        <- (p * p) %/ q
 
-clone import PolyReduce as Rppq with
-    type BasePoly.coeff      <- Zppq,
-    pred BasePoly.Coeff.unit <- Zppq.unit,
-    op BasePoly.Coeff.zeror  <- Zppq.zero,
-    op BasePoly.Coeff.oner   <- Zppq.one,
-    op BasePoly.Coeff.( + )  <- Zppq.( + ),
-    op BasePoly.Coeff.([-])  <- Zppq.([-]),
-    op BasePoly.Coeff.( * )  <- Zppq.( * ),
-    op BasePoly.Coeff.invr   <- Zppq.inv,
-    op BasePoly.Coeff.intmul <- Zppq.ZModpRing.intmul,
-    op BasePoly.Coeff.ofint  <- Zppq.ZModpRing.ofint,
-    op BasePoly.Coeff.exp    <- Zppq.ZModpRing.exp,
-    type polyXnD1            <- Rppq,
-    op n                     <- n
-  proof gt0_n                    by rewrite -lez_add1r /= ge1_n
-  proof BasePoly.Coeff.addrA     by exact Zppq.ZModpRing.addrA
-  proof BasePoly.Coeff.addrC     by exact Zppq.ZModpRing.addrC
-  proof BasePoly.Coeff.add0r     by exact Zppq.ZModpRing.add0r
-  proof BasePoly.Coeff.addNr     by exact Zppq.ZModpRing.addNr
-  proof BasePoly.Coeff.oner_neq0 by exact Zppq.ZModpRing.oner_neq0
-  proof BasePoly.Coeff.mulrA     by exact Zppq.ZModpRing.mulrA
-  proof BasePoly.Coeff.mulrC     by exact Zppq.ZModpRing.mulrC
-  proof BasePoly.Coeff.mul1r     by exact Zppq.ZModpRing.mul1r
-  proof BasePoly.Coeff.mulrDl    by exact Zppq.ZModpRing.mulrDl
-  proof BasePoly.Coeff.mulVr     by exact Zppq.ZModpRing.mulVr
-  proof BasePoly.Coeff.unitP     by exact Zppq.ZModpRing.unitP
-  proof BasePoly.Coeff.unitout   by exact Zppq.ZModpRing.unitout.
+  proof  Zmod.ge2_p by apply/ge2_ppq
+
+  rename [theory] "Zmod" as "Zppq"
+  rename [theory] "Rmod" as "Rppq".
 
 (* -- R2t = Z/2tZ [X] / (X^n + 1)  -- *)
-type Z2t.
-type R2t.
+type Z2t, R2t.
 
-clone import ZModRing as Z2t with
-    type zmod <- Z2t,
-    op p <- 2 * t
-  proof ge2_p by apply ge2_2t.
+clone include PolyZ with
+    type Zmod.zmod     <- Z2t,
+    type Rmod.polyXnD1 <- R2t,
+    op   Zmod.p        <- 2 * t
 
-clone import PolyReduce as R2t with
-    type BasePoly.coeff      <- Z2t,
-    pred BasePoly.Coeff.unit <- Z2t.unit,
-    op BasePoly.Coeff.zeror  <- Z2t.zero,
-    op BasePoly.Coeff.oner   <- Z2t.one,
-    op BasePoly.Coeff.( + )  <- Z2t.( + ),
-    op BasePoly.Coeff.([-])  <- Z2t.([-]),
-    op BasePoly.Coeff.( * )  <- Z2t.( * ),
-    op BasePoly.Coeff.invr   <- Z2t.inv,
-    op BasePoly.Coeff.intmul <- Z2t.ZModpRing.intmul,
-    op BasePoly.Coeff.ofint  <- Z2t.ZModpRing.ofint,
-    op BasePoly.Coeff.exp    <- Z2t.ZModpRing.exp,
-    type polyXnD1            <- R2t,
-    op n                     <- n
-  proof gt0_n                    by rewrite -lez_add1r /= ge1_n
-  proof BasePoly.Coeff.addrA     by exact Z2t.ZModpRing.addrA
-  proof BasePoly.Coeff.addrC     by exact Z2t.ZModpRing.addrC
-  proof BasePoly.Coeff.add0r     by exact Z2t.ZModpRing.add0r
-  proof BasePoly.Coeff.addNr     by exact Z2t.ZModpRing.addNr
-  proof BasePoly.Coeff.oner_neq0 by exact Z2t.ZModpRing.oner_neq0
-  proof BasePoly.Coeff.mulrA     by exact Z2t.ZModpRing.mulrA
-  proof BasePoly.Coeff.mulrC     by exact Z2t.ZModpRing.mulrC
-  proof BasePoly.Coeff.mul1r     by exact Z2t.ZModpRing.mul1r
-  proof BasePoly.Coeff.mulrDl    by exact Z2t.ZModpRing.mulrDl
-  proof BasePoly.Coeff.mulVr     by exact Z2t.ZModpRing.mulVr
-  proof BasePoly.Coeff.unitP     by exact Z2t.ZModpRing.unitP
-  proof BasePoly.Coeff.unitout   by exact Z2t.ZModpRing.unitout.
+  proof  Zmod.ge2_p by apply/ge2_2t
+
+  rename [theory] "Zmod" as "Z2t"
+  rename [theory] "Rmod" as "R2t".
 
 (* -- R2 = Z/2Z [X] / (X^n + 1) -- *)
-type Z2.
-type R2.
+type Z2, R2.
 
-clone import ZModRing as Z2 with
-    type zmod <- Z2,
-    op p <- 2
-  proof ge2_p by apply lezz.
+clone include PolyZ with
+    type Zmod.zmod     <- Z2,
+    type Rmod.polyXnD1 <- R2,
+    op   Zmod.p        <- 2
 
-clone import PolyReduce as R2 with
-    type BasePoly.coeff      <- Z2,
-    pred BasePoly.Coeff.unit <- Z2.unit,
-    op BasePoly.Coeff.zeror  <- Z2.zero,
-    op BasePoly.Coeff.oner   <- Z2.one,
-    op BasePoly.Coeff.( + )  <- Z2.( + ),
-    op BasePoly.Coeff.([-])  <- Z2.([-]),
-    op BasePoly.Coeff.( * )  <- Z2.( * ),
-    op BasePoly.Coeff.invr   <- Z2.inv,
-    op BasePoly.Coeff.intmul <- Z2.ZModpRing.intmul,
-    op BasePoly.Coeff.ofint  <- Z2.ZModpRing.ofint,
-    op BasePoly.Coeff.exp    <- Z2.ZModpRing.exp,
-    type polyXnD1            <- R2,
-    op n                     <- n
-  proof gt0_n                    by rewrite -lez_add1r /= ge1_n
-  proof BasePoly.Coeff.addrA     by exact Z2.ZModpRing.addrA
-  proof BasePoly.Coeff.addrC     by exact Z2.ZModpRing.addrC
-  proof BasePoly.Coeff.add0r     by exact Z2.ZModpRing.add0r
-  proof BasePoly.Coeff.addNr     by exact Z2.ZModpRing.addNr
-  proof BasePoly.Coeff.oner_neq0 by exact Z2.ZModpRing.oner_neq0
-  proof BasePoly.Coeff.mulrA     by exact Z2.ZModpRing.mulrA
-  proof BasePoly.Coeff.mulrC     by exact Z2.ZModpRing.mulrC
-  proof BasePoly.Coeff.mul1r     by exact Z2.ZModpRing.mul1r
-  proof BasePoly.Coeff.mulrDl    by exact Z2.ZModpRing.mulrDl
-  proof BasePoly.Coeff.mulVr     by exact Z2.ZModpRing.mulVr
-  proof BasePoly.Coeff.unitP     by exact Z2.ZModpRing.unitP
-  proof BasePoly.Coeff.unitout   by exact Z2.ZModpRing.unitout.
+  proof  Zmod.ge2_p by done
+
+  rename [theory] "Zmod" as "Z2"
+  rename [theory] "Rmod" as "R2".
 
 (* - Properties - *)
 (* Vector Distribution Has Same Properties as the Distribution of the Vector's Elements *)
@@ -360,11 +286,11 @@ proof. apply /Mat_Rq.Matrix.dmatrix_uni; rewrite /dRq; apply /DRq.dunifin_uni. q
 
 (* - Imports - *)
 import Mat_Rq Mat_Rp.
-import Rq.RingQuotient Rq.BasePoly. 
-import Rp.RingQuotient Rp.BasePoly.
-import Rppq.RingQuotient Rppq.BasePoly.
-import R2t.RingQuotient R2t.BasePoly.
-import R2.RingQuotient R2.BasePoly.
+import Zq Rq Rq.BasePoly. 
+import Zp Rp Rp.BasePoly.
+import Zppq Rppq Rppq.BasePoly.
+import Z2t R2t R2t.BasePoly.
+import Z2 R2 R2.BasePoly.
 
 (* - Constants - *)
 const h1 : Rq = pi (to_polyd (fun _ => Zq.inzmod (2 ^ (eq - ep - 1)))).
