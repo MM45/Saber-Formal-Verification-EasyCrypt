@@ -3,7 +3,7 @@
 (* ----------------------------------- *)
 
 (* --- Built-in --- *)
-require import AllCore Distr ZModP IntDiv StdOrder.
+require import AllCore Distr ZModP IntDiv Bigalg StdOrder.
 require (*--*) Matrix PKE.
 (*---*) import IntOrder.
 
@@ -151,6 +151,41 @@ clone import PolyReduce.PolyReduceZp as Rmod with
 clear [Rmod.Zrmod.* Rmod.Zrmod.DZmodP.* Rmod.Zrmod.DZmodP.Support.*].
 clear [Rmod.Zrmod.ZModule.* Rmod.Zrmod.ComRing.* Rmod.Zrmod.ZModpRing.*].
 clear [Rmod.Zrmod.ZModpRing.AddMonoid.* Rmod.Zrmod.ZModpRing.MulMonoid.*].
+
+clone BigComRing as BigXnD1 with
+  type t         <- Rmod.polyXnD1,
+    op CR.zeror  <- Rmod.zeror,
+    op CR.oner   <- Rmod.oner,
+    op CR.( + )  <- Rmod.( + ),
+    op CR.([-])  <- Rmod.([-]),
+    op CR.( * )  <- Rmod.( * ),
+    op CR.invr   <- Rmod.invr,
+    op CR.intmul <- Rmod.ComRing.intmul,
+    op CR.ofint  <- Rmod.ComRing.ofint,
+    op CR.exp    <- Rmod.ComRing.exp,
+    op CR.lreg   <- Rmod.ComRing.lreg,
+  pred CR.unit   <- Rmod.unit
+
+  proof *
+
+  remove abbrev CR.(-)
+  remove abbrev CR.(/)
+
+  rename [theory] "BAdd" as "PCA"
+         [theory] "BMul" as "PCM".
+
+realize CR.addrA     by apply: Rmod.ComRing.addrA    .
+realize CR.addrC     by apply: Rmod.ComRing.addrC    .
+realize CR.add0r     by apply: Rmod.ComRing.add0r    .
+realize CR.addNr     by apply: Rmod.ComRing.addNr    .
+realize CR.oner_neq0 by apply: Rmod.ComRing.oner_neq0.
+realize CR.mulrA     by apply: Rmod.ComRing.mulrA    .
+realize CR.mulrC     by apply: Rmod.ComRing.mulrC    .
+realize CR.mul1r     by apply: Rmod.ComRing.mul1r    .
+realize CR.mulrDl    by apply: Rmod.ComRing.mulrDl   .
+realize CR.mulVr     by apply: Rmod.ComRing.mulVr    .
+realize CR.unitP     by apply: Rmod.ComRing.unitP    .
+realize CR.unitout   by apply: Rmod.ComRing.unitout  .
 end PolyZ.
 
 (* -- Rmod = Z/qZ[X] / (X^n + 1) -- *)
@@ -164,7 +199,8 @@ clone include PolyZ with
   proof  Zmod.ge2_p by smt(ge8_q)
 
   rename [theory] "Zmod" as "Zq"
-  rename [theory] "Rmod" as "Rq".
+  rename [theory] "Rmod" as "Rq"
+  rename [theory] "BigXnD1" as "BigRq".
 
 clone Matrix as Mat_Rq with 
     type R <- Rq,
@@ -196,7 +232,8 @@ clone include PolyZ with
   proof  Zmod.ge2_p by smt(ge4_p)
 
   rename [theory] "Zmod" as "Zp"
-  rename [theory] "Rmod" as "Rp".
+  rename [theory] "Rmod" as "Rp"
+  rename [theory] "BigXnD1" as "BigRp".
 
 clone Matrix as Mat_Rp with 
     type R <- Rp,
@@ -223,7 +260,8 @@ clone include PolyZ with
   proof  Zmod.ge2_p by apply/ge2_ppq
 
   rename [theory] "Zmod" as "Zppq"
-  rename [theory] "Rmod" as "Rppq".
+  rename [theory] "Rmod" as "Rppq"
+  rename [theory] "BigXnD1" as "BigRppq".
 
 (* -- R2t = Z/2tZ [X] / (X^n + 1)  -- *)
 type Z2t, R2t.
@@ -236,7 +274,8 @@ clone include PolyZ with
   proof  Zmod.ge2_p by apply/ge2_2t
 
   rename [theory] "Zmod" as "Z2t"
-  rename [theory] "Rmod" as "R2t".
+  rename [theory] "Rmod" as "R2t"
+  rename [theory] "BigXnD1" as "Big2t".
 
 (* -- R2 = Z/2Z [X] / (X^n + 1) -- *)
 type Z2, R2.
@@ -249,7 +288,8 @@ clone include PolyZ with
   proof  Zmod.ge2_p by done
 
   rename [theory] "Zmod" as "Z2"
-  rename [theory] "Rmod" as "R2".
+  rename [theory] "Rmod" as "R2"
+  rename [theory] "BigXnD1" as "BigR2".
 
 (* - Properties - *)
 (* Vector Distribution Has Same Properties as the Distribution of the Vector's Elements *)
@@ -286,11 +326,24 @@ proof. apply /Mat_Rq.Matrix.dmatrix_uni; rewrite /dRq; apply /DRq.dunifin_uni. q
 
 (* - Imports - *)
 import Mat_Rq Mat_Rp.
-import Zq Rq Rq.BasePoly. 
-import Zp Rp Rp.BasePoly.
-import Zppq Rppq Rppq.BasePoly.
-import Z2t R2t R2t.BasePoly.
-import Z2 R2 R2.BasePoly.
+import Zq Rq Rq.ComRing Rq.BasePoly. 
+import Zp Rp Rp.ComRing Rp.BasePoly.
+import Zppq Rppq Rppq.ComRing Rppq.BasePoly.
+import Z2t R2t R2t.ComRing R2t.BasePoly.
+import Z2 R2 R2.ComRing R2.BasePoly.
+
+(* - From Rq to Rp - *)
+op Zq2Zp (z : Zq) : Zp =
+  Zp.inzmod (asint z).
+
+op Rq2Rp (p : Rq) : Rp =
+  BigRp.PCA.bigi predT (fun (i : int) => Zq2Zp p.[i] ** exp Rp.iX i) 0 n.
+
+lemma Rq2RpE (p : Rq) (i : int) : (Rq2Rp p).[i] = Zq2Zp p.[i].
+proof. admitted.
+
+lemma duni_Rp_Rq : dmap Rq.dpolyXnD1 Rq2Rp = Rp.dpolyXnD1.
+proof. admitted.
 
 (* - Constants - *)
 const h1 : Rq = pi (to_polyd (fun _ => Zq.inzmod (2 ^ (eq - ep - 1)))).

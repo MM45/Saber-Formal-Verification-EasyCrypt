@@ -92,6 +92,13 @@ abbrev pinject = pi.
 abbrev prepr   = repr.
 
 (* -------------------------------------------------------------------- *)
+op iX = pinject X.
+
+(* -------------------------------------------------------------------- *)
+op ( ** ) (c : coeff) (p : polyXnD1) =
+  pinject (c ** (repr p)).
+
+(* -------------------------------------------------------------------- *)
 lemma eqv_Xn : eqv (exp X n) (-poly1).
 proof. by rewrite eqv_sym /eqv opprK /I mem_idgen1_gen. qed.
 
@@ -350,24 +357,24 @@ import BasePoly.
 (* we can build the full-uniform distribution over polyX1nD by sampling *)
 (* uniformly each coefficient in the reduced form representation.       *)
 
-op dpolyX1nD = dmap (dpoly n Zp.DZmodP.dunifin) pinject.
+op dpolyXnD1 = dmap (dpoly n Zp.DZmodP.dunifin) pinject.
 
-lemma dpolyX1nD_uni : is_uniform dpolyX1nD.
+lemma dpolyXnD1_uni : is_uniform dpolyXnD1.
 proof.
 apply/dmap_uni_in_inj/dpoly_uni/DZmodP.dunifin_uni => //.
 move=> p q; rewrite !supp_dpoly //; case=> [degp _] [deqq _].
 by move/eqv_pi/reduce_eqP; rewrite !reduce_reduced // !reducedP.
 qed.
 
-lemma dpolyX1nD_fu : is_full dpolyX1nD.
+lemma dpolyXnD1_fu : is_full dpolyXnD1.
 proof.
 apply/dmap_fu_in=> p; exists (crepr p); rewrite creprK /=.
 by apply/dpoly_fu/deg_crepr => //; rewrite DZmodP.dunifin_fu.
 qed.
 
-lemma dpolyX1nD_ll : is_lossless dpolyX1nD.
+lemma dpolyXnD1_ll : is_lossless dpolyXnD1.
 proof. by apply/dmap_ll/dpoly_ll/DZmodP.dunifin_ll. qed.
 
-lemma dpolyX1nD_funi : is_funiform dpolyX1nD.
-proof. by apply/is_full_funiform/dpolyX1nD_uni/dpolyX1nD_fu. qed.
+lemma dpolyXnD1_funi : is_funiform dpolyXnD1.
+proof. by apply/is_full_funiform/dpolyXnD1_uni/dpolyXnD1_fu. qed.
 end PolyReduceZp.
