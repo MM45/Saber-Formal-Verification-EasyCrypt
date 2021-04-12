@@ -9,9 +9,8 @@ require import AllCore Distr DBool ZModP IntDiv StdOrder.
 (* --- Local --- *)
 require import SaberRqPreliminaries.
 (*---*) import Mat_Rq Mat_Rp.
-(*---*) import Rq Rp.
-(*---*) import Rq.RingQuotient Rp.RingQuotient.
-(*---*) import Rq.RingQuotient.ComRing Rp.RingQuotient.ComRing.
+(*---*) import Rq Rq.ComRing.
+(*---*) import Rp Rp.ComRing.
 (*---*) import Saber_PKE.
 
 (* ----------------------------------- *)
@@ -523,10 +522,10 @@ proof.
   rnd. 
   call (_: true); [apply (Adv_CPA_guess_ll A) | auto].
   call(_ : true); [apply (Adv_CPA_choose_ll A) | auto].
-  by progress; [apply dseed_ll       |
-                apply dRq_vec_ll     |
-                apply dRp_vec_ll     |
-                apply DRp.dunifin_ll |
+  by progress; [apply dseed_ll        |
+                apply dRq_vec_ll      |
+                apply dRp_vec_ll      |
+                apply Rp.dpolyXnD1_ll |
                 apply dbool1E].
 qed.
 
@@ -541,16 +540,18 @@ proof.
   + swap {2} 7 -6.
   + call (_ : true); wp.
   + rnd (fun (x : Rp) => x + (shl_enc (m_decode (if u{1} then m1{1} else m0{1})) (2 * ep - eq - 1)))  
-        (fun (x : Rp) => x + (- (shl_enc (m_decode (if u{1} then m1{1} else m0{1})) (2 * ep - eq - 1)))).
+        (fun (x : Rp) => x - (shl_enc (m_decode (if u{1} then m1{1} else m0{1})) (2 * ep - eq - 1))).
   + auto; call(_ : true); auto.
   + progress.
     - pose x := shl_enc (m_decode (if uL then result_R.`2 else result_R.`1)) (2 * ep - eq - 1).
-      by rewrite -addrA addNr addrC add0r.
+      by rewrite -addrA addNr addrC add0r. 
+    - by apply /rnd_funi /Rp.dpolyXnD1_funi.
+    - by apply /is_fullP /Rp.dpolyXnD1_fu.
     - pose x := shl_enc (m_decode (if uL then result_R.`2 else result_R.`1)) (2 * ep - eq - 1).
-      have xx_0: forall (x : Rp), x + (- x) = Rp.RingQuotient.zeror.
+      have xx_0: forall (x : Rp), x - x = Rp.zeror.
       * by move => x0; rewrite -(addrN x0).
       by rewrite -addrA (xx_0 x) addrC add0r.
-    - by rewrite scale_Rp_Rp_id H7.  
+    - by rewrite scale_Rp_Rp_id.  
 qed.
 
 (* Game4 Analysis *)

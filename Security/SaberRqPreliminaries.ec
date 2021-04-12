@@ -3,7 +3,7 @@
 (* ----------------------------------- *)
 
 (* --- Built-in --- *)
-require import AllCore Distr ZModP IntDiv Bigalg StdOrder.
+require import AllCore Distr ZModP IntDiv Bigalg StdOrder List.
 require (*--*) Matrix PKE.
 (*---*) import IntOrder.
 
@@ -121,20 +121,20 @@ clone import PolyReduce.PolyReduceZp as Rmod with
     op  p <- Zmod.p,
     op  n <- n,
 
-  op   Zp.unit   <- Zmod.unit  ,
-  op   Zp.zero   <- Zmod.zero  ,
-  op   Zp.one    <- Zmod.one   ,
-  op   Zp.( + )  <- Zmod.( + ) ,
-  op   Zp.([-])  <- Zmod.([-]) ,
-  op   Zp.( * )  <- Zmod.( * ) ,
-  op   Zp.inv    <- Zmod.inv   ,
-  op   Zp.inzmod <- Zmod.inzmod,
-  op   Zp.asint  <- Zmod.asint ,
+    op Zp.unit   <- Zmod.unit  ,
+    op Zp.zero   <- Zmod.zero  ,
+    op Zp.one    <- Zmod.one   ,
+    op Zp.( + )  <- Zmod.( + ) ,
+    op Zp.([-])  <- Zmod.([-]) ,
+    op Zp.( * )  <- Zmod.( * ) ,
+    op Zp.inv    <- Zmod.inv   ,
+    op Zp.inzmod <- Zmod.inzmod,
+    op Zp.asint  <- Zmod.asint ,
 
-  op   Zp.ZModpRing.ofint  <- Zmod.ZModpRing.ofint ,
-  op   Zp.ZModpRing.intmul <- Zmod.ZModpRing.intmul,
-  op   Zp.ZModpRing.exp    <- Zmod.ZModpRing.exp   ,
-  op   Zp.ZModpRing.lreg   <- Zmod.ZModpRing.lreg
+    op Zp.ZModpRing.ofint  <- Zmod.ZModpRing.ofint ,
+    op Zp.ZModpRing.intmul <- Zmod.ZModpRing.intmul,
+    op Zp.ZModpRing.exp    <- Zmod.ZModpRing.exp   ,
+    op Zp.ZModpRing.lreg   <- Zmod.ZModpRing.lreg
 
   proof gt0_n by smt(ge1_n)
   proof ge2_p by apply/Zmod.ge2_p
@@ -174,21 +174,21 @@ clone BigComRing as BigXnD1 with
   rename [theory] "BAdd" as "PCA"
          [theory] "BMul" as "PCM".
 
-realize CR.addrA     by apply: Rmod.ComRing.addrA    .
-realize CR.addrC     by apply: Rmod.ComRing.addrC    .
-realize CR.add0r     by apply: Rmod.ComRing.add0r    .
-realize CR.addNr     by apply: Rmod.ComRing.addNr    .
-realize CR.oner_neq0 by apply: Rmod.ComRing.oner_neq0.
-realize CR.mulrA     by apply: Rmod.ComRing.mulrA    .
-realize CR.mulrC     by apply: Rmod.ComRing.mulrC    .
-realize CR.mul1r     by apply: Rmod.ComRing.mul1r    .
-realize CR.mulrDl    by apply: Rmod.ComRing.mulrDl   .
-realize CR.mulVr     by apply: Rmod.ComRing.mulVr    .
-realize CR.unitP     by apply: Rmod.ComRing.unitP    .
-realize CR.unitout   by apply: Rmod.ComRing.unitout  .
+  realize CR.addrA     by apply: Rmod.ComRing.addrA    .
+  realize CR.addrC     by apply: Rmod.ComRing.addrC    .
+  realize CR.add0r     by apply: Rmod.ComRing.add0r    .
+  realize CR.addNr     by apply: Rmod.ComRing.addNr    .
+  realize CR.oner_neq0 by apply: Rmod.ComRing.oner_neq0.
+  realize CR.mulrA     by apply: Rmod.ComRing.mulrA    .
+  realize CR.mulrC     by apply: Rmod.ComRing.mulrC    .
+  realize CR.mul1r     by apply: Rmod.ComRing.mul1r    .
+  realize CR.mulrDl    by apply: Rmod.ComRing.mulrDl   .
+  realize CR.mulVr     by apply: Rmod.ComRing.mulVr    .
+  realize CR.unitP     by apply: Rmod.ComRing.unitP    .
+  realize CR.unitout   by apply: Rmod.ComRing.unitout  .
 end PolyZ.
 
-(* -- Rmod = Z/qZ[X] / (X^n + 1) -- *)
+(* -- Rq = Z/qZ[X] / (X^n + 1) -- *)
 type Zq, Rq.
 
 clone include PolyZ with
@@ -203,18 +203,31 @@ clone include PolyZ with
   rename [theory] "BigXnD1" as "BigRq".
 
 clone Matrix as Mat_Rq with 
-    type R <- Rq,
+  type R         <- Rq,
+    op ZR.zeror  <- Rq.zeror,
+    op ZR.oner   <- Rq.oner,
+    op ZR.( + )  <- Rq.( + ),
+    op ZR.([-])  <- Rq.([-]),
+    op ZR.( * )  <- Rq.( * ),
+    op ZR.invr   <- Rq.invr,
+    op ZR.intmul <- Rq.ComRing.intmul,
+    op ZR.ofint  <- Rq.ComRing.ofint,
+    op ZR.exp    <- Rq.ComRing.exp,
+    op ZR.lreg   <- Rq.ComRing.lreg,
+  pred ZR.unit   <- Rq.unit,
     op size <- l
   proof ge0_size by apply (lez_trans 1 _ _ _ ge1_l).
 
+(*
 clone import MFinite as DRq with
     type t <- Rq,
     op Support.card <- q ^ n.
+*)
     
 type Rq_vec = Mat_Rq.vector.
 type Rq_mat = Mat_Rq.Matrix.matrix.
 
-op dRq : Rq distr = DRq.dunifin.
+op dRq : Rq distr = Rq.dpolyXnD1.
 op [lossless] dsmallRq : Rq distr.
 
 op dRq_vec : Rq_vec distr = Mat_Rq.Matrix.dvector dRq.
@@ -236,17 +249,28 @@ clone include PolyZ with
   rename [theory] "BigXnD1" as "BigRp".
 
 clone Matrix as Mat_Rp with 
-    type R <- Rp,
+  type R         <- Rp,
+    op ZR.zeror  <- Rp.zeror,
+    op ZR.oner   <- Rp.oner,
+    op ZR.( + )  <- Rp.( + ),
+    op ZR.([-])  <- Rp.([-]),
+    op ZR.( * )  <- Rp.( * ),
+    op ZR.invr   <- Rp.invr,
+    op ZR.intmul <- Rp.ComRing.intmul,
+    op ZR.ofint  <- Rp.ComRing.ofint,
+    op ZR.exp    <- Rp.ComRing.exp,
+    op ZR.lreg   <- Rp.ComRing.lreg,
+  pred ZR.unit   <- Rp.unit,
     op size <- l
   proof ge0_size by apply (lez_trans 1 _ _ _ ge1_l).
-
+(*
 clone import MFinite as DRp with
     type t <- Rp,
     op Support.card <- p ^ n.  
-
+*)
 type Rp_vec = Mat_Rp.vector.
 
-op dRp : Rp distr = DRp.dunifin. 
+op dRp : Rp distr = Rp.dpolyXnD1. 
 op dRp_vec : Rp_vec distr = Mat_Rp.Matrix.dvector dRp.
 
 (* -- Rppq = Z/ppqZ [X] / (X^n + 1) -- *)
@@ -275,7 +299,7 @@ clone include PolyZ with
 
   rename [theory] "Zmod" as "Z2t"
   rename [theory] "Rmod" as "R2t"
-  rename [theory] "BigXnD1" as "Big2t".
+  rename [theory] "BigXnD1" as "BigR2t".
 
 (* -- R2 = Z/2Z [X] / (X^n + 1) -- *)
 type Z2, R2.
@@ -294,35 +318,35 @@ clone include PolyZ with
 (* - Properties - *)
 (* Vector Distribution Has Same Properties as the Distribution of the Vector's Elements *)
 lemma dRq_vec_ll: is_lossless dRq_vec.
-proof. by apply Mat_Rq.Matrix.dvector_ll; rewrite /dRq; apply /DRq.dunifin_ll. qed.
+proof. by apply Mat_Rq.Matrix.dvector_ll; rewrite /dRq; apply /Rq.dpolyXnD1_ll. qed.
 
 lemma dRq_vec_fu: is_full dRq_vec.
-proof. by apply /Mat_Rq.Matrix.dvector_fu; rewrite /dRq; apply /DRq.dunifin_fu. qed.
+proof. by apply /Mat_Rq.Matrix.dvector_fu; rewrite /dRq; apply /Rq.dpolyXnD1_fu. qed.
 
 lemma dRq_vec_uni: is_uniform dRq_vec.
-proof. by apply /Mat_Rq.Matrix.dvector_uni; rewrite /dRq; apply /DRq.dunifin_uni. qed.
+proof. by apply /Mat_Rq.Matrix.dvector_uni; rewrite /dRq; apply /Rq.dpolyXnD1_uni. qed.
 
 lemma dRp_vec_ll: is_lossless dRp_vec.
-proof. by apply /Mat_Rp.Matrix.dvector_ll; rewrite /dRp; apply /DRp.dunifin_ll. qed.
+proof. by apply /Mat_Rp.Matrix.dvector_ll; rewrite /dRp; apply /Rp.dpolyXnD1_ll. qed.
 
 lemma dRp_vec_fu: is_full dRp_vec.
-proof. by apply /Mat_Rp.Matrix.dvector_fu; rewrite /dRp; apply /DRp.dunifin_fu. qed.
+proof. by apply /Mat_Rp.Matrix.dvector_fu; rewrite /dRp; apply /Rp.dpolyXnD1_fu. qed.
 
 lemma dRp_vec_uni: is_uniform dRp_vec.
-proof. by apply /Mat_Rp.Matrix.dvector_uni; rewrite /dRp; apply /DRp.dunifin_uni. qed.
+proof. by apply /Mat_Rp.Matrix.dvector_uni; rewrite /dRp; apply /Rp.dpolyXnD1_uni. qed.
 
 lemma dsmallRq_vec_ll: is_lossless dsmallRq_vec.
 proof. by apply /Mat_Rq.Matrix.dvector_ll /dsmallRq_ll. qed.
 
 (* Matrix Distribution Has Same Properties as the Distribution of the Matrix's Elements *)
 lemma dRq_mat_ll: is_lossless dRq_mat.
-proof. apply /Mat_Rq.Matrix.dmatrix_ll; rewrite /dRq; apply /DRq.dunifin_ll. qed.
+proof. apply /Mat_Rq.Matrix.dmatrix_ll; rewrite /dRq; apply /Rq.dpolyXnD1_ll. qed.
 
 lemma dRq_mat_fu: is_full dRq_mat.
-proof. apply /Mat_Rq.Matrix.dmatrix_fu; rewrite /dRq; apply /DRq.dunifin_fu. qed.
+proof. apply /Mat_Rq.Matrix.dmatrix_fu; rewrite /dRq; apply /Rq.dpolyXnD1_fu. qed.
 
 lemma dRq_mat_uni: is_uniform dRq_mat.
-proof. apply /Mat_Rq.Matrix.dmatrix_uni; rewrite /dRq; apply /DRq.dunifin_uni. qed.
+proof. apply /Mat_Rq.Matrix.dmatrix_uni; rewrite /dRq; apply /Rq.dpolyXnD1_uni. qed.
 
 (* - Imports - *)
 import Mat_Rq Mat_Rp.
@@ -342,8 +366,80 @@ op Rq2Rp (p : Rq) : Rp =
 lemma Rq2RpE (p : Rq) (i : int) : (Rq2Rp p).[i] = Zq2Zp p.[i].
 proof. admitted.
 
-lemma duni_Rp_Rq : dmap Rq.dpolyXnD1 Rq2Rp = Rp.dpolyXnD1.
+lemma duni_Rp_Rq : dmap dRq Rq2Rp = dRp.
 proof. admitted.
+
+op Rqv2Rpv (p : Rq_vec) : Rp_vec = offunv (fun (i : int) => Rq2Rp p.[i]).
+
+lemma Rqv2RpvE (p : Rq_vec) (i : int) : (Rqv2Rpv p).[i] = Rq2Rp p.[i].
+proof.
+  rewrite /Rqv2Rpv /Mat_Rp.Vector."_.[_]" offunvK /vclamp.
+  case (0 <= i && i < l) => //; move/(Mat_Rq.Vector.getv_out p i) => ->.
+  rewrite /Rq2Rp eq_sym BigRp.PCA.big_seq BigRp.PCA.big1 => //= j; case/mem_range => ge0_j ltn_j.
+  have ->: Zq2Zp Rq.zeror.[j] = Zp.zero; 2: rewrite /( ** ) scale0p //.
+  by rewrite /zeror /"_.[_]" piK 1:reducedP 1:degC // -/Rq.BasePoly."_.[_]" poly0E /Zq2Zp Zq.zeroE.
+qed.
+
+op Rql2Rpv (p : Rq list) : Rp_vec = offunv (fun (i : int) => Rq2Rp (nth witness p i)).
+
+lemma duni_Rp_Rq_vec: dmap dRq_vec Rqv2Rpv = dRp_vec.
+proof.
+(*apply/eq_distr=> v; rewrite !dmap1E.
+rewrite /dRp_vec /dvector /Rqv2Rpv.
+pose F (xs : Rp list) :=  offunv (nth witness xs).
+pose G (vq : Rq_vec) := offunv (fun (i : int) => Rq2Rp vq.[i]).
+pose H (vp : Rp_vec) := map (fun (i : int) => vp.[i]) (range 0 l).
+have eq: forall vq, G vq = (F \o H) (Rqv2Rpv vq).
+move=> rqv. rewrite /(\o) /G /H /F. rewrite eq_vectorP => i [ge0_i ltn_i].
+rewrite /"_.[_]" !offunvK /vclamp ge0_i ltn_i //=.
+rewrite (nth_map witness). admit. simplify. 
+rewrite (nth_range). admit.
+rewrite ge0_i ltn_i //=. 
+rewrite eq_distr => v. rewrite !dmap1E.
+
+rewrite (mu_eq_support (dvector dRq) _ (pred1 v \o F \o H \o Rqv2Rpv)).
+move => xv supp_dvector.
+move: (eq xv). rewrite /(\o) => -> //.
+rewrite -dmap1E. rewrite -dmap_comp. rewrite dmap1E. 
+rewrite /H.
+congr.
+rewrite /dvector dmap_comp /(\o).
+rewrite &(map_comp).
+congr.
+rewrite /H.
+rewrite /dvector.
+rewrite eq_sym.
+rewrite -djoin_dmap_nseq.
+apply/eq_distr=> m; rewrite !dmap1E.
+rewrite dmap_comp /(\o) /Rqv2Rpv.
+rewrite eq_distr => v. 
+rewrite dmap_comp /(\o).
+print Rqv2Rpv.
+have test:
+(dmap (djoin (nseq l dRq))
+     (fun (x : Rq list) => Rqv2Rpv (offunv (nth witness x))))
+= dmap (djoin (nseq l dRq)) (map (fun (x : Rq) => offunv 
+      (fun (i : int) => Rq2Rp .
+
+(* 
+no matching operator, named `dmap', for the following parameters' type:
+  [1]: Rq list distr
+  [2]: Rq_vec list -> vector list
+*)
+pose M (x : Rq list):= map (fun Rqv2Rpv) (x).
+rewrite /Rqv2Rpv.
+rewrite !dmap1E.
+rewrite /Rqv2Rpv. rewrite /dRq_vec. rewrite /dvector. rewrite dvector1E.
+
+
+rewrite dmap1E.
+
+rewrite /Rqv2Rpv.
+rewrite dmap_comp /(\o). rewrite /dRp_vec /dvector. rewrite !dmap1E /(\o). rewrite /Rqv2Rpv.
+rewrite dmap_comp /(\o). rewrite eq_distr => v. rewrite !dmap1E /(\o). rewrite /Rqv2Rpv.
+rewrite eq_distr => v.  rewrite !dmap1E /(\o) /Rqv2Rpv. 
+*)
+admitted.
 
 (* - Constants - *)
 const h1 : Rq = pi (to_polyd (fun _ => Zq.inzmod (2 ^ (eq - ep - 1)))).
@@ -517,7 +613,7 @@ proof.
     - by rewrite mulzC -intmulz mulr2z addzCA /= (ltr_le_trans p) 2:lezz Zp.gtp_asint.
   apply /(scale_comp (Zp.asint x)) /ge2epeq_ep; [apply Zp.ge0_asint | by apply /(lez_trans 1) /ge1_et1 |].
   rewrite mulzC -intmulz mulr2z -(lez_add2r (-(et + 1))) /= -(lez_add2l (eq)) addzAC addzCA /= 
-          -(lez_add2r (-ep)) addzAC (subrK ep (-ep)) opprD addzA.
+          -(lez_add2r (-ep)) addzAC (Ring.IntID.subrK ep (-ep)) opprD addzA.
   by apply sec_assumption.
 qed.
 
@@ -714,7 +810,7 @@ module Saber_PKE_Scheme : Scheme = {
       cm <- c_dec.`1;
       b' <- c_dec.`2;
       v <- (dotp b' (mod_p_Rq_vec s)) + (mod_p_Rq h1);
-      m' <- scale_Rp_R2 (v + (- (shl_dec cm)) + (mod_p_Rq h2));
+      m' <- scale_Rp_R2 (v  - (shl_dec cm) + (mod_p_Rq h2));
       
       return Some (m_encode m');
    }

@@ -353,8 +353,8 @@ clear [BasePoly.Coeff.MulMonoid.*].
 import BasePoly.
 
 (* ==================================================================== *)
-(* We already know that polyX1nD is finite. However, we prove here that *)
-(* we can build the full-uniform distribution over polyX1nD by sampling *)
+(* We already know that polyXnD1 is finite. However, we prove here that *)
+(* we can build the full-uniform distribution over polyXnD1 by sampling *)
 (* uniformly each coefficient in the reduced form representation.       *)
 
 op dpolyXnD1 = dmap (dpoly n Zp.DZmodP.dunifin) pinject.
