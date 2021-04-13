@@ -427,10 +427,10 @@ lemma Equivalence_SaberINDCPA_Game0 &m (A <: Adversary) :
 proof.
   have -> //: Pr[CPA(Saber_PKE_Scheme, A).main() @ &m : res] = Pr[Game0(A).main() @ &m : res].
   + byequiv => //.
-  + proc; inline *. 
-  + swap {1} 7 -6.
-  + call (_ : true); auto; call (_: true); auto.
-  + progress; first do! congr; by rewrite pk_enc_dec_inv.
+    proc; inline *. 
+    swap {1} 7 -6.
+    call (_ : true); auto; call (_: true); auto.
+    progress; first do! congr; by rewrite pk_enc_dec_inv.
     - by rewrite (eq_sym result_R0 bL).
 qed.
 
@@ -441,20 +441,20 @@ lemma Distinguish_Game0_Game1_To_GMLWR &m  (A <: Adversary) :
       `| Pr[GMLWR( B0(A) ).main(true) @ &m : res] - Pr[GMLWR( B0(A) ).main(false) @ &m : res] |. 
 proof.
   have ->: Pr[Game0(A).main() @ &m : res] =  Pr[GMLWR( B0(A) ).main(false) @ &m : res].
-   + byequiv => //.
-   + proc; inline *.
-   + rcondf {2} 4.
-     - by move=> &m0; auto.
-   + swap {2} 7 -6; wp.
-   + by call (_ : true); auto; call (_: true); auto.
+  + byequiv => //.
+    proc; inline *.
+    rcondf {2} 4.
+    - by move=> &m0; auto.
+    swap {2} 7 -6; wp.
+    by call (_ : true); auto; call (_: true); auto.
   have ->: Pr[Game1(A).main() @ &m : res] =  Pr[GMLWR( B0(A) ).main(true) @ &m : res].
-   + byequiv => //.
-   + proc; inline *.
-   + rcondt {2} 4.
-     - by move=> &m0; auto.
-   + swap {2} 7 -6; wp.
-   + call (_ : true); auto; call (_: true); auto; rnd {2}; auto.
-   + by progress; apply dsmallRq_vec_ll.
+  + byequiv => //.
+    proc; inline *.
+    rcondt {2} 4.
+    - by move=> &m0; auto.
+    swap {2} 7 -6; wp.
+    call (_ : true); auto; call (_: true); auto; rnd {2}; auto.
+    by progress; apply dsmallRq_vec_ll.
   by apply distrC.
 qed.
 
@@ -466,9 +466,9 @@ lemma Game1_To_Game2 &m (A <: Adversary) :
 proof.
   have -> //: Pr[Game1(A).main() @ &m : res] = Pr[Game2( A2(A) ).main() @ &m : res].
   + byequiv => //.
-  + proc; inline *.
-  + wp; call (_ : true); auto; call (_ : true); auto.
-  + by progress; do! congr; rewrite c_enc_dec_inv; 1: rewrite scale_comp_Rp_Rppq_R2t.  
+    proc; inline *.
+    wp; call (_ : true); auto; call (_ : true); auto.
+    by progress; do! congr; rewrite c_enc_dec_inv; 1: rewrite scale_comp_Rp_Rppq_R2t.  
 qed.
 
 (* Game2 ==> Game3 *)
@@ -479,10 +479,10 @@ lemma Game2_To_Game3 &m (A <: Adversary) :
 proof.
   have -> //: Pr[Game2(A).main() @ &m : res] = Pr[Game3( A3(A) ).main() @ &m : res].
   + byequiv => //.
-  + proc; inline *.
-  + wp; call (_ : true); auto; call (_ : true); wp.
-  (* What functions to use here... *)
-  admit.
+    proc; inline *.
+    wp; call (_ : true); auto; call (_ : true); wp.
+    (* What functions to use here... *)
+    admit.
 qed.
 
 (* Game3 <> Game4 ==> XMLWR *)
@@ -493,23 +493,23 @@ lemma Distinguish_Game3_Game4_To_XMLWR &m (A <: Adversary) :
 proof.
   have ->: Pr[Game3(A).main() @ &m : res] =  Pr[XMLWR( B1(A) ).main(false) @ &m : res].
   + byequiv => //.
-  + proc; inline *.
-  + rcondf {2} 4.
+    proc; inline *.
+    rcondf {2} 4.
     - by move => &m0; auto.
-  + rcondf {2} 6.
+    rcondf {2} 6.
     - by move => &m0; auto.
-  + swap {2} 11 -10; swap {1} 5 3; swap {2} 6 -2; wp.
-  + by sim.
+    swap {2} 11 -10; swap {1} 5 3; swap {2} 6 -2; wp.
+    by sim.
   have ->: Pr[Game4(A).main() @ &m : res] =  Pr[XMLWR( B1(A) ).main(true) @ &m : res].
   + byequiv => //.
-  + proc; inline *.
-  + rcondt {2} 4.
+    proc; inline *.
+    rcondt {2} 4.
     - by move => &m0; auto.
-  + rcondt {2} 6.
+    rcondt {2} 6.
     - by move => &m0; auto.
-  + swap {2} 11 -10; swap {1} 5 2; swap {2} 6 -1; wp.
-  + sim; rnd {2}; auto.
-  + by progress; apply dsmallRq_vec_ll.
+    swap {2} 11 -10; swap {1} 5 2; swap {2} 6 -1; wp.
+    sim; rnd {2}; auto.
+    by progress; apply dsmallRq_vec_ll.
   by apply distrC.
 qed.
 
@@ -536,13 +536,13 @@ lemma Equivalence_Game4_Aux &m  (A <: Adversary) :
 proof.
   have -> //: Pr[Game4(A).main() @ &m : res] = Pr[Auxiliary_Game(A).main() @ &m : res].
   + byequiv => //. 
-  + proc; inline *.
-  + swap {2} 7 -6.
-  + call (_ : true); wp.
-  + rnd (fun (x : Rp) => x + (shl_enc (m_decode (if u{1} then m1{1} else m0{1})) (2 * ep - eq - 1)))  
+    proc; inline *.
+    swap {2} 7 -6.
+    call (_ : true); wp.
+    rnd (fun (x : Rp) => x + (shl_enc (m_decode (if u{1} then m1{1} else m0{1})) (2 * ep - eq - 1)))  
         (fun (x : Rp) => x - (shl_enc (m_decode (if u{1} then m1{1} else m0{1})) (2 * ep - eq - 1))).
-  + auto; call(_ : true); auto.
-  + progress.
+    auto; call(_ : true); auto.
+    progress.
     - pose x := shl_enc (m_decode (if uL then result_R.`2 else result_R.`1)) (2 * ep - eq - 1).
       by rewrite -addrA addNr addrC add0r. 
     - by apply /rnd_funi /Rp.dpolyXnD1_funi.

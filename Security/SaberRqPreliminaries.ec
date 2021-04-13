@@ -384,6 +384,163 @@ op Rql2Rpv (p : Rq list) : Rp_vec = offunv (fun (i : int) => Rq2Rp (nth witness 
 
 lemma duni_Rp_Rq_vec: dmap dRq_vec Rqv2Rpv = dRp_vec.
 proof.
+(*
+  rewrite dmap_comp /(\o).
+apply/eq_distr=> v; rewrite !dmap1E.
+pose F (xs : Rp list) :=  offunv (nth witness xs).
+rewrite /Rqv2Rpv.
+pose H (x : Rq list) := map (fun (i : int) => Rq2Rp (offunv (nth witness x)).[i]) (range 0 l). 
+pose G (x : Rq list) := offunv (fun (i : int) => Rq2Rp (offunv (nth witness x)).[i]).
+have eq: forall xl, size xl = l => G xl = (F \o H) xl.
+move => xl len @/(\o) @/F @/G @/H.
+rewrite eq_vectorP => i [ge0_i ltn_i] @/Rqv2Rpv @/"_.[_]".
+rewrite !offunvK /vclamp ge0_i ltn_i /=.
+rewrite (nth_map witness). admit.
+rewrite (nth_range) /= ge0_i ltn_i //.
+rewrite (mu_eq_support _ _ (pred1 v \o (F \o H))).
+- move=> xs /supp_djoin [+ _]; rewrite size_nseq ler_maxr //.
+move/eq_sym => /eq @/(\o) -> //.
+rewrite -(dmap1E _ (F \o H)) -dmap_comp dmap1E. congr.
+rewrite /H.
+rewrite -/(\o).
+have ->:
+(fun (x : Rq list) =>
+     map (fun (i : int) => Rq2Rp (offunv (nth witness x)).[i]) (range 0 l))
+=
+  (fun (x : Rq list) =>
+     map (fun a : Rq => Rq2Rp a) x).
+rewrite fun_ext /(==) => rql. rewrite -(nth_map witness).
+
+dmap (djoin (nseq l dRq))
+  (fun (x : Rq list) =>
+     map (fun (i : int) => Rq2Rp (offunv (nth witness x)).[i]) (range 0 l))
+=
+dmap (djoin (nseq l dRq))
+  (fun (x : Rq list) =>
+     map (fun a : Rq => Rq2Rp a) x).
+
+*)
+rewrite dmap_comp.
+apply/eq_distr=> v; rewrite !dmap1E.
+pose F (xs : Rp list) :=  offunv (nth witness xs).
+rewrite /Rqv2Rpv.
+print offunv.
+print Rq_vec.
+pose H (x : Rq list) := map ((fun (p : Rq_vec) => (fun (i : int) => Rq2Rp p.[i])) (offunv (nth witness x))) (range 0 l). 
+pose G (x : Rq list) := 
+((fun (p : Rq_vec) => offunv (fun (i : int) => Rq2Rp p.[i])) \o
+    fun (xs : Rq list) => offunv (nth witness xs)) x.
+have eq: forall xl, size xl = l => G xl = (F \o H) xl.
+move => xl len @/(\o) @/F @/G @/H.
+rewrite eq_vectorP => i [ge0_i ltn_i] @/Rqv2Rpv @/"_.[_]".
+rewrite !offunvK /vclamp ge0_i ltn_i /=.
+rewrite (nth_map witness). admit.
+rewrite (nth_range) /= 1:ge0_i 1:ltn_i //. smt.
+rewrite (mu_eq_support _ _ (pred1 v \o (F \o H))).
+- move=> xs /supp_djoin [+ _]; rewrite size_nseq ler_maxr //.
+move/eq_sym => /eq @/G @/(\o) => <- //.
+rewrite -(dmap1E _ (F \o H)) -dmap_comp dmap1E. congr.
+rewrite /H /=.
+have funeq: 
+forall (x : Rq list),
+  size x = l => 
+     map (fun (i : int) => Rq2Rp (offunv (nth witness x)).[i]) (range 0 l)
+=
+     map (fun (a : Rq) => Rq2Rp a) x.
+move=> x sxl.
+rewrite /"_.[_]" offunvK /vclamp.
+pose f1 := Rq2Rp.
+pose f2 i := if 0 <= i && i < l then nth witness x i else Rq.zeror.
+have ->:
+(fun (i : int) =>
+     f1 (if 0 <= i && i < l then nth witness x i else Rq.zeror))
+=
+(f1 \o f2).
+rewrite /f2 /f1 /(\o) //.
+rewrite map_comp /f1. congr.
+trivial.
+rewrite /f2.
+rewrite eq_sym -{1}(map_nth_range witness) sxl.
+apply (eq_from_nth witness).
+admit.
+move => i [ge0_i ]. rewrite size_map size_range /= maxrE lezNgt -(lez_add1r _ l) ge1_l /= => ltl_i.
+simplify.
+rewrite !(nth_map witness). admit.
+admit.
+rewrite !nth_range.
+admit.
+rewrite /= ge0_i ltl_i //=.
+rewrite (eq_dmap_in _ _ ((fun (x : Rq list) =>
+     map (fun (a : Rq) => Rq2Rp a) x))).
+move => x /supp_djoin_size; rewrite size_nseq maxrE lezNgt -(lez_add1r _ l) ge1_l /= => ltl_sx.
+by apply: (funeq x).
+rewrite djoin_dmap_nseq. do 2! congr. apply duni_Rp_Rq.
+have ->:
+map (fun (i : int) => Rq2Rp (offunv (nth witness x)).[i] (range 0 l)
+=
+map (fun (a : Rq) => Rq2Rp a) x.
+print supp_djoin.
+
+simplify.
+have rangeeq:
+0 <= j 
+(fun (i : int) => if 0 <= i && i < l then nth witness x i else Rq.zeror)
+=
+fun (i : int) =>  nth witness x i.
+rewrite fun_ext /(==) => y.
+rewrite -nth_nseq_if.
+
+ admit.
+rewrite (range_cat 1) // 1:smt. map_cat.
+print eq_from_nth.
+rewrite eq_from_nth.
+have ->: x = map (fun (i : int) => nth witness x i) (range 0 (size x)).
+
+smt.
+rewrite map_f.
+smt.
+fun (i : int) =>
+     f1 (if 0 <= i && i < l then nth witness x i else Rq.zeror)
+
+have ->: 
+have ->:
+(fun (i : int) =>
+     (Rq2Rp (if 0 <= i && i < l then nth witness x i else Rq.zeror)))
+=
+fun (i : int) =>
+     Rq2Rp (nth Rq.zeror (nseq l (nth witness x i)) i).
+rewrite fun_ext /(==) => x0. congr.
+rewrite -nth_nseq_if //.
+have ->:
+map (fun (i : int) => Rq2Rp (nth Rq.zeror (nseq l (nth witness x i)) i))
+  (range 0 l)
+=
+map (fun (i : int) => Rq2Rp (nth witness x i))
+  (range 0 l).
+apply eq_map => x0 /=.
+rewrite &(eq_map). map_eq.
+rewrite nth_nseq.
+rewrite -(nth_map witness).
+rewrite fun_ext /(==).
+(djoin (nseq l (dmap dRq Rq2Rp))). 
+admit.
+rewrite duni_Rp_Rq //.
+(fun (i : int) => Rq2Rp (offunv (nth witness x)).[i]) (range 0 l))
+rewrite (djoin_dmap_nseq l dRq _).
+pose joiny:= (djoin (nseq l dRq)).
+rewrite (djoin_dmap_nseq l joiny ). 
+apply djoin_dmap_nseq.
+rewrite /(\o) /F/G/H eq_vectorP => i [ge0_i ltn_i] @/"_.[_]" @/Rqv2Rpv.
+rewrite 
+rewrite /Rqv2Rpv in G.
+(*
+apply/eq_distr=> v; rewrite !dmap1E.
+rewrite /dRp_vec /dvector /Rqv2Rpv.
+pose F (xs : Rp list) :=  offunv (nth witness xs).
+pose G (vq : Rq_vec) := offunv (fun (i : int) => Rq2Rp vq.[i]).
+pose H (vp : Rq_vec)
+*)
+(*rewrite /dRp_vec.*)
 (*apply/eq_distr=> v; rewrite !dmap1E.
 rewrite /dRp_vec /dvector /Rqv2Rpv.
 pose F (xs : Rp list) :=  offunv (nth witness xs).
