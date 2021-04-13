@@ -3,7 +3,7 @@
 (* ----------------------------------- *)
 
 (* --- Built-in --- *)
-require import AllCore Distr ZModP IntDiv Bigalg StdOrder List.
+require import AllCore List Distr Ring ZModP IntDiv Bigalg StdOrder.
 require (*--*) Matrix PKE.
 (*---*) import IntOrder.
 
@@ -41,6 +41,7 @@ lemma ge2_ep: 2 <= ep by apply /(lez_trans (et + 2) 2 ep) /geet2_ep /(lez_add2r 
 lemma ge3_eq: 3 <= eq by apply /(lez_trans (ep + 1) 3 eq) /geep1_eq /(lez_add2r 1 2 ep) /ge2_ep.
 
 lemma ge1_n : 1 <= n by rewrite exprn_ege1 1:ge0_en.
+lemma ge0_n: 0 <= n by smt(ge1_n).
 lemma ge1_t: 1 <= t by rewrite exprn_ege1 1:ge0_et.
 lemma ge2_2t: 2 <= 2 * t by move: (ler_pmul2l 2 _ 1 t); rewrite // ge1_t //.
 lemma ge4_p: 4 <= p by move: (ler_weexpn2l 2 _ 2 ep); rewrite //= ge2_ep /= expr2.
@@ -121,20 +122,22 @@ clone import PolyReduce.PolyReduceZp as Rmod with
     op  p <- Zmod.p,
     op  n <- n,
 
-    op Zp.unit   <- Zmod.unit  ,
-    op Zp.zero   <- Zmod.zero  ,
-    op Zp.one    <- Zmod.one   ,
-    op Zp.( + )  <- Zmod.( + ) ,
-    op Zp.([-])  <- Zmod.([-]) ,
-    op Zp.( * )  <- Zmod.( * ) ,
-    op Zp.inv    <- Zmod.inv   ,
-    op Zp.inzmod <- Zmod.inzmod,
-    op Zp.asint  <- Zmod.asint ,
-
-    op Zp.ZModpRing.ofint  <- Zmod.ZModpRing.ofint ,
-    op Zp.ZModpRing.intmul <- Zmod.ZModpRing.intmul,
-    op Zp.ZModpRing.exp    <- Zmod.ZModpRing.exp   ,
-    op Zp.ZModpRing.lreg   <- Zmod.ZModpRing.lreg
+    op  Zp.unit   <- Zmod.unit  ,
+    op  Zp.zero   <- Zmod.zero  ,
+    op  Zp.one    <- Zmod.one   ,
+    op  Zp.( + )  <- Zmod.( + ) ,
+    op  Zp.([-])  <- Zmod.([-]) ,
+    op  Zp.( * )  <- Zmod.( * ) ,
+    op  Zp.inv    <- Zmod.inv   ,
+    op  Zp.inzmod <- Zmod.inzmod,
+    op  Zp.asint  <- Zmod.asint ,
+  
+    op  Zp.DZmodP.dunifin <- Zmod.DZmodP.dunifin,
+  
+    op  Zp.ZModpRing.ofint  <- Zmod.ZModpRing.ofint ,
+    op  Zp.ZModpRing.intmul <- Zmod.ZModpRing.intmul,
+    op  Zp.ZModpRing.exp    <- Zmod.ZModpRing.exp   ,
+    op  Zp.ZModpRing.lreg   <- Zmod.ZModpRing.lreg
 
   proof gt0_n by smt(ge1_n)
   proof ge2_p by apply/Zmod.ge2_p
@@ -151,41 +154,6 @@ clone import PolyReduce.PolyReduceZp as Rmod with
 clear [Rmod.Zrmod.* Rmod.Zrmod.DZmodP.* Rmod.Zrmod.DZmodP.Support.*].
 clear [Rmod.Zrmod.ZModule.* Rmod.Zrmod.ComRing.* Rmod.Zrmod.ZModpRing.*].
 clear [Rmod.Zrmod.ZModpRing.AddMonoid.* Rmod.Zrmod.ZModpRing.MulMonoid.*].
-
-clone BigComRing as BigXnD1 with
-  type t         <- Rmod.polyXnD1,
-    op CR.zeror  <- Rmod.zeror,
-    op CR.oner   <- Rmod.oner,
-    op CR.( + )  <- Rmod.( + ),
-    op CR.([-])  <- Rmod.([-]),
-    op CR.( * )  <- Rmod.( * ),
-    op CR.invr   <- Rmod.invr,
-    op CR.intmul <- Rmod.ComRing.intmul,
-    op CR.ofint  <- Rmod.ComRing.ofint,
-    op CR.exp    <- Rmod.ComRing.exp,
-    op CR.lreg   <- Rmod.ComRing.lreg,
-  pred CR.unit   <- Rmod.unit
-
-  proof *
-
-  remove abbrev CR.(-)
-  remove abbrev CR.(/)
-
-  rename [theory] "BAdd" as "PCA"
-         [theory] "BMul" as "PCM".
-
-  realize CR.addrA     by apply: Rmod.ComRing.addrA    .
-  realize CR.addrC     by apply: Rmod.ComRing.addrC    .
-  realize CR.add0r     by apply: Rmod.ComRing.add0r    .
-  realize CR.addNr     by apply: Rmod.ComRing.addNr    .
-  realize CR.oner_neq0 by apply: Rmod.ComRing.oner_neq0.
-  realize CR.mulrA     by apply: Rmod.ComRing.mulrA    .
-  realize CR.mulrC     by apply: Rmod.ComRing.mulrC    .
-  realize CR.mul1r     by apply: Rmod.ComRing.mul1r    .
-  realize CR.mulrDl    by apply: Rmod.ComRing.mulrDl   .
-  realize CR.mulVr     by apply: Rmod.ComRing.mulVr    .
-  realize CR.unitP     by apply: Rmod.ComRing.unitP    .
-  realize CR.unitout   by apply: Rmod.ComRing.unitout  .
 end PolyZ.
 
 (* -- Rq = Z/qZ[X] / (X^n + 1) -- *)
@@ -204,8 +172,8 @@ clone include PolyZ with
 
 clone Matrix as Mat_Rq with 
   type R         <- Rq,
-    op ZR.zeror  <- Rq.zeror,
-    op ZR.oner   <- Rq.oner,
+    op ZR.zeror  <- Rq.zeroXnD1,
+    op ZR.oner   <- Rq.oneXnD1,
     op ZR.( + )  <- Rq.( + ),
     op ZR.([-])  <- Rq.([-]),
     op ZR.( * )  <- Rq.( * ),
@@ -250,8 +218,8 @@ clone include PolyZ with
 
 clone Matrix as Mat_Rp with 
   type R         <- Rp,
-    op ZR.zeror  <- Rp.zeror,
-    op ZR.oner   <- Rp.oner,
+    op ZR.zeror  <- Rp.zeroXnD1,
+    op ZR.oner   <- Rp.oneXnD1,
     op ZR.( + )  <- Rp.( + ),
     op ZR.([-])  <- Rp.([-]),
     op ZR.( * )  <- Rp.( * ),
@@ -355,19 +323,63 @@ import Zp Rp Rp.ComRing Rp.BasePoly.
 import Zppq Rppq Rppq.ComRing Rppq.BasePoly.
 import Z2t R2t R2t.ComRing R2t.BasePoly.
 import Z2 R2 R2.ComRing R2.BasePoly.
+import Rp.BasePoly.BigCf.
 
 (* - From Rq to Rp - *)
 op Zq2Zp (z : Zq) : Zp =
   Zp.inzmod (asint z).
 
+lemma Zq2Zp0 : Zq2Zp Zq.zero = Zp.zero.
+proof. by rewrite -eq_inzmod zeroE mod0z. qed.
+
+import DInterval DList.
+
+lemma duni_Zp_Zq : dmap DZqP.dunifin Zq2Zp = DZpP.dunifin.
+proof.
+rewrite !(DZqP.dzmodE, DZpP.dzmodE) dmap_comp.
+have ->: Zq2Zp \o Zq.inzmod = Zp.inzmod.
+- apply/fun_ext=> i; apply/Zp.eq_inzmod.
+  by rewrite inzmodK modz_dvd // p_div_q.
+apply/eq_distr; elim/Zp.inzmodW => i rgi.
+rewrite eq_sym (dmap1E_can _ _ Zp.asint) 1:&(Zp.asintK).
+- by move=> j /supp_dinter rgj; rewrite inzmodK pmod_small //#.
+rewrite inzmodK pmod_small // eq_sym dmap1E /(\o) /pred1.
+pose P := fun x => Zp.inzmod x = Zp.inzmod i.
+have ->: P = pred1 i \o (fun x => x %% p).
+- apply/fun_ext=> j @/(\o) @/pred1 @/P.
+  by rewrite -eq_inzmod (pmod_small i).
+rewrite -dmap1E; apply/eq_distr/duni_range_dvd/p_div_q.
+- by apply/(ltr_le_trans 8)/ge8_q.
+- by apply/(ltr_le_trans 4)/ge4_p.
+qed.
+
 op Rq2Rp (p : Rq) : Rp =
-  BigRp.PCA.bigi predT (fun (i : int) => Zq2Zp p.[i] ** exp Rp.iX i) 0 n.
+  BigRp.XnD1CA.bigi predT (fun (i : int) => Zq2Zp p.[i] ** exp Rp.iX i) 0 n.
 
 lemma Rq2RpE (p : Rq) (i : int) : (Rq2Rp p).[i] = Zq2Zp p.[i].
-proof. admitted.
+proof.
+case: (i < 0) => [lt0_i|]; first by rewrite !lt0_rcoeff // Zq2Zp0.
+move/lerNgt=> ge0_i; case: (i < n); last first.
+- by move/lerNgt=> ge_ni; rewrite !gered_rcoeff // Zq2Zp0.
+move=> lt_in; rewrite rcoeff_sum /= (BCA.bigD1 _ _ i) /=;
+  1,2: by rewrite (mem_range, range_uniq).
+rewrite rcoeffZ rcoeff_polyXn //= Zp.ZModpRing.mulr1.
+rewrite BCA.big_seq_cond BCA.big1 /=; last first.
+- by rewrite Zp.ZModpRing.addr0.
+move=> j [/mem_range rgj @/predC1 ne_ji].
+rewrite rcoeffZ rcoeff_polyXn // (eq_sym i j) ne_ji /=.
+- by rewrite Zp.ZModpRing.mulr0.
+qed.
 
-lemma duni_Rp_Rq : dmap dRq Rq2Rp = dRp.
-proof. admitted.
+lemma duni_Rp_Rq : dmap Rq.dpolyXnD1 Rq2Rp = Rp.dpolyXnD1.
+proof.
+rewrite /Rq.dpolyXnD1 /Rp.dpolyXnD1 -duni_Zp_Zq.
+rewrite !(dmap_comp, dlist_dmap) &(eq_dmap_in).
+move=> xs /(supp_dlist_size _ _ _ ge0_n) => szxs @/(\o).
+apply/Rp.polyXnD1_eqP=> i rgi; rewrite Rq2RpE.
+rewrite !piK; ~-1: by rewrite (reduced_polyL) ?size_map szxs.
+by rewrite !polyLE (nth_map Zq.zero) ?szxs.
+qed.
 
 op Rqv2Rpv (p : Rq_vec) : Rp_vec = offunv (fun (i : int) => Rq2Rp p.[i]).
 
@@ -375,8 +387,8 @@ lemma Rqv2RpvE (p : Rq_vec) (i : int) : (Rqv2Rpv p).[i] = Rq2Rp p.[i].
 proof.
   rewrite /Rqv2Rpv /Mat_Rp.Vector."_.[_]" offunvK /vclamp.
   case (0 <= i && i < l) => //; move/(Mat_Rq.Vector.getv_out p i) => ->.
-  rewrite /Rq2Rp eq_sym BigRp.PCA.big_seq BigRp.PCA.big1 => //= j; case/mem_range => ge0_j ltn_j.
-  have ->: Zq2Zp Rq.zeror.[j] = Zp.zero; 2: rewrite /( ** ) scale0p //.
+  rewrite /Rq2Rp eq_sym BigRp.XnD1CA.big_seq BigRp.XnD1CA.big1 => //= j; case/mem_range => ge0_j ltn_j.
+  have ->: Zq2Zp Rq.zeroXnD1.[j] = Zp.zero; 2: rewrite /( ** ) scale0p //.
   by rewrite /zeror /"_.[_]" piK 1:reducedP 1:degC // -/Rq.BasePoly."_.[_]" poly0E /Zq2Zp Zq.zeroE.
 qed.
 
@@ -770,7 +782,7 @@ proof.
     - by rewrite mulzC -intmulz mulr2z addzCA /= (ltr_le_trans p) 2:lezz Zp.gtp_asint.
   apply /(scale_comp (Zp.asint x)) /ge2epeq_ep; [apply Zp.ge0_asint | by apply /(lez_trans 1) /ge1_et1 |].
   rewrite mulzC -intmulz mulr2z -(lez_add2r (-(et + 1))) /= -(lez_add2l (eq)) addzAC addzCA /= 
-          -(lez_add2r (-ep)) addzAC (Ring.IntID.subrK ep (-ep)) opprD addzA.
+          -(lez_add2r (-ep)) addzAC (IntID.subrK ep (-ep)) opprD addzA.
   by apply sec_assumption.
 qed.
 
@@ -883,7 +895,7 @@ proof.
 
   (* Main Proof *)
   rewrite /mod_ppq_Rp /scale_Rp_Rppq; do 2! congr; rewrite fun_ext /(==) => i.
-  rewrite /mod_p_Rq /scale_Rq_Rp /shl_enc !addE !piK; 1, 2: apply Rp.reduceD;
+  rewrite /mod_p_Rq /scale_Rq_Rp /shl_enc !addE !piK; 1, 2: apply Rp.reducedD;
           2, 3, 4: rewrite reducedP deg_leP 1:ge0_n => j gen_j; 2, 3, 4: rewrite coeffE /=.
   + by apply reduced_topolyd_scale_Zq_Zp.
   + by apply ispoly_shlm_pp2q.
