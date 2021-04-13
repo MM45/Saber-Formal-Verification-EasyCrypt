@@ -1,5 +1,5 @@
 (* ==================================================================== *)
-require import AllCore Finite List Distr.
+require import AllCore Finite List Bigalg Distr.
 require import Ring StdOrder IntDiv ZModP Ideal Poly.
 (*---*) import IntOrder.
 
@@ -72,7 +72,12 @@ hint exact : idI.
 type polyXnD1.
 
 clone include RingQuotient
-  with type qT <- polyXnD1, op p <- I proof IdealAxioms.*.
+  with type qT <- polyXnD1, op p <- I
+
+  proof IdealAxioms.*
+
+  rename [op] "zeror" as "zeroXnD1"
+  rename [op] "oner"  as "oneXnD1".
 
 realize IdealAxioms.ideal_p by apply/idI.
 
@@ -88,6 +93,44 @@ by rewrite (_ : 1 = 1 + 0) 1:// ler_lt_add // deg_ge1.
 qed.
 
 (* -------------------------------------------------------------------- *)
+clone BigComRing as BigXnD1 with
+  type t         <- polyXnD1,
+    op CR.zeror  <- zeroXnD1,
+    op CR.oner   <- oneXnD1,
+    op CR.( + )  <- ( + ),
+    op CR.([-])  <- ([-]),
+    op CR.( * )  <- ( * ),
+    op CR.invr   <- invr,
+    op CR.intmul <- ComRing.intmul,
+    op CR.ofint  <- ComRing.ofint,
+    op CR.exp    <- ComRing.exp,
+    op CR.lreg   <- ComRing.lreg,
+  pred CR.unit   <- unit
+
+  proof *
+
+  remove abbrev CR.(-)
+  remove abbrev CR.(/)
+
+  rename [theory] "BAdd" as "XnD1CA"
+         [theory] "BMul" as "XnD1CM".
+
+realize CR.addrA     by apply: ComRing.addrA    .
+realize CR.addrC     by apply: ComRing.addrC    .
+realize CR.add0r     by apply: ComRing.add0r    .
+realize CR.addNr     by apply: ComRing.addNr    .
+realize CR.oner_neq0 by apply: ComRing.oner_neq0.
+realize CR.mulrA     by apply: ComRing.mulrA    .
+realize CR.mulrC     by apply: ComRing.mulrC    .
+realize CR.mul1r     by apply: ComRing.mul1r    .
+realize CR.mulrDl    by apply: ComRing.mulrDl   .
+realize CR.mulVr     by apply: ComRing.mulVr    .
+realize CR.unitP     by apply: ComRing.unitP    .
+realize CR.unitout   by apply: ComRing.unitout  .
+
+import BigXnD1.
+
+(* -------------------------------------------------------------------- *)
 abbrev pinject = pi.
 abbrev prepr   = repr.
 
@@ -97,6 +140,14 @@ op iX = pinject X.
 (* -------------------------------------------------------------------- *)
 op ( ** ) (c : coeff) (p : polyXnD1) =
   pinject (c ** (repr p)).
+
+(* -------------------------------------------------------------------- *)
+lemma scale0p (p : polyXnD1) : zeror ** p = zeroXnD1.
+proof. by rewrite /( ** ) scale0p. qed.
+
+(* -------------------------------------------------------------------- *)
+lemma scaleE c (p : poly) : c ** pi p = pinject (c ** p).
+proof. by rewrite /( ** ) !scalepE -2!mulE reprK. qed.
 
 (* -------------------------------------------------------------------- *)
 lemma eqv_Xn : eqv (exp X n) (-poly1).
@@ -232,7 +283,49 @@ move=> ih p; rewrite (_ : p = pi (crepr p)).
 qed.
 
 (* -------------------------------------------------------------------- *)
-lemma reduceD (p q : poly) : reduced p => reduced q => reduced (p + q).
+lemma polyXnD1_eqP (p q : polyXnD1) :
+  (p = q) <=> (forall i, 0 <= i < n => p.[i] = q.[i]).
+proof.
+elim/polyXnD1W: p => p redp; elim/polyXnD1W: q => q redq.
+rewrite !piK // -eqv_pi -reduce_eqP !reduce_reduced //.
+split=> [->//|eq_pq]; apply/poly_eqP => i ge0_i.
+case: (i < n) => [lt_in|/lerNgt le_ni]; first by apply/eq_pq.
+by rewrite !gedeg_coeff //; smt(reducedP).
+qed.
+
+(* -------------------------------------------------------------------- *)
+lemma reduced_polyL xs : size xs <= n => reduced (polyL xs).
+proof. by move=> len; apply/reducedP/(ler_trans (size xs))/len/degL_le. qed.
+
+(* -------------------------------------------------------------------- *)
+lemma reducedC c : reduced (polyC c).
+proof. by rewrite reducedP degC; smt(gt0_n). qed.
+
+(* -------------------------------------------------------------------- *)
+lemma reduced0 : reduced poly0.
+proof. by apply: reducedC. qed.
+
+(* -------------------------------------------------------------------- *)
+lemma reduced1 : reduced poly1.
+proof. by apply: reducedC. qed.
+
+(* -------------------------------------------------------------------- *)
+lemma lt0_rcoeff p i : i < 0 => p.[i] = zeror.
+proof. by move=> gt0_i; rewrite lt0_coeff. qed.
+
+(* -------------------------------------------------------------------- *)
+lemma gered_rcoeff p i : n <= i => p.[i] = zeror.
+proof.
+move=> ge_ni; rewrite gedeg_coeff //.
+by apply/(ler_trans n)/ge_ni/deg_crepr.
+qed.
+
+(* -------------------------------------------------------------------- *)
+lemma rcoeff0 k : zeroXnD1.[k] = Coeff.zeror.
+proof. by rewrite piK 1:reduced0 poly0E. qed.
+
+(* -------------------------------------------------------------------- *)
+lemma reducedD (p q : poly) : reduced p => reduced q => reduced (p + q).
 proof.
 rewrite !reducedP => dgp dgq;
   apply: (ler_trans _ _ _ (degD _ _ ));
@@ -240,14 +333,55 @@ rewrite !reducedP => dgp dgq;
 qed.
 
 (* -------------------------------------------------------------------- *)
-lemma reducedD (p q : polyXnD1) k : (p + q).[k] = p.[k] + q.[k].
+lemma rcoeffD (p q : polyXnD1) k : (p + q).[k] = p.[k] + q.[k].
 proof.
 elim/polyXnD1W: p => p rdp; elim/polyXnD1W: q => q rdq.
-by rewrite addE !piK 1:&(reduceD) // polyDE.
+by rewrite addE !piK 1:&(reducedD) // polyDE.
 qed.
 
 (* -------------------------------------------------------------------- *)
-lemma reducedM (p q : polyXnD1) k : 0 <= k < n => (p * q).[k] =
+lemma reduced_sum ['a] (P : 'a -> bool) (F : 'a -> poly) (r : 'a list) :
+  (forall i, P i => reduced (F i)) => reduced (PCA.big P F r).
+proof.
+move=> red; elim: r => [|x r ih]; 1: by rewrite big_nil reduced0.
+by rewrite big_cons; case: (P x) => // Px; rewrite reducedD // &(red).
+qed.
+
+(* -------------------------------------------------------------------- *)
+lemma rcoeff_sum ['a] (P : 'a -> bool) (F : 'a -> polyXnD1) (r : 'a list) k :
+  (XnD1CA.big P F r).[k] = BCA.big P (fun i => (F i).[k]) r.
+proof.
+elim: r => [|x r ih].
+- by rewrite XnD1CA.big_nil BCA.big_nil rcoeff0.
+rewrite XnD1CA.big_cons BCA.big_cons.
+by case: (P x) => Px; rewrite ?rcoeffD ih.
+qed.
+
+(* -------------------------------------------------------------------- *)
+lemma reducedZ c p : reduced p => reduced (c ** p).
+proof. by rewrite !reducedP => degp; apply/(ler_trans (deg p))/degp/degZ_le. qed.
+
+(* -------------------------------------------------------------------- *)
+lemma rcoeffZ c p k : (c ** p).[k] = c * p.[k].
+proof.
+case: (c = zeror) => [->|nz_c]; 1: by rewrite scale0p rcoeff0 mul0r.
+elim/polyXnD1W: p => p redp; rewrite scaleE.
+by rewrite !piK 1:&(reducedZ) // polyZE.
+qed.
+
+(* -------------------------------------------------------------------- *)
+lemma reducedXn i : 0 <= i < n => reduced (exp X i).
+proof.
+by case=> ge0_i lt_in; rewrite reducedP (ler_trans (i+1)) 1:deg_polyXn //#.
+qed.
+
+(* -------------------------------------------------------------------- *)
+lemma rcoeff_polyXn i k : 0 <= i < n =>
+  (ComRing.exp iX i).[k] = if k = i then oner else zeror.
+proof. admitted.
+
+(* -------------------------------------------------------------------- *)
+lemma rcoeffM (p q : polyXnD1) k : 0 <= k < n => (p * q).[k] =
     BCA.bigi predT (fun i =>
        p.[i] * q.[k - i] - p.[i] * q.[n + k - i]) 0 n.
 proof.

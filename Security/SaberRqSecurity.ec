@@ -9,8 +9,8 @@ require import AllCore Distr DBool ZModP IntDiv StdOrder.
 (* --- Local --- *)
 require import SaberRqPreliminaries.
 (*---*) import Mat_Rq Mat_Rp.
-(*---*) import Rq Rq.ComRing.
-(*---*) import Rp Rp.ComRing.
+(*---*) import Rq Rp.
+(*---*) import Rq.ComRing Rp.ComRing.
 (*---*) import Saber_PKE.
 
 (* ----------------------------------- *)
@@ -548,7 +548,7 @@ proof.
     - by apply /rnd_funi /Rp.dpolyXnD1_funi.
     - by apply /is_fullP /Rp.dpolyXnD1_fu.
     - pose x := shl_enc (m_decode (if uL then result_R.`2 else result_R.`1)) (2 * ep - eq - 1).
-      have xx_0: forall (x : Rp), x - x = Rp.zeror.
+      have xx_0: forall (x : Rp), x + (- x) = Rp.zeroXnD1.
       * by move => x0; rewrite -(addrN x0).
       by rewrite -addrA (xx_0 x) addrC add0r.
     - by rewrite scale_Rp_Rp_id.  
