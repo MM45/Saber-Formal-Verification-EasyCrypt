@@ -1,6 +1,6 @@
-(* ----------------------------------- *)
-(*  Require/Import Theories            *)
-(* ----------------------------------- *)
+(* ------------------------------------------------------------------------------------- *)
+(*  Require/Import Theories                                                              *)
+(* ------------------------------------------------------------------------------------- *)
 
 (* --- Built-in --- *)
 require import AllCore List Distr Ring ZModP IntDiv Bigalg StdOrder.
@@ -10,9 +10,9 @@ require (*--*) Matrix PKE.
 (* --- Local --- *)
 require (*--*) PolyReduce.
 
-(* ----------------------------------- *)
-(*  General Preliminaries              *)
-(* ----------------------------------- *)
+(* ------------------------------------------------------------------------------------- *)
+(*  General Preliminaries                                                                *)
+(* ------------------------------------------------------------------------------------- *)
 
 (* --- Constants --- *)
 (* -- Exponents -- *)
@@ -103,7 +103,8 @@ qed.
 
 lemma eq_22epeq_ppq: 2 ^ (2 * ep - eq) = (p * p) %/ q.
 proof.
-  apply (mulfI q); [by rewrite neq_ltz; right; apply expr_gt0 | rewrite mulzC -(mulzC (p * p %/ q) _)].  
+  apply (mulfI q); [by rewrite neq_ltz; right; apply expr_gt0 | 
+                    rewrite mulzC -(mulzC (p * p %/ q) _)].  
   have ->: p * p %/ q * q = p * p.
    by rewrite -(dvdz_eq q (p * p)) q_div_pp.
   rewrite /p /q -exprD_nneg; first by rewrite subz_ge0 (lez_trans (eq + 1) eq (2 * ep)); 
@@ -119,25 +120,25 @@ clone import ZModRing as Zmod.
 
 clone import PolyReduce.PolyReduceZp as Rmod with
   type Zp <- Zmod.zmod,
-    op  p <- Zmod.p,
-    op  n <- n,
+    op p  <- Zmod.p,
+    op n  <- n,
 
-    op  Zp.unit   <- Zmod.unit  ,
-    op  Zp.zero   <- Zmod.zero  ,
-    op  Zp.one    <- Zmod.one   ,
-    op  Zp.( + )  <- Zmod.( + ) ,
-    op  Zp.([-])  <- Zmod.([-]) ,
-    op  Zp.( * )  <- Zmod.( * ) ,
-    op  Zp.inv    <- Zmod.inv   ,
-    op  Zp.inzmod <- Zmod.inzmod,
-    op  Zp.asint  <- Zmod.asint ,
+    op Zp.unit   <- Zmod.unit,
+    op Zp.zero   <- Zmod.zero,
+    op Zp.one    <- Zmod.one,
+    op Zp.( + )  <- Zmod.( + ),
+    op Zp.([-])  <- Zmod.([-]),
+    op Zp.( * )  <- Zmod.( * ),
+    op Zp.inv    <- Zmod.inv,
+    op Zp.inzmod <- Zmod.inzmod,
+    op Zp.asint  <- Zmod.asint,
   
-    op  Zp.DZmodP.dunifin <- Zmod.DZmodP.dunifin,
+    op Zp.DZmodP.dunifin <- Zmod.DZmodP.dunifin,
   
-    op  Zp.ZModpRing.ofint  <- Zmod.ZModpRing.ofint ,
-    op  Zp.ZModpRing.intmul <- Zmod.ZModpRing.intmul,
-    op  Zp.ZModpRing.exp    <- Zmod.ZModpRing.exp   ,
-    op  Zp.ZModpRing.lreg   <- Zmod.ZModpRing.lreg
+    op Zp.ZModpRing.ofint  <- Zmod.ZModpRing.ofint,
+    op Zp.ZModpRing.intmul <- Zmod.ZModpRing.intmul,
+    op Zp.ZModpRing.exp    <- Zmod.ZModpRing.exp,
+    op Zp.ZModpRing.lreg   <- Zmod.ZModpRing.lreg
 
   proof gt0_n by smt(ge1_n)
   proof ge2_p by apply/Zmod.ge2_p
@@ -160,11 +161,11 @@ end PolyZ.
 type Zq, Rq.
 
 clone include PolyZ with
-    type Zmod.zmod     <- Zq,
-    type Rmod.polyXnD1 <- Rq,
-    op   Zmod.p        <- q
+  type Zmod.zmod     <- Zq,
+  type Rmod.polyXnD1 <- Rq,
+    op Zmod.p        <- q
 
-  proof  Zmod.ge2_p by smt(ge8_q)
+  proof Zmod.ge2_p by smt(ge8_q)
 
   rename [theory] "Zmod" as "Zq"
   rename [theory] "Rmod" as "Rq"
@@ -172,6 +173,9 @@ clone include PolyZ with
 
 clone Matrix as Mat_Rq with 
   type R         <- Rq,
+    op size      <- l,
+
+  pred ZR.unit   <- Rq.unit,
     op ZR.zeror  <- Rq.zeroXnD1,
     op ZR.oner   <- Rq.oneXnD1,
     op ZR.( + )  <- Rq.( + ),
@@ -181,16 +185,9 @@ clone Matrix as Mat_Rq with
     op ZR.intmul <- Rq.ComRing.intmul,
     op ZR.ofint  <- Rq.ComRing.ofint,
     op ZR.exp    <- Rq.ComRing.exp,
-    op ZR.lreg   <- Rq.ComRing.lreg,
-  pred ZR.unit   <- Rq.unit,
-    op size <- l
-  proof ge0_size by apply (lez_trans 1 _ _ _ ge1_l).
+    op ZR.lreg   <- Rq.ComRing.lreg
 
-(*
-clone import MFinite as DRq with
-    type t <- Rq,
-    op Support.card <- q ^ n.
-*)
+  proof ge0_size by apply (lez_trans 1 _ _ _ ge1_l).
     
 type Rq_vec = Mat_Rq.vector.
 type Rq_mat = Mat_Rq.Matrix.matrix.
@@ -206,11 +203,11 @@ op dsmallRq_vec : Rq_vec distr = Mat_Rq.Matrix.dvector dsmallRq.
 type Zp, Rp.
 
 clone include PolyZ with
-    type Zmod.zmod     <- Zp,
-    type Rmod.polyXnD1 <- Rp,
-    op   Zmod.p        <- p
+   type Zmod.zmod     <- Zp,
+   type Rmod.polyXnD1 <- Rp,
+     op Zmod.p        <- p
 
-  proof  Zmod.ge2_p by smt(ge4_p)
+  proof Zmod.ge2_p by smt(ge4_p)
 
   rename [theory] "Zmod" as "Zp"
   rename [theory] "Rmod" as "Rp"
@@ -218,6 +215,9 @@ clone include PolyZ with
 
 clone Matrix as Mat_Rp with 
   type R         <- Rp,
+    op size      <- l,
+
+  pred ZR.unit   <- Rp.unit,
     op ZR.zeror  <- Rp.zeroXnD1,
     op ZR.oner   <- Rp.oneXnD1,
     op ZR.( + )  <- Rp.( + ),
@@ -227,15 +227,10 @@ clone Matrix as Mat_Rp with
     op ZR.intmul <- Rp.ComRing.intmul,
     op ZR.ofint  <- Rp.ComRing.ofint,
     op ZR.exp    <- Rp.ComRing.exp,
-    op ZR.lreg   <- Rp.ComRing.lreg,
-  pred ZR.unit   <- Rp.unit,
-    op size <- l
+    op ZR.lreg   <- Rp.ComRing.lreg
+
   proof ge0_size by apply (lez_trans 1 _ _ _ ge1_l).
-(*
-clone import MFinite as DRp with
-    type t <- Rp,
-    op Support.card <- p ^ n.  
-*)
+
 type Rp_vec = Mat_Rp.vector.
 
 op dRp : Rp distr = Rp.dpolyXnD1. 
@@ -245,11 +240,11 @@ op dRp_vec : Rp_vec distr = Mat_Rp.Matrix.dvector dRp.
 type Zppq, Rppq.
 
 clone include PolyZ with
-    type Zmod.zmod     <- Zppq,
-    type Rmod.polyXnD1 <- Rppq,
-    op   Zmod.p        <- (p * p) %/ q
+  type Zmod.zmod     <- Zppq,
+  type Rmod.polyXnD1 <- Rppq,
+    op Zmod.p        <- (p * p) %/ q
 
-  proof  Zmod.ge2_p by apply/ge2_ppq
+  proof Zmod.ge2_p by apply/ge2_ppq
 
   rename [theory] "Zmod" as "Zppq"
   rename [theory] "Rmod" as "Rppq"
@@ -259,11 +254,11 @@ clone include PolyZ with
 type Z2t, R2t.
 
 clone include PolyZ with
-    type Zmod.zmod     <- Z2t,
-    type Rmod.polyXnD1 <- R2t,
-    op   Zmod.p        <- 2 * t
+  type Zmod.zmod     <- Z2t,
+  type Rmod.polyXnD1 <- R2t,
+    op Zmod.p        <- 2 * t
 
-  proof  Zmod.ge2_p by apply/ge2_2t
+  proof Zmod.ge2_p by apply/ge2_2t
 
   rename [theory] "Zmod" as "Z2t"
   rename [theory] "Rmod" as "R2t"
@@ -273,11 +268,11 @@ clone include PolyZ with
 type Z2, R2.
 
 clone include PolyZ with
-    type Zmod.zmod     <- Z2,
-    type Rmod.polyXnD1 <- R2,
-    op   Zmod.p        <- 2
+  type Zmod.zmod     <- Z2,
+  type Rmod.polyXnD1 <- R2,
+    op Zmod.p        <- 2
 
-  proof  Zmod.ge2_p by done
+  proof Zmod.ge2_p by done
 
   rename [theory] "Zmod" as "Z2"
   rename [theory] "Rmod" as "R2"
@@ -356,6 +351,8 @@ qed.
 op Rq2Rp (p : Rq) : Rp =
   BigRp.XnD1CA.bigi predT (fun (i : int) => Zq2Zp p.[i] ** exp Rp.iX i) 0 n.
 
+op Rqv2Rpv (p : Rq_vec) : Rp_vec = offunv (fun (i : int) => Rq2Rp p.[i]).
+
 lemma Rq2RpE (p : Rq) (i : int) : (Rq2Rp p).[i] = Zq2Zp p.[i].
 proof.
 case: (i < 0) => [lt0_i|]; first by rewrite !lt0_rcoeff // Zq2Zp0.
@@ -381,15 +378,15 @@ rewrite !piK; ~-1: by rewrite (reduced_polyL) ?size_map szxs.
 by rewrite !polyLE (nth_map Zq.zero) ?szxs.
 qed.
 
-op Rqv2Rpv (p : Rq_vec) : Rp_vec = offunv (fun (i : int) => Rq2Rp p.[i]).
-
 lemma Rqv2RpvE (p : Rq_vec) (i : int) : (Rqv2Rpv p).[i] = Rq2Rp p.[i].
 proof.
   rewrite /Rqv2Rpv /Mat_Rp.Vector."_.[_]" offunvK /vclamp.
   case (0 <= i && i < l) => //; move/(Mat_Rq.Vector.getv_out p i) => ->.
-  rewrite /Rq2Rp eq_sym BigRp.XnD1CA.big_seq BigRp.XnD1CA.big1 => //= j; case/mem_range => ge0_j ltn_j.
+  rewrite /Rq2Rp eq_sym BigRp.XnD1CA.big_seq BigRp.XnD1CA.big1 => //= j; 
+          case/mem_range => ge0_j ltn_j.
   have ->: Zq2Zp Rq.zeroXnD1.[j] = Zp.zero; 2: rewrite /( ** ) scale0p //.
-  by rewrite /zeror /"_.[_]" piK 1:reducedP 1:degC // -/Rq.BasePoly."_.[_]" poly0E /Zq2Zp Zq.zeroE.
+  by rewrite /zeror /"_.[_]" piK 1:reducedP 1:degC // 
+     -/Rq.BasePoly."_.[_]" poly0E /Zq2Zp Zq.zeroE.
 qed.
 
 lemma duni_Rp_Rq_vec: dmap dRq_vec Rqv2Rpv = dRp_vec.
@@ -579,7 +576,8 @@ proof.
             [rewrite (lez_addl _ 1) | apply geeq1_2ep].
     - by rewrite subz_ge0.
     - by rewrite mulzC -intmulz mulr2z addzCA /= (ltr_le_trans p) 2:lezz Zp.gtp_asint.
-  apply /(scale_comp (Zp.asint x)) /ge2epeq_ep; [apply Zp.ge0_asint | by apply /(lez_trans 1) /ge1_et1 |].
+  apply /(scale_comp (Zp.asint x)) /ge2epeq_ep; 
+        [apply Zp.ge0_asint | by apply /(lez_trans 1) /ge1_et1 |].
   rewrite mulzC -intmulz mulr2z -(lez_add2r (-(et + 1))) /= -(lez_add2l (eq)) addzAC addzCA /= 
           -(lez_add2r (-ep)) addzAC (IntID.subrK ep (-ep)) opprD addzA.
   by apply sec_assumption.
@@ -629,7 +627,7 @@ proof.
 qed.
 
 lemma eq_scaleZqZp_modZppq_scaleZpZppq (x : Zq) (m : Z2) :
-      Zppq.inzmod (Zp.asint ( (scale_Zq_Zp x) + (Zp.inzmod (shl (Z2.asint m) (2 * ep - eq - 1)))))
+      Zppq.inzmod (Zp.asint ((scale_Zq_Zp x) + (Zp.inzmod (shl (Z2.asint m) (2 * ep - eq - 1)))))
       =
       scale_Zp_Zppq ((Zp.inzmod (Zq.asint x)) + Zp.inzmod (shl (Z2.asint m) (ep - 1))).
 proof.
@@ -712,11 +710,120 @@ proof.
   + by apply ispoly_xmodp.
   + by apply ispoly_shlm_p2.
   by apply eq_scaleZqZp_modZppq_scaleZpZppq.
-qed.  
+qed.
 
-(* ----------------------------------- *)
-(*  Saber's PKE Scheme                 *)
-(* ----------------------------------- *)
+pragma Goals:printall.
+
+lemma Zq2Zp_DDl (a b : Zq) : Zq2Zp (a + b) = Zq2Zp a + Zq2Zp b.
+proof. by rewrite /Zq2Zp /( + ) !inzmodK /inzmod modzDm modz_dvd 1:p_div_q. qed.
+
+lemma Zq2Zp_BDl (a b : Zq) : Zq2Zp (a - b) = Zq2Zp a - Zq2Zp b.
+proof. 
+by rewrite /Zq2Zp /( + ) !inzmodK modzNm /inzmod modzDm modzDmr modz_dvd 1:p_div_q. 
+qed.
+
+lemma Zq2Zp_MDl (a b : Zq) : Zq2Zp (a * b) = Zq2Zp a * Zq2Zp b.
+proof. by rewrite /Zq2Zp /( * ) !inzmodK /inzmod modzMm modz_dvd 1:p_div_q. qed.
+
+lemma Rq2Rp_DDl (a: Rq) (b : Rq) :
+      Rq2Rp (a + b) = (Rq2Rp a) + (Rq2Rp b).
+proof.
+by rewrite polyXnD1_eqP => i [ge0_i ltn_i]; rewrite eq_sym rcoeffD !Rq2RpE rcoeffD Zq2Zp_DDl.
+qed.
+
+lemma Rq2Rp_MDl (a: Rq) (b : Rq) :
+      Rq2Rp (a * b) = (Rq2Rp a) * (Rq2Rp b).
+proof.
+rewrite polyXnD1_eqP => i [ge0_i ltn_i]; rewrite Rq2RpE !rcoeffM 1,2://# eq_sym. 
+have ->: 
+ (fun (i0 : int) =>
+  ((Rq2Rp a).[i0] * (Rq2Rp b).[i - i0] - (Rq2Rp a).[i0] * (Rq2Rp b).[n + i - i0]))
+ =    
+ (fun (i0 : int) =>
+  (Zq2Zp (a.[i0] * b.[i - i0] - a.[i0] * b.[n + i - i0]))).
++ by rewrite fun_ext /( == ) => j; rewrite !Rq2RpE Zq2Zp_BDl !Zq2Zp_MDl.
+admit.
+qed.
+
+lemma Rq2Rp_DotDl (a: Rq_vec) (b : Rq_vec) :
+      Rq2Rp (dotp a b) = dotp (Rqv2Rpv a) (Rqv2Rpv b).
+proof.
+rewrite /Rqv2Rpv /dotp eq_sym.
+rewrite /Mat_Rp.Vector."_.[_]" !offunvK /= /vclamp.
+have ->:
+(Big.BAdd.bigi predT
+   (fun (i : int) =>
+      (if 0 <= i && i < l then Rq2Rp (a.[i]) else Rp.zeroXnD1) *
+      if 0 <= i && i < l then Rq2Rp (b.[i]) else Rp.zeroXnD1) 0 l)
+=
+(Big.BAdd.bigi predT
+   (fun (i : int) =>
+      Rq2Rp (a.[i] * b.[i])) 0 l).
+rewrite !Big.BAdd.big_seq &(Big.BAdd.eq_bigr) => i /= /mem_range [ge0_i ltl_i]; smt(Rq2Rp_MDl).
+admit.
+qed.
+
+op Zp2Zq (z : Zp) : Zq = Zq.inzmod (Zp.asint z).
+
+op Rp2Rq (p : Rp) : Rq =
+  BigRq.XnD1CA.bigi predT (fun (i : int) => Zp2Zq p.[i] ** exp Rq.iX i) 0 n.
+
+op Rpv2Rqv (pv : Rp_vec) : Rq_vec = offunv (fun (i : int) => Rp2Rq pv.[i]).
+
+lemma Zp2Zq0 : Zp2Zq Zp.zero = Zq.zero.
+proof. by rewrite -eq_inzmod zeroE mod0z. qed.
+
+lemma Rp2RqE (p : Rp) (i : int) : (Rp2Rq p).[i] = Zp2Zq p.[i].
+proof.
+case: (i < 0) => [lt0_i|]; first by rewrite !lt0_rcoeff // Zp2Zq0.
+move/lerNgt=> ge0_i; case: (i < n); last first.
++ by move/lerNgt=> ge_ni; rewrite !gered_rcoeff // Zp2Zq0.
+move=> lt_in; rewrite rcoeff_sum /= (Rq.BasePoly.BigCf.BCA.bigD1 _ _ i) /=;
+              1,2: by rewrite (mem_range, range_uniq).
+rewrite rcoeffZ rcoeff_polyXn //= Zq.ZModpRing.mulr1.
+rewrite Rq.BasePoly.BigCf.BCA.big_seq_cond Rq.BasePoly.BigCf.BCA.big1 /=; last first.
++ by rewrite Zq.ZModpRing.addr0.
+move=> j [/mem_range rgj @/predC1 ne_ji].
+rewrite rcoeffZ rcoeff_polyXn // (eq_sym i j) ne_ji /=.
++ by rewrite Zq.ZModpRing.mulr0.
+qed.
+
+lemma Rpv2RqvE (p : Rp_vec) (i : int) : (Rpv2Rqv p).[i] = Rp2Rq p.[i].
+proof.
+rewrite /Rpv2Rqv /Mat_Rq.Vector."_.[_]" offunvK /vclamp.
+case (0 <= i && i < l) => //; move/(Mat_Rp.Vector.getv_out p i) => ->.
+rewrite /Rp2Rq eq_sym BigRq.XnD1CA.big_seq BigRq.XnD1CA.big1 => //= j /mem_range [ge0_j ltn_j].
+by rewrite rcoeff0 Zp2Zq0 scale0p.
+qed.
+
+lemma Zp2Zq_Zq2Zp_inv (z : Zp) : Zq2Zp (Zp2Zq z) = z.
+proof.
+rewrite /Zq2Zp /Zp2Zq inzmodK modz_small 1: ge0_asint 2:asintK //=.
+rewrite ger0_norm 2:(ltr_le_trans p _ _ (Zp.gtp_asint z)) /p /q; first smt(ge8_q).
+by apply (ler_weexpn2l 2 _ ep eq _); 2: smt(ge2_ep geep1_eq).
+qed.
+
+lemma Rp2Rq_Rq2Rp_inv (p : Rp) : Rq2Rp (Rp2Rq p) = p.
+proof.
+rewrite /Rq2Rp polyXnD1_eqP => i [ge0_i ltn_i].
+rewrite rcoeff_sum /= (BCA.bigD1 _ _  i) /=; 1, 2: by rewrite (mem_range, range_uniq).
+rewrite rcoeffZ rcoeff_polyXn //= Rp2RqE Zp2Zq_Zq2Zp_inv Zp.ZModpRing.mulr1.
+rewrite BCA.big_seq_cond BCA.big1 /=; last by rewrite Zp.ZModpRing.addr0.
+move => j [/mem_range rgj @/predC1 ne_ji].
+by rewrite rcoeffZ rcoeff_polyXn // (eq_sym i j) ne_ji Zp.ZModpRing.mulr0 //.
+qed.
+
+lemma Rpv2Rqv_Rqv2Rpv_inv (pv : Rp_vec) : Rqv2Rpv (Rpv2Rqv pv) = pv.
+proof. admitted.
+
+lemma Rq2Rp_23 (b : Rp_vec) (s : Rq_vec) : 
+      dotp b (Rqv2Rpv s) + Rq2Rp h1 = Rq2Rp (dotp (Rpv2Rqv b) s + h1).
+proof. by rewrite eq_sym Rq2Rp_DDl Rq2Rp_DotDl Rpv2Rqv_Rqv2Rpv_inv. qed.
+
+
+(* ------------------------------------------------------------------------------------- *)
+(*  Saber's PKE Scheme                                                                   *)
+(* ------------------------------------------------------------------------------------- *)
 
 (* --- General --- *)
 clone import PKE as Saber_PKE with
