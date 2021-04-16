@@ -760,6 +760,18 @@ have ->:
    (fun (i : int) =>
       Rq2Rp (a.[i] * b.[i])) 0 l).
 rewrite !Big.BAdd.big_seq &(Big.BAdd.eq_bigr) => i /= /mem_range [ge0_i ltl_i]; smt(Rq2Rp_MDl).
+rewrite polyXnD1_eqP => i rngi. 
+rewrite !rcoeff_sum /= eq_sym.
+rewrite (BCA.bigD1 _ _ i) /=;  1, 2: by rewrite (mem_range, range_uniq).
+rewrite rcoeffZ rcoeff_polyXn //= Zp.ZModpRing.mulr1.
+rewrite BCA.big_seq_cond BCA.big1 /= => [j [/mem_range rngj @/predC1 ne_ji] |].
++ by rewrite rcoeffZ rcoeff_polyXn // (eq_sym i) ne_ji /= Zp.ZModpRing.mulr0.
+rewrite Zp.ZModpRing.addr0 rcoeff_sum /=. 
+have ->: 
+(BCA.bigi predT (fun (i0 : int) => (Rq2Rp (a.[i0] * b.[i0])).[i]) 0 l)
+=
+(BCA.bigi predT (fun (i0 : int) => Zq2Zp (a.[i0] * b.[i0]).[i]) 0 l).
++ by apply BCA.eq_bigr => j _ /=; rewrite Rq2RpE.   
 admit.
 qed.
 
@@ -814,12 +826,179 @@ by rewrite rcoeffZ rcoeff_polyXn // (eq_sym i j) ne_ji Zp.ZModpRing.mulr0 //.
 qed.
 
 lemma Rpv2Rqv_Rqv2Rpv_inv (pv : Rp_vec) : Rqv2Rpv (Rpv2Rqv pv) = pv.
-proof. admitted.
+proof.
+rewrite /Rqv2Rpv eq_vectorP => i rngi.
+by rewrite {1}/Mat_Rp.Vector."_.[_]" offunvK /vclamp rngi /= Rpv2RqvE Rp2Rq_Rq2Rp_inv.
+qed.
 
-lemma Rq2Rp_23 (b : Rp_vec) (s : Rq_vec) : 
-      dotp b (Rqv2Rpv s) + Rq2Rp h1 = Rq2Rp (dotp (Rpv2Rqv b) s + h1).
-proof. by rewrite eq_sym Rq2Rp_DDl Rq2Rp_DotDl Rpv2Rqv_Rqv2Rpv_inv. qed.
+lemma Rq2Rp_DG23 (b : Rp_vec) (s : Rq_vec) : 
+       Rq2Rp (dotp (Rpv2Rqv b) s + h1) = dotp b (Rqv2Rpv s) + Rq2Rp h1.
+proof. by rewrite Rq2Rp_DDl Rq2Rp_DotDl Rpv2Rqv_Rqv2Rpv_inv. qed.
 
+op scaleZq2Zp (z : Zq) : Zp = Zp.inzmod (scale (Zq.asint z) eq ep).
+op scaleZp2Zp (z : Zp) : Zp = Zp.inzmod (scale (Zp.asint z) ep ep).
+op scaleZp2Zppq (z : Zp) : Zppq = Zppq.inzmod (scale (Zp.asint z) ep (2 * ep - eq)).
+op scaleZp2Z2t (z : Zp) : Z2t = Z2t.inzmod (scale (Zp.asint z) ep (et + 1)).
+op scaleZp2Z2 (z : Zp) : Z2 = Z2.inzmod (scale (Zp.asint z) ep 1).
+op scaleZppq2Z2t (z : Zppq) : Z2t = Z2t.inzmod (scale (Zppq.asint z) (2 * ep - eq) (et + 1)).
+
+op scaleRq2Rp (p : Rq) : Rp = 
+  BigRp.XnD1CA.bigi predT (fun (i : int) => scaleZq2Zp p.[i] ** exp Rp.iX i) 0 n.
+op scaleRp2Rp (p : Rp) : Rp = 
+  BigRp.XnD1CA.bigi predT (fun (i : int) => scaleZp2Zp p.[i] ** exp Rp.iX i) 0 n.
+op scaleRp2Rppq (p : Rp) : Rppq = 
+  BigRppq.XnD1CA.bigi predT (fun (i : int) => scaleZp2Zppq p.[i] ** exp Rppq.iX i) 0 n.
+op scaleRp2R2t (p : Rp) : R2t = 
+  BigR2t.XnD1CA.bigi predT (fun (i : int) => scaleZp2Z2t p.[i] ** exp R2t.iX i) 0 n.
+op scaleRp2R2 (p : Rp) : R2 = 
+  BigR2.XnD1CA.bigi predT (fun (i : int) => scaleZp2Z2 p.[i] ** exp R2.iX i) 0 n.
+op scaleRppq2R2t (p : Rppq) : R2t = 
+  BigR2t.XnD1CA.bigi predT (fun (i : int) => scaleZppq2Z2t p.[i] ** exp R2t.iX i) 0 n.
+
+op scaleRqv2Rpv (pv : Rq_vec) : Rp_vec = offunv (fun (i : int) => scaleRq2Rp pv.[i]).
+
+lemma scaleZp2Zp_id (z : Zp) : scaleZp2Zp z = z.
+proof. by rewrite /scaleZp2Zp scale_id 2: Zp.asintK. qed.
+
+lemma scaleRp2Rp_id (p : Rp) : scaleRp2Rp p = p.
+proof. 
+rewrite /scaleRp2Rp polyXnD1_eqP => i rngi; rewrite rcoeff_sum /=.
+rewrite (BCA.bigD1 _ _ i) /=; 1, 2: by rewrite (mem_range, range_uniq).
+rewrite BCA.big_seq_cond BCA.big1 => /= [j [/mem_range rngj @/predC1 ne_ji] |];
+        rewrite scaleZp2Zp_id rcoeffZ rcoeff_polyXn //= ?((eq_sym i j), ne_ji) /=.
++ by apply Zp.ZModpRing.mulr0.
++ by rewrite Zp.ZModpRing.mulr1 Zp.ZModpRing.addr0.
+qed.
+
+lemma scaleZp2Zppq2Z2t_comp (x : Zp) :
+      scaleZp2Z2t x = scaleZppq2Z2t (scaleZp2Zppq x).
+proof.
+rewrite /scaleZp2Z2t /scaleZppq2Z2t /scaleZp2Zppq Zppq.inzmodK -Z2t.eq_inzmod; do 2! congr.
+rewrite (modz_small _ (p * p %/ q)) /scale /shr; first split => [| ?].
++ by apply /divz_ge0 /Zp.ge0_asint /expr_gt0.
++ rewrite ger0_norm; first by apply /(lez_trans 2) /ge2_ppq. 
+  apply ltz_divLR; first by apply expr_gt0. 
+  have ge2epeq_ep: 2 * ep - eq <= ep by smt(geep1_eq).
+  rewrite -eq_22epeq_ppq -exprD_nneg; smt(geeq1_2ep Zp.gtp_asint).
+by apply /(scale_comp (Zp.asint x) _ _ _ (Zp.ge0_asint x)); smt(ge1_et1 geep1_eq sec_assumption).
+qed.
+
+lemma scaleRp2Rppq2R2t_comp (x : Rp) :
+      scaleRp2R2t x = scaleRppq2R2t (scaleRp2Rppq x).
+proof.
+rewrite /scaleRp2R2t /scaleRppq2R2t /scaleRp2Rppq polyXnD1_eqP => i rngi. 
+rewrite !(rcoeff_sum, (R2t.BasePoly.BigCf.BCA.bigD1 _ _ i)) /=; first 4 smt(mem_range range_uniq).
+congr; last first.
++ rewrite R2t.BasePoly.BigCf.BCA.big_seq_cond eq_sym R2t.BasePoly.BigCf.BCA.big_seq_cond.
+  by rewrite !R2t.BasePoly.BigCf.BCA.big1 //= => 
+             [j [/mem_range rngj @/predC1 ne_ji] | j [/mem_range rngj @/predC1 ne_ji]];
+             rewrite rcoeffZ rcoeff_polyXn 2:(eq_sym i) 2:ne_ji //= Z2t.ZModpRing.mulr0.
++ rewrite 2!rcoeffZ rcoeff_polyXn //= 2!Z2t.ZModpRing.mulr1 scaleZp2Zppq2Z2t_comp; congr.
+  rewrite rcoeff_sum (Rppq.BasePoly.BigCf.BCA.bigD1 _ _ i) /=; first 2 smt(mem_range range_uniq).
+  rewrite Rppq.BasePoly.BigCf.BCA.big_seq_cond Rppq.BasePoly.BigCf.BCA.big1 => 
+          [j [/mem_range rngj @/predC1 ne_ji] /= |]; rewrite rcoeffZ rcoeff_polyXn //=.
+  - by rewrite (eq_sym i) ne_ji /= Zppq.ZModpRing.mulr0.
+  by rewrite Zppq.ZModpRing.addr0 Zppq.ZModpRing.mulr1.
+qed.
+
+op Zp2Zppq (z : Zp) : Zppq = Zppq.inzmod (Zp.asint z).
+
+op Rp2Rppq (p : Rp) : Rppq =
+  BigRppq.XnD1CA.bigi predT (fun (i : int) => Zp2Zppq p.[i] ** exp Rppq.iX i) 0 n.
+
+lemma Zp2Zppq0 : Zp2Zppq Zp.zero = Zppq.zero.
+proof. by rewrite -eq_inzmod zeroE. qed.
+
+lemma Rp2RppqE (p : Rp) (i : int) : (Rp2Rppq p).[i] = Zp2Zppq p.[i].
+proof.
+case: (i < 0) => [lt0_i|]; first by rewrite !lt0_rcoeff // Zp2Zppq0.
+move/lerNgt=> ge0_i; case: (i < n); last first.
+- by move/lerNgt=> ge_ni; rewrite !gered_rcoeff // Zp2Zppq0.
+move=> lt_in; rewrite rcoeff_sum /= (Rppq.BasePoly.BigCf.BCA.bigD1 _ _ i) /=;
+  1,2: by rewrite (mem_range, range_uniq).
+rewrite rcoeffZ rcoeff_polyXn //= Zppq.ZModpRing.mulr1.
+rewrite Rppq.BasePoly.BigCf.BCA.big_seq_cond Rppq.BasePoly.BigCf.BCA.big1 /=; last first.
+- by rewrite Zppq.ZModpRing.addr0.
+move=> j [/mem_range rgj @/predC1 ne_ji].
+rewrite rcoeffZ rcoeff_polyXn // (eq_sym i j) ne_ji /=.
+- by rewrite Zppq.ZModpRing.mulr0.
+qed.
+
+lemma cmuZq_red23 (z : Zq) (m : Z2) :
+      Zp2Zppq ((scaleZq2Zp z) + (Zp.inzmod (shl (Z2.asint m) (2 * ep - eq - 1))))
+      =
+      scaleZp2Zppq ((Zq2Zp z) + Zp.inzmod (shl (Z2.asint m) (ep - 1))).
+proof.
+rewrite /Zp2Zppq /Zq2Zp /scaleZq2Zp /scaleZp2Zppq /scale /shr /shl !Zp.inzmodK !modzDm 
+        {2}(mulzC 2) -(intmulz ep) mulr2z !opprD !addzA /= (addzC _ eq).
+have ge0_eqep: 0 <= eq - ep; 1: by apply /(lez_trans 1) /(lez_add2l ep); 
+     2: rewrite addzCA /= geep1_eq.
+have leep_eq_ep: eq - ep <= ep; 1: by rewrite -(lez_add2r ep) -addzA /= -mulr2z intmulz mulzC 
+                                               (lez_trans (eq + 1)) 2:geeq1_2ep lez_addl.
+have ge0_2epeq: 0 <= 2 * ep - eq; 1: by rewrite -(lez_add2r eq) -addzA /= (lez_trans (eq + 1)) 
+                                                2:geeq1_2ep lez_addl.
+have leep_2epeq: 2 * ep - eq <= ep; first rewrite mulzC -intmulz mulr2z -(lez_add2l (-ep)) 2!addzA;
+     move: (oppz_le0 (eq - ep)); rewrite ge0_eqep opprD /= addzC => -> //.
+case: (Z2.asint m = 0) => [-> /= | /neq_ltz]; last case => [lt0_m | gt0_m]; 
+      move: (Z2.Sub.valP m) => [ge0_m lt2_m].
++ by rewrite -Zppq.eq_inzmod -eq_22epeq_ppq /p /q (modz_pow2_div); 
+             [apply Zq.ge0_asint | 
+              split | 
+              rewrite opprD (addzC _ ep) addzA -mulr2z intmulz (mulzC ep) modz_mod modz_dvd_pow].
++ by rewrite -/Z2.asint lezNgt in ge0_m.
+have -> /= {gt0_m ge0_m lt2_m}: Z2.asint m = 1; first rewrite eqz_leq; split. 
++ by rewrite -/Z2.asint -lez_add1r -(lez_add2l (-1)) /= in lt2_m.
++ by rewrite -lez_add1r in gt0_m.
+rewrite -Zppq.eq_inzmod -eq_22epeq_ppq /p modz_dvd_pow; 1: by split.
+rewrite modz_pow2_div; [by apply /addz_ge0 /expr_ge0; 1: apply Zq.ge0_asint | by split |]. 
+rewrite opprD (addzC (-eq)) addzA /= -mulr2z intmulz (mulzC ep) modz_mod divzDr 1: dvdz_exp2l. 
++ by split => [| ?]; last rewrite -(lez_add2r 1) -(lez_add2l ep) -!addzA /= !addzA addzAC 
+                                   addzC !addzA /= -mulr2z intmulz mulzC geeq1_2ep.
+have -> //: 2 ^ (ep - 1) %/ 2 ^ (eq - ep) = 2 ^ (2 * ep - eq - 1).
+rewrite eq_sym eqz_div 2:dvdz_exp2l 3: -exprD_nneg; last congr; rewrite //#. 
++ by rewrite neq_ltz; right; apply expr_gt0.
++ by split => [| ?]; last rewrite -(lez_add2r 1) -(lez_add2l ep) -!addzA /= !addzA 
+                                   addzAC addzC !addzA /= -mulr2z intmulz mulzC geeq1_2ep.
++ by rewrite -(lez_add2r 1) -addzA /= -(lez_add2r eq) -addzA addzC /= geeq1_2ep.
++ by apply /(lez_trans 1) /(lez_add2l ep); 2: rewrite addzCA /= geep1_eq.
+qed.
+
+
+op shl_enc_2 (x : R2, ex : int) : Rp =  
+  BigRp.XnD1CA.bigi predT (fun (i : int) => 
+  Zp.inzmod (shl (Z2.asint x.[i]) ex) ** exp Rp.iX i) 0 n.
+   
+op shl_dec_2 (x : R2t) : Rp =
+  BigRp.XnD1CA.bigi predT (fun (i : int) => 
+  Zp.inzmod (shl (Z2t.asint x.[i]) (ep - et - 1)) ** exp Rp.iX i) 0 n.
+
+lemma cmu_red23 (p : Rq) (m : R2) :
+      Rp2Rppq ((scaleRq2Rp p) + (shl_enc_2 m (2 * ep - eq - 1)))
+      =
+      scaleRp2Rppq ((Rq2Rp p) + (shl_enc_2 m (ep - 1))).
+proof.
+rewrite polyXnD1_eqP => i rngi.
+rewrite /Rp2Rppq /scaleRp2Rppq.
+rewrite 2!rcoeff_sum /=.
+rewrite !(Rppq.BasePoly.BigCf.BCA.bigD1 _ _ i) /=; first 4 smt(mem_range range_uniq).
+rewrite Rppq.BasePoly.BigCf.BCA.big_seq_cond eq_sym Rppq.BasePoly.BigCf.BCA.big_seq_cond.
+rewrite !Rppq.BasePoly.BigCf.BCA.big1 /= 3:2!Zppq.ZModpRing.addr0 =>
+        [j [/mem_range rngj @/predC1 ne_ji] | j [/mem_range rngj @/predC1 ne_ji] |];
+        first 2 by rewrite rcoeffZ rcoeff_polyXn // (eq_sym i) ne_ji /= Zppq.ZModpRing.mulr0.
+rewrite 2!rcoeffZ rcoeff_polyXn //= 2!Zppq.ZModpRing.mulr1.
+rewrite /Rq2Rp /shl_enc_2. rewrite -BigRp.XnD1CA.big_split /=.
+rewrite rcoeff_sum /=.
+rewrite (BCA.bigD1 _ _ i) /=; first 2 smt(mem_range range_uniq).
+rewrite BCA.big_seq_cond BCA.big1 2:Zp.ZModpRing.addr0 => [j [/mem_range rngj @/predC1 ne_ji]|] /=.
+by rewrite rcoeffD 2!rcoeffZ !rcoeff_polyXn // (eq_sym i) ne_ji /= 2!Zp.ZModpRing.mulr0 Zp.ZModpRing.addr0.
+rewrite rcoeffD 2!rcoeffZ !rcoeff_polyXn //= 2!Zp.ZModpRing.mulr1.
+rewrite /scaleRq2Rp -BigRp.XnD1CA.big_split /= rcoeff_sum /=.
+rewrite (BCA.bigD1 _ _ i) /=; first 2 smt(mem_range range_uniq).
+rewrite BCA.big_seq_cond BCA.big1 2:Zp.ZModpRing.addr0 => [j [/mem_range rngj @/predC1 ne_ji]|] /=.
+by rewrite rcoeffD 2!rcoeffZ !rcoeff_polyXn // (eq_sym i) ne_ji /= 2!Zp.ZModpRing.mulr0 Zp.ZModpRing.addr0.
+rewrite rcoeffD 2!rcoeffZ !rcoeff_polyXn //= 2!Zp.ZModpRing.mulr1.
+by rewrite eq_sym; apply cmuZq_red23.
+qed.
 
 (* ------------------------------------------------------------------------------------- *)
 (*  Saber's PKE Scheme                                                                   *)
