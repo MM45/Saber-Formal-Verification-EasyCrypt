@@ -57,7 +57,7 @@ module MLWR(A : Adv_MLWR) = {
        if (u) {
           b <$ dRp_vec; 
        } else {
-          b <- scale_vec_Rq_Rp (_A *^ s + h);
+          b <- scaleRqv2Rpv (_A *^ s + h);
        }
        
        u' <@ A.guess(_A, b);
@@ -85,8 +85,8 @@ module MLWR1(A : Adv_MLWR1) = {
           b <$ dRp_vec;
           d <$ dRp;
        } else {
-          b <- scale_vec_Rq_Rp (_A *^ s + h);
-          d <- scale_Rq_Rp ((dotp a s) + h1);
+          b <- scaleRqv2Rpv (_A *^ s + h);
+          d <- scaleRq2Rp ((dotp a s) + h1);
        }
        
        u' <@ A.guess(_A, a, b, d);
@@ -115,7 +115,7 @@ module GMLWR_RO(A : Adv_GMLWR_RO) = {
       if (u) {
          b <$ dRp_vec;
       } else {
-         b <- scale_vec_Rq_Rp (_A *^ s + h);
+         b <- scaleRqv2Rpv (_A *^ s + h);
       }
       
       u' <@ A.guess(sd, b);
@@ -146,7 +146,7 @@ module XMLWR_RO(A : Adv_XMLWR_RO) = {
       if (u) {
          b <$ dRp_vec;
       } else {
-         b <- scale_vec_Rq_Rp ((trmx _A) *^ s + h);
+         b <- scaleRqv2Rpv ((trmx _A) *^ s + h);
       }
       
       a <$ dRq_vec;
@@ -154,7 +154,7 @@ module XMLWR_RO(A : Adv_XMLWR_RO) = {
       if (u) {
          d <$ dRp;
       } else {
-         d <- scale_Rq_Rp ((dotp a s) + h1);
+         d <- scaleRq2Rp ((dotp a s) + h1);
       }
     
       u' <@ A.guess(sd, b, a, d);

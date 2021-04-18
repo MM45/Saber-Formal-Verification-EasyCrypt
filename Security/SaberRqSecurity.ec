@@ -46,7 +46,7 @@ module GMLWR(A : Adv_GMLWR) = {
       if (u) {
          b <$ dRp_vec;
       } else {
-         b <- scale_vec_Rq_Rp (_A *^ s + h);
+         b <- scaleRqv2Rpv (_A *^ s + h);
       }
       
       u' <@ A.guess(sd, b);
@@ -73,7 +73,7 @@ module XMLWR(A : Adv_XMLWR) = {
       if (u) {
          b <$ dRp_vec;
       } else {
-         b <- scale_vec_Rq_Rp ((trmx _A) *^ s + h);
+         b <- scaleRqv2Rpv ((trmx _A) *^ s + h);
       }
       
       a <$ dRq_vec;
@@ -81,7 +81,7 @@ module XMLWR(A : Adv_XMLWR) = {
       if (u) {
          d <$ dRp;
       } else {
-         d <- scale_Rq_Rp ((dotp a s) + h1);
+         d <- scaleRq2Rp ((dotp a s) + h1);
       }
     
       u' <@ A.guess(sd, b, a, d);
@@ -109,14 +109,14 @@ module Game0(A : Adversary) = {
       sd <$ dseed;
       _A <- gen sd;
       s <$ dsmallRq_vec;
-      b <- scale_vec_Rq_Rp (_A *^ s + h);
+      b <- scaleRqv2Rpv (_A *^ s + h);
 
       (m0, m1) <@ A.choose(pk_encode (sd, b));
 
       s' <$ dsmallRq_vec;
-      b' <- scale_vec_Rq_Rp (( trmx _A) *^ s' + h);
-      v' <- (dotp b (mod_p_Rq_vec s')) + (mod_p_Rq h1);
-      cmu <- scale_Rp_R2t (v' + (shl_enc (m_decode (if u then m1 else m0)) (ep - 1)));
+      b' <- scaleRqv2Rpv (( trmx _A) *^ s' + h);
+      v' <- (dotp b (Rqv2Rpv s')) + (Rq2Rp h1);
+      cmu <- scaleRp2R2t (v' + (shl_enc (m_decode (if u then m1 else m0)) (ep - 1)));
       
       u' <@ A.guess(c_encode (cmu, b'));
 
@@ -147,9 +147,9 @@ module Game1(A : Adversary) = {
       (m0, m1) <@ A.choose(pk_encode (sd, b));
 
       s' <$ dsmallRq_vec;
-      b' <- scale_vec_Rq_Rp (( trmx _A) *^ s' + h);
-      v' <- (dotp b (mod_p_Rq_vec s')) + (mod_p_Rq h1);
-      cmu <- scale_Rp_R2t (v' + (shl_enc (m_decode (if u then m1 else m0)) (ep - 1)));
+      b' <- scaleRqv2Rpv (( trmx _A) *^ s' + h);
+      v' <- (dotp b (Rqv2Rpv s')) + (Rq2Rp h1);
+      cmu <- scaleRp2R2t (v' + (shl_enc (m_decode (if u then m1 else m0)) (ep - 1)));
       
       u' <@ A.guess(c_encode (cmu, b'));
 
@@ -180,9 +180,9 @@ module Game2(A : Adversary) = {
       (m0, m1) <@ A.choose(pk_encode (sd, b));
 
       s' <$ dsmallRq_vec;
-      b' <- scale_vec_Rq_Rp ((trmx _A) *^ s' + h);
-      v' <- (dotp b (mod_p_Rq_vec s')) + (mod_p_Rq h1);
-      cmu <- scale_Rp_Rppq (v' + (shl_enc (m_decode (if u then m1 else m0)) (ep - 1)));
+      b' <- scaleRqv2Rpv ((trmx _A) *^ s' + h);
+      v' <- (dotp b (Rqv2Rpv s')) + (Rq2Rp h1);
+      cmu <- scaleRp2Rppq (v' + (shl_enc (m_decode (if u then m1 else m0)) (ep - 1)));
       
       u' <@ A.guess(c_encode (cmu, b'));
 
@@ -214,9 +214,9 @@ module Game3(A : Adversary) = {
       (m0, m1) <@ A.choose(pk_encode (sd, b));
 
       s' <$ dsmallRq_vec;
-      b' <- scale_vec_Rq_Rp ((trmx _A) *^ s' + h);
-      v' <- scale_Rq_Rp ((dotp b s') + h1);
-      cmu <- scale_Rp_Rp (v' + (shl_enc (m_decode (if u then m1 else m0)) (2 * ep - eq - 1)));
+      b' <- scaleRqv2Rpv ((trmx _A) *^ s' + h);
+      v' <- scaleRq2Rp ((dotp b s') + h1);
+      cmu <- scaleRp2Rp (v' + (shl_enc (m_decode (if u then m1 else m0)) (2 * ep - eq - 1)));
    
       u' <@ A.guess(c_encode (cmu, b'));
 
@@ -250,7 +250,7 @@ module Game4(A : Adversary) = {
       (* Skip: s' <$ dsmallRq_vec; *)
       b' <$ dRp_vec;
       v' <$ dRp;
-      cmu <- scale_Rp_Rp (v' + (shl_enc (m_decode (if u then m1 else m0)) (2 * ep - eq - 1)));
+      cmu <- scaleRp2Rp (v' + (shl_enc (m_decode (if u then m1 else m0)) (2 * ep - eq - 1)));
       
       u' <@ A.guess(c_encode (cmu, b'));
 
@@ -309,9 +309,9 @@ module B0(A : Adversary) : Adv_GMLWR = {
       (m0, m1) <@ A.choose(pk_encode (sd, b));
 
       s' <$ dsmallRq_vec;
-      b' <- scale_vec_Rq_Rp ((trmx _A) *^ s' + h);
-      v' <- (dotp b (mod_p_Rq_vec s')) + (mod_p_Rq h1);
-      cmw <- scale_Rp_R2t (v' + (shl_enc (m_decode (if w then m1 else m0)) (ep - 1)));
+      b' <- scaleRqv2Rpv ((trmx _A) *^ s' + h);
+      v' <- (dotp b (Rqv2Rpv s')) + (Rq2Rp h1);
+      cmw <- scaleRp2R2t (v' + (shl_enc (m_decode (if w then m1 else m0)) (ep - 1)));
       
       w' <@ A.guess(c_encode (cmw, b'));
       
@@ -331,7 +331,7 @@ module B1(A : Adversary) : Adv_XMLWR = {
 
       (m0, m1) <@ A.choose(pk_encode (sd, a));
 
-      cmw <- scale_Rp_Rp (d + (shl_enc (m_decode (if w then m1 else m0)) (2 * ep - eq - 1)));
+      cmw <- scaleRp2Rp (d + (shl_enc (m_decode (if w then m1 else m0)) (2 * ep - eq - 1)));
       
       w' <@ A.guess(c_encode (cmw, b));
       
@@ -362,7 +362,7 @@ module A2(A1 : Adversary) : Adversary = {
       cmu <- c_dec.`1;
       b' <- c_dec.`2;
 
-      cmu' <- scale_Rppq_R2t cmu; 
+      cmu' <- scaleRppq2R2t cmu; 
             
       u' <@ A1.guess(c_encode (cmu', b'));
 
@@ -383,7 +383,7 @@ module A3(A2 : Adversary) : Adversary = {
       pk_dec <- pk_decode pk;
       sd <- pk_dec.`1;
       b <- pk_dec.`2;
-      bp <- mod_p_Rq_vec b;
+      bp <- Rqv2Rpv b;
       
       (m0, m1) <@ A2.choose(pk_encode (sd, bp));
       
@@ -401,7 +401,7 @@ module A3(A2 : Adversary) : Adversary = {
       c_dec <- c_decode c;
       cmu <- c_dec.`1;
       b' <- c_dec.`2;
-      cmu' <- mod_ppq_Rp cmu; 
+      cmu' <- Rp2Rppq cmu; 
       
       u' <@ A2.guess(c_encode (cmu', b'));
 
@@ -468,7 +468,7 @@ proof.
   + byequiv => //.
     proc; inline *.
     wp; call (_ : true); auto; call (_ : true); auto.
-    by progress; do! congr; rewrite c_enc_dec_inv; 1: rewrite scale_comp_Rp_Rppq_R2t.  
+    by progress; do! congr; rewrite c_enc_dec_inv; 1: rewrite scaleRp2Rppq2R2t_comp.  
 qed.
 
 (* Game2 ==> Game3 *)
@@ -481,8 +481,18 @@ proof.
   + byequiv => //.
     proc; inline *.
     wp; call (_ : true); auto; call (_ : true); wp.
-    (* What functions to use here... *)
-    admit.
+    (* What functions to use here ... *)  
+    rnd (fun (pv : Rp_vec) => Rpv2Rqv pv)
+        (fun (pv : Rq_vec) => Rqv2Rpv pv).
+    auto; progress. 
+    - admit. 
+    - admit.
+    - by apply /(is_fullP dRq_vec) /dRq_vec_fu.
+    - by rewrite Rpv2Rqv_Rqv2Rpv_inv.
+    - by rewrite pk_enc_dec_inv /= Rpv2Rqv_Rqv2Rpv_inv.
+    - rewrite c_enc_dec_inv scaleRp2Rp_id //=; congr.
+      rewrite &(pw_eq) // cmu_red23 eq_sym; congr. 
+      by rewrite (Rq2Rp_DM (dotp (Rpv2Rqv bL) s'L) h1) Rq2Rp_DotDl Rpv2Rqv_Rqv2Rpv_inv.
 qed.
 
 (* Game3 <> Game4 ==> XMLWR *)
@@ -551,7 +561,7 @@ proof.
       have xx_0: forall (x : Rp), x + (- x) = Rp.zeroXnD1.
       * by move => x0; rewrite -(addrN x0).
       by rewrite -addrA (xx_0 x) addrC add0r.
-    - by rewrite scale_Rp_Rp_id.  
+    - by rewrite scaleRp2Rp_id.  
 qed.
 
 (* Game4 Analysis *)
