@@ -322,8 +322,10 @@ import Z2 R2 R2.ComRing R2.BasePoly.
 import Rp.BasePoly.BigCf.
 
 (* - Constants - *)
-const h1 : Rq = pi (to_polyd (fun _ => Zq.inzmod (2 ^ (eq - ep - 1)))).
-const h2 : Rq = pi (to_polyd (fun _ => Zq.inzmod (2 ^ (ep - 2) - 2 ^ (ep - et - 2)))).
+const h1 : Rq = 
+  BigRq.XnD1CA.bigi predT (fun (i : int) => Zq.inzmod (2 ^ (eq - ep - 1)) ** exp Rq.iX i) 0 n.
+const h2 : Rq =
+  BigRq.XnD1CA.bigi predT (fun (i : int) => Zq.inzmod (2 ^ (ep - 2) - 2 ^ (ep - et - 2)) ** exp Rq.iX i) 0 n.
 const h : Rq_vec = vectc h1.
 
 (* -- Cryptographic Types and Distributions  -- *)
