@@ -12,6 +12,7 @@ require import SaberRqPreliminaries.
 (*---*) import Rq Rp.
 (*---*) import Rq.ComRing Rp.ComRing.
 (*---*) import Saber_PKE.
+(*---*) import DMapRqv2Rpv.
 
 (* ----------------------------------- *)
 (*  Adversary Prototypes               *)
@@ -176,6 +177,73 @@ module Game2(A : Adversary) = {
       _A <- gen sd;
       (* Skip: s <$ dsmallRq_vec; *)
       b <$ dRp_vec;
+
+      (m0, m1) <@ A.choose(pk_encode (sd, b));
+
+      s' <$ dsmallRq_vec;
+      b' <- scaleRqv2Rpv ((trmx _A) *^ s' + h);
+      v' <- (dotp b (Rqv2Rpv s')) + (Rq2Rp h1);
+      cmu <- scaleRp2Rppq (v' + (shl_enc (m_decode (if u then m1 else m0)) (ep - 1)));
+      
+      u' <@ A.guess(c_encode (cmu, b'));
+
+      return (u = u');
+   }
+}.
+
+(* Auxiliary Game (Reduction 2-3): Game 2a *)
+module Game2a(A : Adversary) = {
+   proc main() : bool = {
+      var u, u' : bool;
+      var m0, m1 : plaintext;
+
+      var sd : seed;
+      var _A : Rq_mat;
+      var s, s' : Rq_vec;
+      var b, b' : Rp_vec;
+      var v' : Rp;
+      var cmu : Rppq;
+
+      u <$ dbool;
+
+      sd <$ dseed;
+      _A <- gen sd;
+      (* Skip: s <$ dsmallRq_vec; *)
+      b <@ Rqv2RpvSampl.sample(dRq_vec, Rqv2Rpv);
+
+      (m0, m1) <@ A.choose(pk_encode (sd, b));
+
+      s' <$ dsmallRq_vec;
+      b' <- scaleRqv2Rpv ((trmx _A) *^ s' + h);
+      v' <- (dotp b (Rqv2Rpv s')) + (Rq2Rp h1);
+      cmu <- scaleRp2Rppq (v' + (shl_enc (m_decode (if u then m1 else m0)) (ep - 1)));
+      
+      u' <@ A.guess(c_encode (cmu, b'));
+
+      return (u = u');
+   }
+}.
+
+(* Auxiliary Game (Reduction 2-3): Game 2b *)
+module Game2b(A : Adversary) = {
+   proc main() : bool = {
+      var u, u' : bool;
+      var m0, m1 : plaintext;
+
+      var sd : seed;
+      var _A : Rq_mat;
+      var s, s' : Rq_vec;
+      var bq : Rq_vec;
+      var b, b' : Rp_vec;
+      var v' : Rp;
+      var cmu : Rppq;
+
+      u <$ dbool;
+
+      sd <$ dseed;
+      _A <- gen sd;
+      (* Skip: s <$ dsmallRq_vec; *)
+      b <@ Rqv2RpvSampl.map(dRq_vec, Rqv2Rpv);
 
       (m0, m1) <@ A.choose(pk_encode (sd, b));
 
@@ -471,177 +539,49 @@ have -> //: Pr[Game1(A).main() @ &m : res] = Pr[Game2( A2(A) ).main() @ &m : res
   by progress; do! congr; rewrite c_enc_dec_inv; 1: rewrite scaleRp2Rppq2R2t_comp.  
 qed.
 
-(*
-===========================================================================
-START TEST
-===========================================================================
-*)
+(* Auxiliary Step (Reduction 2-3): Game2 ==> Game2a *)
+lemma Game2_To_Game2a &m (A <: Adversary) :
+      `| Pr[Game2(A).main() @ &m : res] - 1%r / 2%r |
+      =
+      `| Pr[Game2a(A).main() @ &m : res] - 1%r / 2%r |.
+proof.
+have -> //: Pr[Game2(A).main() @ &m : res] = Pr[Game2a(A).main() @ &m : res].
++ byequiv => //.
+  proc; inline *.
+  auto; call(_ : true); auto; call(_ : true); auto.
+  progress.
+  - by rewrite dRqv2dRpv.
+  - by rewrite dRqv2dRpv &(is_fullP dRp_vec) dRp_vec_fu.
+qed.
 
-(* Game 2.5 *)
-module Game25(A : Adversary) = {
-   proc main() : bool = {
-      var u, u' : bool;
-      var m0, m1 : plaintext;
+(* Auxiliary Step (Reduction 2-3): Game2a ==> Game2b *)
+lemma Game2a_To_Game2b &m (A <: Adversary) :
+      `| Pr[Game2a(A).main() @ &m : res] - 1%r / 2%r |
+      =
+      `| Pr[Game2b(A).main() @ &m : res] - 1%r / 2%r |.
+proof.
+have -> //: Pr[Game2a(A).main() @ &m : res] = Pr[Game2b(A).main() @ &m : res].
++ byequiv => //.
+  proc.
+  by auto; call(_ : true); auto; call(_ : true); call sample; auto.
+qed.
 
-      var sd : seed;
-      var _A : Rq_mat;
-      var s, s' : Rq_vec;
-      var bq : Rq_vec;
-      var b, b' : Rp_vec;
-      var v' : Rp;
-      var cmu : Rppq;
-
-      u <$ dbool;
-
-      sd <$ dseed;
-      _A <- gen sd;
-      (* Skip: s <$ dsmallRq_vec; *)
-      bq <$ dRq_vec;
-      b <- Rqv2Rpv bq;
-
-      (m0, m1) <@ A.choose(pk_encode (sd, b));
-
-      s' <$ dsmallRq_vec;
-      b' <- scaleRqv2Rpv ((trmx _A) *^ s' + h);
-      v' <- (dotp b (Rqv2Rpv s')) + (Rq2Rp h1);
-      cmu <- scaleRp2Rppq (v' + (shl_enc (m_decode (if u then m1 else m0)) (ep - 1)));
-      
-      u' <@ A.guess(c_encode (cmu, b'));
-
-      return (u = u');
-   }
-}.
-
-pragma Goals:printall.
-lemma Game25_To_Game3 &m (A <: Adversary) :
-      `| Pr[Game25(A).main() @ &m : res] - 1%r / 2%r |
+(* Auxiliary Step (Reduction 2-3): Game2b ==> Game3 *)
+lemma Game2b_To_Game3 &m (A <: Adversary) :
+      `| Pr[Game2b(A).main() @ &m : res] - 1%r / 2%r |
       =
       `| Pr[Game3( A3(A) ).main() @ &m : res] - 1%r / 2%r |.
 proof.
-have -> //: Pr[Game25(A).main() @ &m : res] = Pr[Game3( A3(A) ).main() @ &m : res].
-byequiv => //.
-proc; inline *.
-auto; call(_ : true); auto; call(_ : true); auto.
-progress. 
-+ by rewrite pk_enc_dec_inv. 
-+ rewrite c_enc_dec_inv scaleRp2Rp_id //=. 
-  congr.
-  rewrite &(pw_eq) // cmu_red23.
-  do 2! congr.
-  by rewrite eq_sym (Rq2Rp_DM (dotp bqL s'L) h1) Rq2Rp_DotDl.
+have -> //: Pr[Game2b(A).main() @ &m : res] = Pr[Game3( A3(A) ).main() @ &m : res].
++ byequiv => //.
+  proc; inline *.
+  auto; call(_ : true); auto; call(_ : true); auto.
+  progress.
+  - by rewrite pk_enc_dec_inv.
+  - rewrite c_enc_dec_inv scaleRp2Rp_id /=; congr.
+    rewrite &(pw_eq) // comp_red23; do 2! congr.
+    by rewrite eq_sym &(Rq2Rp_DG23).
 qed.
-
-require import DMap.
-
-clone import DMapSampling with
-   type t1 <- Rq_vec,
-   type t2 <- Rp_vec.
-
-(* Game 2.4 *)
-module Game24(A : Adversary) = {
-   proc main() : bool = {
-      var u, u' : bool;
-      var m0, m1 : plaintext;
-
-      var sd : seed;
-      var _A : Rq_mat;
-      var s, s' : Rq_vec;
-      var b, b' : Rp_vec;
-      var v' : Rp;
-      var cmu : Rppq;
-
-      u <$ dbool;
-
-      sd <$ dseed;
-      _A <- gen sd;
-      (* Skip: s <$ dsmallRq_vec; *)
-      b <@ S.sample(dRq_vec, Rqv2Rpv);
-
-      (m0, m1) <@ A.choose(pk_encode (sd, b));
-
-      s' <$ dsmallRq_vec;
-      b' <- scaleRqv2Rpv ((trmx _A) *^ s' + h);
-      v' <- (dotp b (Rqv2Rpv s')) + (Rq2Rp h1);
-      cmu <- scaleRp2Rppq (v' + (shl_enc (m_decode (if u then m1 else m0)) (ep - 1)));
-      
-      u' <@ A.guess(c_encode (cmu, b'));
-
-      return (u = u');
-   }
-}.
-
-(* Game 2.6 *)
-module Game26(A : Adversary) = {
-   proc main() : bool = {
-      var u, u' : bool;
-      var m0, m1 : plaintext;
-
-      var sd : seed;
-      var _A : Rq_mat;
-      var s, s' : Rq_vec;
-      var bq : Rq_vec;
-      var b, b' : Rp_vec;
-      var v' : Rp;
-      var cmu : Rppq;
-
-      u <$ dbool;
-
-      sd <$ dseed;
-      _A <- gen sd;
-      (* Skip: s <$ dsmallRq_vec; *)
-      b <@ S.map(dRq_vec, Rqv2Rpv);
-
-      (m0, m1) <@ A.choose(pk_encode (sd, b));
-
-      s' <$ dsmallRq_vec;
-      b' <- scaleRqv2Rpv ((trmx _A) *^ s' + h);
-      v' <- (dotp b (Rqv2Rpv s')) + (Rq2Rp h1);
-      cmu <- scaleRp2Rppq (v' + (shl_enc (m_decode (if u then m1 else m0)) (ep - 1)));
-      
-      u' <@ A.guess(c_encode (cmu, b'));
-
-      return (u = u');
-   }
-}.
-
-
-lemma Game2_To_Game24 &m (A <: Adversary) :
-      `| Pr[Game2(A).main() @ &m : res] - 1%r / 2%r |
-      =
-      `| Pr[Game24(A).main() @ &m : res] - 1%r / 2%r |.
-proof.
-have -> //: Pr[Game2(A).main() @ &m : res] = Pr[Game24(A).main() @ &m : res].
-byequiv => //.
-proc; inline *.
-auto; call(_ : true); auto; call(_ : true); auto.
-progress.
-by rewrite dRqv2dRpv.
-rewrite dRqv2dRpv. apply /(is_fullP dRp_vec) /dRp_vec_fu.
-qed.
-
-lemma Game24_To_Game26 &m (A <: Adversary) :
-      `| Pr[Game24(A).main() @ &m : res] - 1%r / 2%r |
-      =
-      `| Pr[Game26(A).main() @ &m : res] - 1%r / 2%r |.
-proof.
-have -> //: Pr[Game24(A).main() @ &m : res] = Pr[Game26(A).main() @ &m : res].
-byequiv => //.
-proc. auto; call(_ : true); auto; call(_ : true). call (_ : ={d, f} ==> ={res}). rewrite sample.
-auto.
-qed.
-
-lemma Game26_To_Game25 &m (A <: Adversary) :
-      `| Pr[Game26(A).main() @ &m : res] - 1%r / 2%r |
-      =
-      `| Pr[Game25(A).main() @ &m : res] - 1%r / 2%r |.
-proof.
-have -> //: Pr[Game26(A).main() @ &m : res] = Pr[Game25(A).main() @ &m : res].
-byequiv => //.
-proc. inline *.
-auto; call(_ : true); auto; call(_ : true); auto.
-qed.
-
-(* ======================================================================= *)
 
 (* Game2 ==> Game3 *)
 lemma Game2_To_Game3 &m (A <: Adversary) :
@@ -649,22 +589,7 @@ lemma Game2_To_Game3 &m (A <: Adversary) :
       =
       `| Pr[Game3( A3(A) ).main() @ &m : res] - 1%r / 2%r |.
 proof.
-have -> //: Pr[Game2(A).main() @ &m : res] = Pr[Game3( A3(A) ).main() @ &m : res].
-+ byequiv => //.
-  proc; inline *.
-  wp; call (_ : true); auto; call (_ : true); wp.
-  (* What functions to use here ... *)  
-  rnd (fun (pv : Rp_vec) => Rpv2Rqv pv)
-      (fun (pv : Rq_vec) => Rqv2Rpv pv).
-  auto; progress. 
-  - admit. 
-  - admit.
-  - by apply /(is_fullP dRq_vec) /dRq_vec_fu.
-  - by rewrite Rpv2Rqv_Rqv2Rpv_inv.
-  - by rewrite pk_enc_dec_inv /= Rpv2Rqv_Rqv2Rpv_inv.
-  - rewrite c_enc_dec_inv scaleRp2Rp_id //=; congr.
-    rewrite &(pw_eq) // cmu_red23 eq_sym; congr. 
-    by rewrite (Rq2Rp_DM (dotp (Rpv2Rqv bL) s'L) h1) Rq2Rp_DotDl Rpv2Rqv_Rqv2Rpv_inv.
+by rewrite (Game2_To_Game2a &m A) (Game2a_To_Game2b &m A) (Game2b_To_Game3 &m A).
 qed.
 
 (* Game3 <> Game4 ==> XMLWR *)
@@ -711,6 +636,7 @@ by progress; [apply dseed_ll        |
               apply dbool1E].
 qed.
 
+(* Game4 <==> Auxiliary_Game *)
 lemma Equivalence_Game4_Aux &m  (A <: Adversary) :
       `| Pr[Game4(A).main() @ &m : res] - 1%r /2%r | 
       =
@@ -740,8 +666,8 @@ qed.
 lemma Game4_Prob_Half &m (A <: Adversary) :
       Pr[Game4(A).main() @ &m : res] = 1%r / 2%r. 
 proof.
-  rewrite -(Real.RField.subr_eq0 Pr[Game4(A).main() @ &m : res] (1%r / 2%r)) -RealOrder.normr0P.
-  by rewrite (Equivalence_Game4_Aux &m A) (Aux_Prob_Half &m A).
+rewrite -(Real.RField.subr_eq0 Pr[Game4(A).main() @ &m : res] (1%r / 2%r)) -RealOrder.normr0P.
+by rewrite (Equivalence_Game4_Aux &m A) (Aux_Prob_Half &m A).
 qed.
 
 (* Intelligibility Intermediate Result *)

@@ -3,7 +3,8 @@
 (* ------------------------------------------------------------------------------------- *)
 
 (* --- Built-in --- *)
-require import AllCore List Distr DInterval DList Ring ZModP IntDiv Bigalg StdOrder.
+require import AllCore List Ring ZModP IntDiv Bigalg StdOrder.
+require import Distr DInterval DList DMap.
 require (*--*) Matrix PKE.
 (*---*) import IntOrder.
 
@@ -323,9 +324,11 @@ import Rp.BasePoly.BigCf.
 
 (* - Constants - *)
 const h1 : Rq = 
-  BigRq.XnD1CA.bigi predT (fun (i : int) => Zq.inzmod (2 ^ (eq - ep - 1)) ** exp Rq.iX i) 0 n.
+  BigRq.XnD1CA.bigi predT (fun (i : int) => 
+   Zq.inzmod (2 ^ (eq - ep - 1)) ** exp Rq.iX i) 0 n.
 const h2 : Rq =
-  BigRq.XnD1CA.bigi predT (fun (i : int) => Zq.inzmod (2 ^ (ep - 2) - 2 ^ (ep - et - 2)) ** exp Rq.iX i) 0 n.
+  BigRq.XnD1CA.bigi predT (fun (i : int) => 
+   Zq.inzmod (2 ^ (ep - 2) - 2 ^ (ep - et - 2)) ** exp Rq.iX i) 0 n.
 const h : Rq_vec = vectc h1.
 
 (* -- Cryptographic Types and Distributions  -- *)
@@ -621,6 +624,12 @@ rewrite !piK; first 2 by rewrite reduced_polyL ?size_map lez_eqVlt; left.
 by rewrite !polyLE (nth_map Zq.zero) //#.
 qed.
 
+clone import DMapSampling as DMapRqv2Rpv with
+   type t1 <- Rq_vec,
+   type t2 <- Rp_vec
+
+   rename [module] "S" as "Rqv2RpvSampl".
+
 (* Scaling *)
 lemma scale_id (x ea eb : int) : ea = eb => scale x ea eb = x.
 proof. by move=> eq_eaeb; rewrite /scale /shr eq_eaeb addzN expr0. qed.
@@ -714,12 +723,11 @@ congr; last first.
 qed.
 
 (* Proof-Specific *)
-lemma Rq2Rp_DG23 (b : Rp_vec) (s : Rq_vec) : 
-       Rq2Rp (dotp (Rpv2Rqv b) s + h1) = dotp b (Rqv2Rpv s) + Rq2Rp h1.
-proof. by rewrite (Rq2Rp_DM (dotp (Rpv2Rqv b) s) h1) Rq2Rp_DotDl Rpv2Rqv_Rqv2Rpv_inv. qed.
+lemma Rq2Rp_DG23 (b : Rq_vec) (s : Rq_vec) : 
+       Rq2Rp (dotp b s + h1) = dotp (Rqv2Rpv b) (Rqv2Rpv s) + Rq2Rp h1.
+proof. by rewrite (Rq2Rp_DM (dotp b s) h1) Rq2Rp_DotDl. qed.
 
-
-lemma cmuZq_red23 (z : Zq) (m : Z2) :
+lemma comp_red23_Zq (z : Zq) (m : Z2) :
       Zp2Zppq ((scaleZq2Zp z) + (Zp.inzmod (shl (Z2.asint m) (2 * ep - eq - 1))))
       =
       scaleZp2Zppq ((Zq2Zp z) + Zp.inzmod (shl (Z2.asint m) (ep - 1))).
@@ -740,7 +748,7 @@ case: (Z2.asint m = 0) => [-> /= | /neq_ltz]; last first.
   - smt(geeq1_2ep geep1_eq modz_dvd_pow). 
 qed.
 
-lemma cmu_red23 (p : Rq) (m : R2) :
+lemma comp_red23 (p : Rq) (m : R2) :
       Rp2Rppq ((scaleRq2Rp p) + (shl_enc m (2 * ep - eq - 1)))
       =
       scaleRp2Rppq ((Rq2Rp p) + (shl_enc m (ep - 1))).
@@ -764,7 +772,7 @@ rewrite BCA.big_seq_cond BCA.big1 2:Zp.ZModpRing.addr0 =>
         [j [/mem_range rngj @/predC1 ne_ji]|] /=.
 + by rewrite rcoeffD 2!rcoeffZ !rcoeff_polyXn // (eq_sym i) ne_ji /= 
              2!Zp.ZModpRing.mulr0 Zp.ZModpRing.addr0.
-by rewrite rcoeffD 2!rcoeffZ !rcoeff_polyXn //= 2!Zp.ZModpRing.mulr1 cmuZq_red23.
+by rewrite rcoeffD 2!rcoeffZ !rcoeff_polyXn //= 2!Zp.ZModpRing.mulr1 comp_red23_Zq.
 qed.
 
 (* ------------------------------------------------------------------------------------- *)
