@@ -34,8 +34,10 @@ axiom ge0_en: 0 <= en.
 axiom ge1_et1: 1 <= et + 1.
 axiom geet2_ep: et + 2 <= ep.
 axiom geep1_eq: ep + 1 <= eq.
-axiom sec_assumption: eq - ep <= ep - et - 1.
+(*axiom sec_assumption: eq - ep <= ep - et - 1.*)
 axiom ge1_l: 1 <= l.
+
+axiom sec_assumption_og: q %/ p <= p %/ (2 * t).
 
 lemma ge0_et: 0 <= et by apply /(lez_add2l (-1) 1 (et + 1)) /ge1_et1.
 lemma ge2_ep: 2 <= ep by apply /(lez_trans (et + 2) 2 ep) /geet2_ep /(lez_add2r 2 0 et) /ge0_et.
@@ -72,11 +74,36 @@ qed.
 
 lemma t_div_q: t %| q by apply /(dvdz_trans p t q) /p_div_q /t_div_p.
 
+lemma ltz_expeqb x m n: 1 <= x => 0 <= m => 0 <= n => exp x m < exp x n => m < n.
+proof.
+move => ge2_x ge0_m ge0_n; rewrite &(contraLR) !ltzNge /= => lem_n. 
+by apply ler_weexpn2l; smt().
+qed.
+
+lemma lez_expeqb x m n: 2 <= x => 0 <= m => 0 <= n => exp x m <= exp x n => m <= n.
+proof.
+move => ge2_x ge0_m ge0_n; rewrite !lez_eqVlt; case => [eq_exp | lt_exp].
++ left; apply (ieexprIn x); smt().
++ right; apply (ltz_expeqb x); smt().
+qed.
+
+lemma sec_assumption_exp: eq - ep <= ep - et - 1.
+proof.
+move: sec_assumption_og.
+have ->: q %/ p = 2 ^ (eq - ep).
++ rewrite eq_sym eqz_div 2:p_div_q; 1: smt(ge4_p).
+  rewrite /p /q -exprD_nneg; smt(geep1_eq ge2_ep).
+have ->: p %/ (2 * t) = 2 ^ (ep - et - 1).
++ rewrite eq_sym eqz_div 2: twot_div_p; 1: smt(ge1_t).
+  rewrite /t -exprS 1:ge0_et -exprD_nneg; smt(geet2_ep ge0_et).
+apply lez_expeqb; smt(geep1_eq geet2_ep).
+qed.
+
 lemma geeq1_2ep: eq + 1 <= 2 * ep.
 proof.
   have le0_eq2ep: eq - ep - ep <= -1.
    apply (lez_trans (-et - 1) (eq - ep - ep) (-1)). 
-    by move: (lez_add2l (-ep) (eq - ep) (ep - et - 1)); rewrite sec_assumption addzC 2!addzA.
+    by move: (lez_add2l (-ep) (eq - ep) (ep - et - 1)); rewrite sec_assumption_exp addzC 2!addzA.
     by rewrite -(lez_add2r (et + 1) (-et - 1) (-1)) addzA addzC addzA /= ge0_et.
   by rewrite mulzC -(intmulz ep 2) mulr2z -(lez_add2r (-1) _ _) /= 
              -(lez_add2l ((-(ep + ep))) _ _) addzA /= addzC opprD addzA.
@@ -454,7 +481,7 @@ rewrite ger0_norm 2:(ltr_le_trans p _ _ (Zp.gtp_asint z)) /p /q; first smt(ge8_q
 by apply (ler_weexpn2l 2 _ ep eq _); 2: smt(ge2_ep geep1_eq).
 qed.
 
-(* Polynomial Modular Reduction/Modulo Conversion*)
+(* Polynomial Lift Modular Reduction/Modulo Conversion*)
 lemma Rq2RpE (p : Rq) (i : int) : (Rq2Rp p).[i] = Zq2Zp p.[i].
 proof.
 case: (i < 0) => [lt0_i|]; first by rewrite !lt0_rcoeff // Zq2Zp0.
@@ -553,7 +580,7 @@ move => j [/mem_range rgj @/predC1 ne_ji].
 by rewrite rcoeffZ rcoeff_polyXn // (eq_sym i j) ne_ji Zp.ZModpRing.mulr0 //.
 qed.
 
-(* Polynomial Vector Modular Reduction/Modulo Conversion *)
+(* Polynomial Vector Lift Modular Reduction/Modulo Conversion *)
 lemma Rpv2RqvE (p : Rp_vec) (i : int) : (Rpv2Rqv p).[i] = Rp2Rq p.[i].
 proof.
 rewrite /Rpv2Rqv /Mat_Rq.Vector."_.[_]" offunvK /vclamp.
@@ -701,7 +728,7 @@ rewrite (modz_small _ (p * p %/ q)) /scale /shr; first split => [| ?].
   apply ltz_divLR; first by apply expr_gt0. 
   have ge2epeq_ep: 2 * ep - eq <= ep by smt(geep1_eq).
   rewrite -eq_22epeq_ppq -exprD_nneg; smt(geeq1_2ep Zp.gtp_asint).
-by apply /(scale_comp (Zp.asint x) _ _ _ (Zp.ge0_asint x)); smt(ge1_et1 geep1_eq sec_assumption).
+by apply /(scale_comp (Zp.asint x) _ _ _ (Zp.ge0_asint x)); smt(ge1_et1 geep1_eq sec_assumption_exp).
 qed.
 
 lemma scaleRp2Rppq2R2t_comp (x : Rp) :
