@@ -34,10 +34,8 @@ axiom ge0_en: 0 <= en.
 axiom ge1_et1: 1 <= et + 1.
 axiom geet2_ep: et + 2 <= ep.
 axiom geep1_eq: ep + 1 <= eq.
-(*axiom sec_assumption: eq - ep <= ep - et - 1.*)
-axiom ge1_l: 1 <= l.
-
 axiom sec_assumption_og: q %/ p <= p %/ (2 * t).
+axiom ge1_l: 1 <= l.
 
 lemma ge0_et: 0 <= et by apply /(lez_add2l (-1) 1 (et + 1)) /ge1_et1.
 lemma ge2_ep: 2 <= ep by apply /(lez_trans (et + 2) 2 ep) /geet2_ep /(lez_add2r 2 0 et) /ge0_et.
@@ -101,45 +99,45 @@ qed.
 
 lemma geeq1_2ep: eq + 1 <= 2 * ep.
 proof.
-  have le0_eq2ep: eq - ep - ep <= -1.
-   apply (lez_trans (-et - 1) (eq - ep - ep) (-1)). 
-    by move: (lez_add2l (-ep) (eq - ep) (ep - et - 1)); rewrite sec_assumption_exp addzC 2!addzA.
-    by rewrite -(lez_add2r (et + 1) (-et - 1) (-1)) addzA addzC addzA /= ge0_et.
-  by rewrite mulzC -(intmulz ep 2) mulr2z -(lez_add2r (-1) _ _) /= 
-             -(lez_add2l ((-(ep + ep))) _ _) addzA /= addzC opprD addzA.
+have le0_eq2ep: eq - ep - ep <= -1.
++ apply (lez_trans (-et - 1) (eq - ep - ep) (-1)). 
++ by move: (lez_add2l (-ep) (eq - ep) (ep - et - 1)); rewrite sec_assumption_exp addzC 2!addzA.
++ by rewrite -(lez_add2r (et + 1) (-et - 1) (-1)) addzA addzC addzA /= ge0_et.
+by rewrite mulzC -(intmulz ep 2) mulr2z -(lez_add2r (-1) _ _) /= 
+           -(lez_add2l ((-(ep + ep))) _ _) addzA /= addzC opprD addzA.
 qed.  
 
 lemma q_div_pp: q %| (p * p).
 proof.
-  rewrite /p /q -exprD_nneg; first 2 by apply /(ler_trans 2 0 ep) /ge2_ep.
-  rewrite dvdz_exp2l; split; [by apply /(lez_trans 3 0 eq) /ge3_eq | move => ?]. 
-  by rewrite -mul1r2z mulrC /ofint_id intmulz /= (lez_trans (eq + 1) _ _); 
-             [rewrite (lez_addl eq 1) | apply geeq1_2ep].
+rewrite /p /q -exprD_nneg; first 2 by apply /(ler_trans 2 0 ep) /ge2_ep.
+rewrite dvdz_exp2l; split; [by apply /(lez_trans 3 0 eq) /ge3_eq | move => ?]. 
+by rewrite -mul1r2z mulrC /ofint_id intmulz /= (lez_trans (eq + 1) _ _); 
+           [rewrite (lez_addl eq 1) | apply geeq1_2ep].
 qed.
 
 lemma ge2_ppq: 2 <= (p * p) %/ q.
 proof.
-  apply (ler_pmul2r q); first by rewrite /q expr_gt0.
-   have ->: p * p %/ q * q = p * p.
-    by rewrite -(dvdz_eq q (p * p)) q_div_pp.
-   rewrite /p /q -exprS; first by apply /(lez_trans 3 0 eq) /ge3_eq.
-    rewrite -exprD_nneg; first 2 by apply /(lez_trans 2 0 ep) /ge2_ep.
-     apply ler_weexpn2l; split; [by apply (lez_trans eq 0 (eq + 1)); 
-           [apply /(lez_trans 3 0 eq) /ge3_eq | rewrite (lez_addl eq 1)] |].
-      by rewrite -mul1r2z mulrC /ofint_id intmulz /= geeq1_2ep.
+apply (ler_pmul2r q); first by rewrite /q expr_gt0.
++ have ->: p * p %/ q * q = p * p.
+  - by rewrite -(dvdz_eq q (p * p)) q_div_pp.
+  rewrite /p /q -exprS; first by apply /(lez_trans 3 0 eq) /ge3_eq.
+  rewrite -exprD_nneg; first 2 by apply /(lez_trans 2 0 ep) /ge2_ep.
+  apply ler_weexpn2l; split; [by apply (lez_trans eq 0 (eq + 1)); 
+        [apply /(lez_trans 3 0 eq) /ge3_eq | rewrite (lez_addl eq 1)] |].
+  by rewrite -mul1r2z mulrC /ofint_id intmulz /= geeq1_2ep.
 qed.
 
 lemma eq_22epeq_ppq: 2 ^ (2 * ep - eq) = (p * p) %/ q.
 proof.
-  apply (mulfI q); [by rewrite neq_ltz; right; apply expr_gt0 | 
-                    rewrite mulzC -(mulzC (p * p %/ q) _)].  
-  have ->: p * p %/ q * q = p * p.
-   by rewrite -(dvdz_eq q (p * p)) q_div_pp.
-  rewrite /p /q -exprD_nneg; first by rewrite subz_ge0 (lez_trans (eq + 1) eq (2 * ep)); 
-          [rewrite (lez_addl _ 1) | apply geeq1_2ep].
-   by apply /(lez_trans 3 0 eq) /ge3_eq.
-  rewrite -exprD_nneg; first 2 by rewrite (lez_trans 2 0 ep); [| apply ge2_ep || apply ge2_ep ].
-   by congr; rewrite -addzA /= mulzC -mul1r2z /ofint_id intmulz.
+apply (mulfI q); [by rewrite neq_ltz; right; apply expr_gt0 | 
+                  rewrite mulzC -(mulzC (p * p %/ q) _)].  
+have ->: p * p %/ q * q = p * p.
++  by rewrite -(dvdz_eq q (p * p)) q_div_pp.
+rewrite /p /q -exprD_nneg; first by rewrite subz_ge0 (lez_trans (eq + 1) eq (2 * ep)); 
+        [rewrite (lez_addl _ 1) | apply geeq1_2ep].
+by apply /(lez_trans 3 0 eq) /ge3_eq.
+rewrite -exprD_nneg; first 2 by rewrite (lez_trans 2 0 ep); [| apply ge2_ep || apply ge2_ep ].
++ by congr; rewrite -addzA /= mulzC -mul1r2z /ofint_id intmulz.
 qed.
 
 
