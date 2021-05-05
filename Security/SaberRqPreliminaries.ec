@@ -369,7 +369,7 @@ op [lossless full uniform] dseed : seed distr.
 op gen : seed -> Rq_mat.
 
 (* - Modular Reduction/Modulus Conversion - *)
-op Zq2Zp (z : Zq) : Zp = Zp.inzmod (asint z).
+op Zq2Zp (z : Zq) : Zp = Zp.inzmod (Zq.asint z).
 op Zp2Zq (z : Zp) : Zq = Zq.inzmod (Zp.asint z).
 op Zp2Zppq (z : Zp) : Zppq = Zppq.inzmod (Zp.asint z).
 
@@ -451,15 +451,15 @@ proof. by rewrite -eq_inzmod zeroE. qed.
 lemma Zp2Zppq0 : Zp2Zppq Zp.zero = Zppq.zero.
 proof. by rewrite -eq_inzmod zeroE. qed.
 
-lemma Zq2Zp_DM (a b : Zq) : morphism_2 Zq2Zp Zq.( + ) Zp.( + ).
+lemma Zq2Zp_DM : morphism_2 Zq2Zp Zq.( + ) Zp.( + ).
 proof. by move => x y; rewrite /Zq2Zp /( + ) !inzmodK /inzmod modzDm modz_dvd 1:p_div_q. qed.
 
-lemma Zq2Zp_BM (a b : Zq) : morphism_2 Zq2Zp Zq.( - ) Zp.( - ).
+lemma Zq2Zp_BM : morphism_2 Zq2Zp Zq.( - ) Zp.( - ).
 proof. 
 by move => x y; rewrite /Zq2Zp /( + ) !inzmodK modzNm /inzmod modzDm modzDmr modz_dvd 1:p_div_q. 
 qed.
 
-lemma Zq2Zp_MM (a b : Zq) : morphism_2 Zq2Zp Zq.( * ) Zp.( * ).
+lemma Zq2Zp_MM : morphism_2 Zq2Zp Zq.( * ) Zp.( * ).
 proof. by move => x y; rewrite /Zq2Zp /( * ) !inzmodK /inzmod modzMm modz_dvd 1:p_div_q. qed.
 
 lemma Zq2Zp_DM_big (F : int -> Zq) (r : int list) :

@@ -598,7 +598,7 @@ lemma Distinguish_Game3_Game4_To_XMLWR &m (A <: Adversary) :
       = 
       `| Pr[XMLWR( B1(A) ).main(true) @ &m : res] - Pr[XMLWR( B1(A) ).main(false) @ &m : res] |. 
 proof.
-have ->: Pr[Game3(A).main() @ &m : res] =  Pr[XMLWR( B1(A) ).main(false) @ &m : res].
+have ->: Pr[Game3(A).main() @ &m : res] = Pr[XMLWR( B1(A) ).main(false) @ &m : res].
 + byequiv => //.
   proc; inline *.
   rcondf {2} 4.
@@ -607,7 +607,7 @@ have ->: Pr[Game3(A).main() @ &m : res] =  Pr[XMLWR( B1(A) ).main(false) @ &m : 
   - by move => &m0; auto.
   swap {2} 11 -10; swap {1} 5 3; swap {2} 6 -2; wp.
   by sim.
-have ->: Pr[Game4(A).main() @ &m : res] =  Pr[XMLWR( B1(A) ).main(true) @ &m : res].
+have ->: Pr[Game4(A).main() @ &m : res] = Pr[XMLWR( B1(A) ).main(true) @ &m : res].
 + byequiv => //.
   proc; inline *.
   rcondt {2} 4.
@@ -626,9 +626,9 @@ lemma Aux_Prob_Half &m  (A <: Adversary) :
 proof.
 byphoare => //.
 proc.
-rnd. 
+rnd.
 call (_: true); [apply (Adv_CPA_guess_ll A) | auto].
-call(_ : true); [apply (Adv_CPA_choose_ll A) | auto].
+call (_: true); [apply (Adv_CPA_choose_ll A) | auto].
 by progress; [apply dseed_ll        |
               apply dRq_vec_ll      |
               apply dRp_vec_ll      |
@@ -694,9 +694,9 @@ have:
      +
      `| Pr[Game1(A).main() @ &m : res] - Pr[Game4( A3(A2(A)) ).main() @ &m : res] |
      <=
-     `| Pr[GMLWR(B0(A)).main(true) @ &m : res] - Pr[GMLWR(B0(A)).main(false) @ &m : res] | 
+     `| Pr[GMLWR( B0(A) ).main(true) @ &m : res] - Pr[GMLWR( B0(A) ).main(false) @ &m : res] | 
      +
-     `| Pr[XMLWR(B1(A3(A2(A)))).main(true) @ &m : res] - Pr[XMLWR(B1(A3(A2(A)))).main(false) @ &m : res] |.
+     `| Pr[XMLWR( B1(A3(A2(A))) ).main(true) @ &m : res] - Pr[XMLWR( B1(A3(A2(A))) ).main(false) @ &m : res] |.
 + by apply ler_add; [rewrite (Distinguish_Game0_Game1_To_GMLWR &m A) |
                      rewrite -(Difference_Game1_Game4_To_XMLWR &m A) ].
 move: (ler_dist_add (Pr[Game1(A).main() @ &m : res]) 

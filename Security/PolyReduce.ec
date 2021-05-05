@@ -146,6 +146,11 @@ lemma scale0p (p : polyXnD1) : zeror ** p = zeroXnD1.
 proof. by rewrite /( ** ) scale0p. qed.
 
 (* -------------------------------------------------------------------- *)
+lemma scaleDl (c1 c2 : coeff) (p : polyXnD1) : 
+  (c1 + c2) ** p = (c1 ** p) + (c2 ** p).
+proof. by rewrite /( ** ) scalepDl addE. qed.
+
+(* -------------------------------------------------------------------- *)
 lemma scaleE c (p : poly) : c ** pi p = pinject (c ** p).
 proof. by rewrite /( ** ) !scalepE -2!mulE reprK. qed.
 
