@@ -386,6 +386,19 @@ lemma rcoeff_polyXn i k : 0 <= i < n =>
 proof. admitted.
 
 (* -------------------------------------------------------------------- *)
+lemma rcoeffZ_sum (F : int -> coeff) (k : int) : 
+  0 <= k < n =>
+  (XnD1CA.bigi predT (fun i => (F i) ** ComRing.exp iX i) 0 n).[k] = F k.
+proof.
+move => rng_k; rewrite rcoeff_sum (BCA.bigD1 _ _ k) /=.
++ by rewrite mem_range.
++ by rewrite range_uniq.
+rewrite BCA.big_seq_cond BCA.big1 => [i [/mem_range rng_i @/predC1 ne_ik]|]. 
++ by rewrite /= rcoeffZ rcoeff_polyXn // (eq_sym k) ne_ik /= mulr0.
++ by rewrite addr0 rcoeffZ rcoeff_polyXn //= mulr1.
+qed.
+
+(* -------------------------------------------------------------------- *)
 lemma rcoeffM (p q : polyXnD1) k : 0 <= k < n => (p * q).[k] =
     BCA.bigi predT (fun i =>
        p.[i] * q.[k - i] - p.[i] * q.[n + k - i]) 0 n.

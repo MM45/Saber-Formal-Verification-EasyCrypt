@@ -235,16 +235,108 @@ rewrite /scaleRpv2Rqv /Mat_Rq.Vector."_.[_]" offunvK /vclamp.
 by case (0 <= i && i < l) => // rng_i; rewrite getv_out // scaleRp2Rq0.
 qed.
 
+(* 
+lemma Zq2Zp_DM_big (F : int -> Zq) (r : int list) :
+      Zq2Zp (Rq.BasePoly.BigCf.BCA.big predT F r)
+      =
+      BCA.big predT (Zq2Zp \o F) r.
+proof.
+elim: r; first by rewrite BCA.big_nil Rq.BasePoly.BigCf.BCA.big_nil Zq2Zp0.
+move => x l @/(\o) IH; rewrite BCA.big_cons Rq.BasePoly.BigCf.BCA.big_cons {1 4}/predT /=.
+by rewrite (Zq2Zp_DM (F x) (Rq.BasePoly.BigCf.BCA.big predT F l)); congr.
+qed.
+*)
+
+lemma Zp2Zq0 : Zp2Zq Zp.zero = Zq.zero.
+proof. by rewrite /Zp2Zq -asintK !zeroE. qed.
+
+lemma Zq2Zp_Zp2Zq_small_inv (z : Zq) : asint z < p => Zp2Zq (Zq2Zp z) = z.
+proof.
+move => ltp_z; by rewrite /Zq2Zp /Zp2Zq -{2}asintK inzmodK pmod_small 2?(ge0_asint, ltp_z).
+qed.
+
+(*
+lemma Zp2Zq_DM : morphism_2 Zp2Zq Zp.( + ) Zq.( + ).
+proof.
+move => x y. rewrite /Zp2Zq addE -inzmodD -eq_inzmod.
+qed.
+
+lemma Zp2Zq_DM_big (F : int -> Zp) (r : int list) :
+      Zp2Zq (Rp.BasePoly.BigCf.BCA.big predT F r)
+      =
+      Rq.BasePoly.BigCf.BCA.big predT (Zp2Zq \o F) r.
+proof.
+elim: r; first by rewrite Rp.BasePoly.BigCf.BCA.big_nil Rq.BasePoly.BigCf.BCA.big_nil Zp2Zq0.
+move => x l @/(\o) ih; rewrite  Rp.BasePoly.BigCf.BCA.big_consT Rq.BasePoly.BigCf.BCA.big_consT.
+by rewrite Zp2Zq_DM; congr.
+qed.
+*)
+
+axiom supp_dsmallRq (prq : Rq) : 
+  prq \in dsmallRq <=> forall (i : int), 0 <= i < n => Zq.asint prq.[i] < p.
+
+axiom supp_dsmallRq_vec (prqv : Rq_vec) :
+  prqv \in dsmallRq_vec 
+  <=>
+  forall (i : int), 0 <= i < l => prqv.[i] \in dsmallRq.
+
+lemma Rq2Rp_Rp2Rq_small_inv (p : Rq) : p \in dsmallRq => Rp2Rq (Rq2Rp p) = p.
+proof.
+move /supp_dsmallRq => val_coeff; rewrite polyXnD1_eqP => i rngi.
+by rewrite rcoeffZ_sum //= rcoeffZ_sum //= Zq2Zp_Zp2Zq_small_inv 1:(val_coeff i).
+qed.
+
 (* dotp (q/p * b) s + (q/p * h1)  =  q / p * (dotp b s + h1) *)
 (* dotp (q/p * b) s = q/p * (dotp b s) *) 
-lemma test (b : Rp_vec) (s : Rq_vec) : 
-  dotp (scaleRpv2Rqv b) s = scaleRp2Rq (dotp b (Rqv2Rpv s)).
+lemma scaleRp2Rq_DotDM (b : Rp_vec) (s : Rq_vec) : 
+  s \in dsmallRq_vec => dotp (scaleRpv2Rqv b) s = scaleRp2Rq (dotp b (Rqv2Rpv s)).
 proof.
+move /supp_dsmallRq_vec => val_coeff.
 rewrite /dotp scaleRp2Rq_DM_big /(\o).
 rewrite !Big.BAdd.big_seq &(Big.BAdd.eq_bigr) /= => i /mem_range rng_i.
-rewrite Rqv2RpvE scaleRp2Rq_MA.
-(* Rq2Rp s.[i] = s.[i]*)
-admit.
+by rewrite Rqv2RpvE scaleRp2Rq_MA scaleRpv2RqvE Rq2Rp_Rp2Rq_small_inv 1:val_coeff.
+qed.
+
+lemma scaleRq_h1 : scaleRq h1 (eq - ep) = scaleRp2Rq (Rq2Rp h1).
+proof.
+rewrite polyXnD1_eqP => i rng_i.
+rewrite rcoeffZ_sum //= eq_sym rcoeffZ_sum //=. 
+rewrite /Rq2Rp. rewrite (Rp.rcoeffZ_sum (fun (i0 : int) => Zq2Zp h1.[i0])) //=.
+rewrite rcoeffZ_sum //=. rewrite /scaleZp2Zq /scaleZq /Zq2Zp -eq_inzmod.
+rewrite !inzmodK. rewrite /q /p modz_dvd_pow. smt(ge2_ep geep1_eq).
+have tt: 2 ^ (eq - ep - 1) < 2 ^ ep. admit.
+rewrite !(pmod_small (2 ^ (eq - ep - 1))). admit. admit.
+trivial.
+qed. 
+
+lemma scaleRq_h2 : scaleRq h2 (eq - ep) = scaleRp2Rq (Rq2Rp h2).
+proof.
+rewrite polyXnD1_eqP => i rng_i.
+rewrite rcoeffZ_sum //= eq_sym rcoeffZ_sum //=. 
+rewrite /Rq2Rp. rewrite (Rp.rcoeffZ_sum (fun (i0 : int) => Zq2Zp h2.[i0])) //=.
+rewrite rcoeffZ_sum //=. rewrite /scaleZp2Zq /scaleZq /Zq2Zp -eq_inzmod.
+rewrite !inzmodK.  rewrite /q /p modz_dvd_pow. smt(ge2_ep geep1_eq).
+have tt: (2 ^ (ep - 2) - 2 ^ (ep - et - 2)) < 2 ^ ep. admit.
+rewrite !(pmod_small ((2 ^ (ep - 2) - 2 ^ (ep - et - 2)))). admit. admit.
+trivial.
+qed.
+
+lemma scaleZp2Z2_DM (z1 z2 : Zp) : 
+  2 ^ (ep - 1) %| Zp.asint z1 \/  2 ^ (ep - 1) %| Zp.asint z2 => 
+  scaleZp2Z2 (z1 + z2) = scaleZp2Z2 z1 + scaleZp2Z2 z2.
+proof. 
+case => [divz1 | divz2]; rewrite /scaleZp2Z2 -inzmodD -scale_DM ?(divz1, divz2) //;
+    rewrite addE /p /scale /shr /inzmod modz_pow2_div; 1, 2, 4, 5: smt(Zp.ge0_asint ge2_ep);
+    congr; by rewrite opprD addzA /= expr1 modz_mod.
+qed.
+
+lemma scaleZq2Z2_DM (z1 z2 : Zq) : 
+  2 ^ (eq - 1) %| Zq.asint z1 \/  2 ^ (eq - 1) %| Zq.asint z2 => 
+  scaleZq2Z2 (z1 + z2) = scaleZq2Z2 z1 + scaleZq2Z2 z2.
+proof. 
+case => [divz1 | divz2]; rewrite /scaleZq2Z2 -inzmodD -scale_DM ?(divz1, divz2) //;
+    rewrite addE /q /scale /shr /inzmod modz_pow2_div; 1, 2, 4, 5: smt(Zq.ge0_asint ge3_eq);
+    congr; by rewrite opprD addzA /= expr1 modz_mod.
 qed.
 
 module Saber_PKE_Scheme_Rq : Scheme = {
@@ -323,7 +415,43 @@ proof.
 proc.
 auto; progress. 
 congr; rewrite &(pw_eq) //.
-admit.
+rewrite scaleRp2R2t_DM 2: scaleRq2R2t_DM; 1, 2: right => i rng_i.
++ rewrite rcoeffZ_sum //= inzmodK /shl.
+  case (asint (m_decode m{2}).[i] = 0) => [-> /= | neq0_m].
+  - by apply dvdz0.
+  - have -> /=:  (Z2.asint (m_decode m{2}).[i]) = 1. admit.
+    rewrite pmod_small. admit.
+    by apply dvdz_exp2l; smt(ge0_et geet2_ep). 
++ rewrite rcoeffZ_sum //= inzmodK /scale_up /shl. 
+  case (asint (m_decode m{2}).[i] = 0) => [-> /= | neq0_m].
+  - by apply dvdz0.
+  - have -> /=:  (Z2.asint (m_decode m{2}).[i]) = 1. admit.
+    rewrite pmod_small. admit.
+    by apply dvdz_exp2l; smt(ge0_et geet2_ep geep1_eq). 
+congr; last first.
++ rewrite polyXnD1_eqP /shl_enc /scaleR22Rq => i rngi.
+  rewrite !rcoeffZ_sum //= !rcoeffZ_sum //=.
+  rewrite eq_sym /scaleZq2Z2t /scaleZ22Zq inzmodK.
+  rewrite eq_sym /scaleZp2Z2t inzmodK -eq_inzmod.
+  rewrite /scale_up /shl (pmod_small _ p) 2:(pmod_small _ q). admit. admit.
+  rewrite /scale /shr (_ : 2 ^ (ep - 1) = 2 ^ (ep - (et + 1)) * 2 ^ et).
+  rewrite -exprD_nneg; 1, 2: smt(geet2_ep ge0_et). congr. ring.
+  rewrite (mulzC _ (2 ^ et)) -mulzA mulzK. admit.
+  rewrite (_ : 2 ^ (eq - 1) = 2 ^ (eq - (et + 1)) * 2 ^ et).
+  rewrite -exprD_nneg; 1, 2: smt(geet2_ep geep1_eq ge0_et).
+  congr. ring.
+  rewrite eq_sym (mulzC _ (2 ^ et)) -mulzA mulzK. admit. trivial.
++ rewrite eq_sym scaleRp2Rq_DotDM // scaleRq_h1 -scaleRp2Rq_DM.
+  rewrite polyXnD1_eqP => i rng_i.
+  rewrite !rcoeffZ_sum //= rcoeffZ_sum //=. 
+  rewrite /scaleZq2Z2t /scaleZp2Zq !inzmodK.
+  rewrite /scaleZp2Z2t -eq_inzmod /scale /scale_up /shr /shl /q /t -exprS 1:ge0_et.
+  rewrite modz_pow2_div. admit. smt(ge0_et geet2_ep geep1_eq).
+  rewrite (_ : 2 ^ (eq - (eq - (et + 1))) = 2 ^ (et + 1)) 2:modz_mod. congr; ring.
+  rewrite (_ : 2 ^ (eq - (et + 1)) = 2 ^ (eq - ep) * 2 ^ (ep - (et + 1))).
+  rewrite -exprD_nneg; 1,2: smt(geet2_ep geep1_eq). congr; ring.
+  rewrite -(mulzC (2 ^ (ep - (et + 1)))) divzMpr. admit.
+  trivial.
 qed.
 
 lemma eq_dec: equiv[Saber_PKE_Scheme.dec ~ Saber_PKE_Scheme_Rq.dec : ={sk, c} ==> ={res}].
@@ -331,5 +459,19 @@ proof.
 proc.
 auto; progress.
 congr.
+rewrite scaleRp2Rq_DotDM. admit.
+rewrite scaleRq_h1 scaleRq_h2.
+rewrite Rq.ComRing.addrC.
+rewrite Rp.ComRing.addrC.
+rewrite Rq.PolyReduce.addrC.
+rewrite scaleRp2Rq_DM.
 admit.
 qed.
+
+(* TODO:
+- Change definitions of regular scheme regarding encoding/decoding such that
+  we can use the types of the artifacts in above proof (i.e., dont use encoding/decoding
+  when unnecessary, and when necesarry, a seperate one for regular scheme with concrete typing).
+- Remove all admits.
+- Clean up.
+*)

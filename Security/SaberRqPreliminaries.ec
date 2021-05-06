@@ -428,8 +428,8 @@ op pk_decode ['a] : pkey -> 'a.
 op sk_encode ['a] : 'a -> skey.
 op sk_decode ['a] : skey -> 'a.
 
-op m_encode ['a] : 'a -> plaintext.
-op m_decode ['a] : plaintext -> 'a.
+op m_encode : R2 -> plaintext.
+op m_decode : plaintext -> R2.
 
 op c_encode ['a] : 'a -> ciphertext.
 op c_decode ['a] : ciphertext -> 'a.
@@ -438,7 +438,7 @@ op c_decode ['a] : ciphertext -> 'a.
 (* Encoding and Decoding are Each Other's Inverses *)
 axiom pk_enc_dec_inv ['a] (x : 'a) : pk_decode (pk_encode x) = x. 
 axiom sk_enc_dec_inv ['a] (x : 'a) : sk_decode (sk_encode x) = x. 
-axiom m_enc_dec_inv ['a] (x : 'a) : m_decode (m_encode x) = x. 
+axiom m_enc_dec_inv (x : R2) : m_decode (m_encode x) = x. 
 axiom c_enc_dec_inv ['a] (x : 'a) : c_decode (c_encode x) = x. 
 
 (* Modular Reduction/Modulo Conversion *)
