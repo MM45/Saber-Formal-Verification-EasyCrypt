@@ -150,6 +150,9 @@ lemma scaleDl (c1 c2 : coeff) (p : polyXnD1) :
   (c1 + c2) ** p = (c1 ** p) + (c2 ** p).
 proof. by rewrite /( ** ) scalepDl addE. qed.
 
+lemma scaleN (c : coeff) p : (-c) ** p = - (c ** p).
+proof. by rewrite /( ** ) scaleNp oppE. qed.
+
 (* -------------------------------------------------------------------- *)
 lemma scaleE c (p : poly) : c ** pi p = pinject (c ** p).
 proof. by rewrite /( ** ) !scalepE -2!mulE reprK. qed.
@@ -338,6 +341,16 @@ rewrite !reducedP => dgp dgq;
 qed.
 
 (* -------------------------------------------------------------------- *)
+lemma reducedN (p : poly) : reduced p => reduced (- p).
+proof. by rewrite !reducedP degN. qed.
+
+(* -------------------------------------------------------------------- *)
+lemma rcoeffN (p : polyXnD1) k : - p.[k] = (- p).[k].
+proof.
+by elim/polyXnD1W: p => p rdp; rewrite oppE !piK 2:reducedN 3: polyNE.
+qed.
+
+(* -------------------------------------------------------------------- *)
 lemma rcoeffD (p q : polyXnD1) k : (p + q).[k] = p.[k] + q.[k].
 proof.
 elim/polyXnD1W: p => p rdp; elim/polyXnD1W: q => q rdq.
@@ -360,6 +373,15 @@ elim: r => [|x r ih].
 - by rewrite XnD1CA.big_nil BCA.big_nil rcoeff0.
 rewrite XnD1CA.big_cons BCA.big_cons.
 by case: (P x) => Px; rewrite ?rcoeffD ih.
+qed.
+
+(* -------------------------------------------------------------------- *)
+lemma polyXnD1_sumN ['a] (P : 'a -> bool) (F : 'a -> polyXnD1) (r : 'a list) :
+  - (XnD1CA.big P F r) = (XnD1CA.big P (fun i => - (F i)) r).
+proof.
+rewrite XnD1CA.big_endo //.
++ by rewrite ComRing.oppr0.
++ by apply ComRing.opprD. 
 qed.
 
 (* -------------------------------------------------------------------- *)
