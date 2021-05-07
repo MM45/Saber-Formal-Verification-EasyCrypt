@@ -112,14 +112,14 @@ module Game0(A : Adversary) = {
       s <$ dsmallRq_vec;
       b <- scaleRqv2Rpv (_A *^ s + h);
 
-      (m0, m1) <@ A.choose(pk_encode (sd, b));
+      (m0, m1) <@ A.choose(pk_encode_g (sd, b));
 
       s' <$ dsmallRq_vec;
       b' <- scaleRqv2Rpv ((trmx _A) *^ s' + h);
       v' <- (dotp b (Rqv2Rpv s')) + (Rq2Rp h1);
       cmu <- scaleRp2R2t (v' + (shl_enc (m_decode (if u then m1 else m0)) (ep - 1)));
       
-      u' <@ A.guess(c_encode (cmu, b'));
+      u' <@ A.guess(c_encode_g (cmu, b'));
 
       return (u = u');
    }
@@ -145,14 +145,14 @@ module Game1(A : Adversary) = {
       (* Skip: s <$ dsmallRq_vec; *)
       b <$ dRp_vec;
 
-      (m0, m1) <@ A.choose(pk_encode (sd, b));
+      (m0, m1) <@ A.choose(pk_encode_g (sd, b));
 
       s' <$ dsmallRq_vec;
       b' <- scaleRqv2Rpv ((trmx _A) *^ s' + h);
       v' <- (dotp b (Rqv2Rpv s')) + (Rq2Rp h1);
       cmu <- scaleRp2R2t (v' + (shl_enc (m_decode (if u then m1 else m0)) (ep - 1)));
       
-      u' <@ A.guess(c_encode (cmu, b'));
+      u' <@ A.guess(c_encode_g (cmu, b'));
 
       return (u = u');
    }
@@ -178,14 +178,14 @@ module Game2(A : Adversary) = {
       (* Skip: s <$ dsmallRq_vec; *)
       b <$ dRp_vec;
 
-      (m0, m1) <@ A.choose(pk_encode (sd, b));
+      (m0, m1) <@ A.choose(pk_encode_g (sd, b));
 
       s' <$ dsmallRq_vec;
       b' <- scaleRqv2Rpv ((trmx _A) *^ s' + h);
       v' <- (dotp b (Rqv2Rpv s')) + (Rq2Rp h1);
       cmu <- scaleRp2Rppq (v' + (shl_enc (m_decode (if u then m1 else m0)) (ep - 1)));
       
-      u' <@ A.guess(c_encode (cmu, b'));
+      u' <@ A.guess(c_encode_g (cmu, b'));
 
       return (u = u');
    }
@@ -211,14 +211,14 @@ module Game2a(A : Adversary) = {
       (* Skip: s <$ dsmallRq_vec; *)
       b <@ Rqv2RpvSampl.sample(dRq_vec, Rqv2Rpv);
 
-      (m0, m1) <@ A.choose(pk_encode (sd, b));
+      (m0, m1) <@ A.choose(pk_encode_g (sd, b));
 
       s' <$ dsmallRq_vec;
       b' <- scaleRqv2Rpv ((trmx _A) *^ s' + h);
       v' <- (dotp b (Rqv2Rpv s')) + (Rq2Rp h1);
       cmu <- scaleRp2Rppq (v' + (shl_enc (m_decode (if u then m1 else m0)) (ep - 1)));
       
-      u' <@ A.guess(c_encode (cmu, b'));
+      u' <@ A.guess(c_encode_g (cmu, b'));
 
       return (u = u');
    }
@@ -245,14 +245,14 @@ module Game2b(A : Adversary) = {
       (* Skip: s <$ dsmallRq_vec; *)
       b <@ Rqv2RpvSampl.map(dRq_vec, Rqv2Rpv);
 
-      (m0, m1) <@ A.choose(pk_encode (sd, b));
+      (m0, m1) <@ A.choose(pk_encode_g (sd, b));
 
       s' <$ dsmallRq_vec;
       b' <- scaleRqv2Rpv ((trmx _A) *^ s' + h);
       v' <- (dotp b (Rqv2Rpv s')) + (Rq2Rp h1);
       cmu <- scaleRp2Rppq (v' + (shl_enc (m_decode (if u then m1 else m0)) (ep - 1)));
       
-      u' <@ A.guess(c_encode (cmu, b'));
+      u' <@ A.guess(c_encode_g (cmu, b'));
 
       return (u = u');
    }
@@ -279,14 +279,14 @@ module Game3(A : Adversary) = {
       (* Skip: s <$ dsmallRq_vec; *)
       b <$ dRq_vec;
 
-      (m0, m1) <@ A.choose(pk_encode (sd, b));
+      (m0, m1) <@ A.choose(pk_encode_g (sd, b));
 
       s' <$ dsmallRq_vec;
       b' <- scaleRqv2Rpv ((trmx _A) *^ s' + h);
       v' <- scaleRq2Rp ((dotp b s') + h1);
       cmu <- scaleRp2Rp (v' + (shl_enc (m_decode (if u then m1 else m0)) (2 * ep - eq - 1)));
    
-      u' <@ A.guess(c_encode (cmu, b'));
+      u' <@ A.guess(c_encode_g (cmu, b'));
 
       return (u = u');
    }
@@ -313,14 +313,14 @@ module Game4(A : Adversary) = {
       (* Skip: s <$ dsmallRq_vec; *)
       b <$ dRq_vec;
 
-      (m0, m1) <@ A.choose(pk_encode (sd, b));
+      (m0, m1) <@ A.choose(pk_encode_g (sd, b));
 
       (* Skip: s' <$ dsmallRq_vec; *)
       b' <$ dRp_vec;
       v' <$ dRp;
       cmu <- scaleRp2Rp (v' + (shl_enc (m_decode (if u then m1 else m0)) (2 * ep - eq - 1)));
       
-      u' <@ A.guess(c_encode (cmu, b'));
+      u' <@ A.guess(c_encode_g (cmu, b'));
 
       return (u = u');
    }
@@ -340,12 +340,12 @@ module Auxiliary_Game(A : Adversary) = {
       sd <$ dseed;
       b <$ dRq_vec;
       
-      (m0, m1) <@ A.choose(pk_encode (sd, b));
+      (m0, m1) <@ A.choose(pk_encode_g (sd, b));
        
       b' <$ dRp_vec;
       cmu <$ dRp;
          
-      u' <@ A.guess(c_encode (cmu, b'));
+      u' <@ A.guess(c_encode_g (cmu, b'));
       
       u <$ dbool;
 
@@ -374,14 +374,14 @@ module B0(A : Adversary) : Adv_GMLWR = {
 
       _A <- gen sd;
 
-      (m0, m1) <@ A.choose(pk_encode (sd, b));
+      (m0, m1) <@ A.choose(pk_encode_g (sd, b));
 
       s' <$ dsmallRq_vec;
       b' <- scaleRqv2Rpv ((trmx _A) *^ s' + h);
       v' <- (dotp b (Rqv2Rpv s')) + (Rq2Rp h1);
       cmw <- scaleRp2R2t (v' + (shl_enc (m_decode (if w then m1 else m0)) (ep - 1)));
       
-      w' <@ A.guess(c_encode (cmw, b'));
+      w' <@ A.guess(c_encode_g (cmw, b'));
       
       return (w = w');
    }
@@ -397,11 +397,11 @@ module B1(A : Adversary) : Adv_XMLWR = {
       
       w <$ dbool;
 
-      (m0, m1) <@ A.choose(pk_encode (sd, a));
+      (m0, m1) <@ A.choose(pk_encode_g (sd, a));
 
       cmw <- scaleRp2Rp (d + (shl_enc (m_decode (if w then m1 else m0)) (2 * ep - eq - 1)));
       
-      w' <@ A.guess(c_encode (cmw, b));
+      w' <@ A.guess(c_encode_g (cmw, b));
       
       return (w = w');
    }
@@ -426,13 +426,13 @@ module A2(A1 : Adversary) : Adversary = {
       var b' : Rp_vec;
       var cmu' : R2t;
       
-      c_dec <- c_decode c;
+      c_dec <- c_decode_g c;
       cmu <- c_dec.`1;
       b' <- c_dec.`2;
 
       cmu' <- scaleRppq2R2t cmu; 
             
-      u' <@ A1.guess(c_encode (cmu', b'));
+      u' <@ A1.guess(c_encode_g (cmu', b'));
 
       return u';
    }
@@ -448,12 +448,12 @@ module A3(A2 : Adversary) : Adversary = {
       var b : Rq_vec;
       var bp: Rp_vec;
       
-      pk_dec <- pk_decode pk;
+      pk_dec <- pk_decode_g pk;
       sd <- pk_dec.`1;
       b <- pk_dec.`2;
       bp <- Rqv2Rpv b;
       
-      (m0, m1) <@ A2.choose(pk_encode (sd, bp));
+      (m0, m1) <@ A2.choose(pk_encode_g (sd, bp));
       
       return (m0, m1);
    }
@@ -466,12 +466,12 @@ module A3(A2 : Adversary) : Adversary = {
       var b' : Rp_vec;
       var cmu' : Rppq;
       
-      c_dec <- c_decode c;
+      c_dec <- c_decode_g c;
       cmu <- c_dec.`1;
       b' <- c_dec.`2;
       cmu' <- Rp2Rppq cmu; 
       
-      u' <@ A2.guess(c_encode (cmu', b'));
+      u' <@ A2.guess(c_encode_g (cmu', b'));
 
       return u';
    }
@@ -487,6 +487,7 @@ axiom Adv_XMLWR_ll (A <: Adv_XMLWR) : islossless A.guess.
 (*  Game-Based Security Proof          *)
 (* ----------------------------------- *)
 
+pragma Goals:printall.
 (* Saber's INDCPA == Game 0 *)
 lemma Equivalence_SaberINDCPA_Game0 &m (A <: Adversary) :
       `| Pr[CPA(Saber_PKE_Scheme, A).main() @ &m : res] - 1%r / 2%r |
@@ -498,7 +499,8 @@ have -> //: Pr[CPA(Saber_PKE_Scheme, A).main() @ &m : res] = Pr[Game0(A).main() 
   proc; inline *. 
   swap {1} 7 -6.
   call (_ : true); auto; call (_: true); auto.
-  progress; first do! congr; by rewrite pk_enc_dec_inv.
+  progress; first by rewrite eq_pks_pkg_enc.
+  - by rewrite eq_cs_cg_enc pks_enc_dec_inv.
   - by rewrite (eq_sym result_R0 bL).
 qed.
 
@@ -536,7 +538,7 @@ have -> //: Pr[Game1(A).main() @ &m : res] = Pr[Game2( A2(A) ).main() @ &m : res
 + byequiv => //.
   proc; inline *.
   wp; call (_ : true); auto; call (_ : true); auto.
-  by progress; do! congr; rewrite c_enc_dec_inv; 1: rewrite scaleRp2Rppq2R2t_comp.  
+  by progress; do! congr; rewrite cg_enc_dec_inv; 1: rewrite scaleRp2Rppq2R2t_comp.  
 qed.
 
 (* Auxiliary Step (Reduction 2-3): Game2 ==> Game2a *)
@@ -577,8 +579,8 @@ have -> //: Pr[Game2b(A).main() @ &m : res] = Pr[Game3( A3(A) ).main() @ &m : re
   proc; inline *.
   auto; call(_ : true); auto; call(_ : true); auto.
   progress.
-  - by rewrite pk_enc_dec_inv.
-  - rewrite c_enc_dec_inv scaleRp2Rp_id /=; congr.
+  - by rewrite pkg_enc_dec_inv.
+  - rewrite cg_enc_dec_inv scaleRp2Rp_id /=; congr.
     rewrite &(pw_eq) // comp_red23; do 2! congr.
     by rewrite eq_sym &(Rq2Rp_DG23).
 qed.

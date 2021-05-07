@@ -15,6 +15,23 @@ require (*--*) PolyReduce.
 (*  General Preliminaries                                                                *)
 (* ------------------------------------------------------------------------------------- *)
 
+lemma ltz_expeqb x m n: 1 <= x => 0 <= m => 0 <= n => exp x m < exp x n => m < n.
+proof.
+move => ge2_x ge0_m ge0_n; rewrite &(contraLR) !ltzNge /= => lem_n. 
+by apply ler_weexpn2l; smt().
+qed.
+
+lemma lez_expeqb x m n: 2 <= x => 0 <= m => 0 <= n => exp x m <= exp x n => m <= n.
+proof.
+move => ge2_x ge0_m ge0_n; rewrite !lez_eqVlt; case => [eq_exp | lt_exp].
++ left; apply (ieexprIn x); smt().
++ right; apply (ltz_expeqb x); smt().
+qed.
+
+(* ------------------------------------------------------------------------------------- *)
+(*  Saber Preliminaries                                                                  *)
+(* ------------------------------------------------------------------------------------- *)
+
 (* --- Constants --- *)
 (* -- Exponents -- *)
 const eq: int.
@@ -71,19 +88,6 @@ proof.
 qed.
 
 lemma t_div_q: t %| q by apply /(dvdz_trans p t q) /p_div_q /t_div_p.
-
-lemma ltz_expeqb x m n: 1 <= x => 0 <= m => 0 <= n => exp x m < exp x n => m < n.
-proof.
-move => ge2_x ge0_m ge0_n; rewrite &(contraLR) !ltzNge /= => lem_n. 
-by apply ler_weexpn2l; smt().
-qed.
-
-lemma lez_expeqb x m n: 2 <= x => 0 <= m => 0 <= n => exp x m <= exp x n => m <= n.
-proof.
-move => ge2_x ge0_m ge0_n; rewrite !lez_eqVlt; case => [eq_exp | lt_exp].
-+ left; apply (ieexprIn x); smt().
-+ right; apply (ltz_expeqb x); smt().
-qed.
 
 lemma sec_assumption_exp: eq - ep <= ep - et - 1.
 proof.
@@ -347,13 +351,36 @@ import Z2t R2t R2t.ComRing R2t.BasePoly.
 import Z2 R2 R2.ComRing R2.BasePoly.
 import Rp.BasePoly.BigCf.
 
+(* - Support of dsmallRq - *)
+axiom supp_dsmallRq (x : Rq) : 
+  x \in dsmallRq <=> forall (i : int), 0 <= i < n => Zq.asint x.[i] < p.
+
+lemma supp_dsmallRq_vec (x : Rq_vec) :
+  x \in dsmallRq_vec <=> forall (i : int), 0 <= i < l => x.[i] \in dsmallRq.
+proof.
+split => [+ i rng_i| memxele]; rewrite supp_dmap.
++ elim => xlist [/supp_djoin [sizexl /allP /= zipxl]].
+  rewrite size_nseq maxrE lezNgt -lez_add1r ge1_l /= eq_sym in sizexl.
+  rewrite eq_vectorP => h1; move: (h1 i); rewrite rng_i /=.
+  rewrite offunvE 1:rng_i => xi_nth.  
+  move: (mem_nth witness xlist i); rewrite sizexl rng_i /= -xi_nth.
+  move /(mem_zip_nseqL dsmallRq x.[i]); rewrite sizexl => memzipnseq.
+  by move: (zipxl ((dsmallRq, x.[i])) memzipnseq).
++ pose xlist := mkseq (Mat_Rq.Vector.tofunv x) l.
+  exists xlist; split; first rewrite supp_djoin; split; 1: by rewrite size_nseq size_mkseq.
+  - rewrite allP /= => y memyzip.
+    move: (mem_zip_fst (nseq l dsmallRq) xlist y) (mem_zip_snd (nseq l dsmallRq) xlist y).
+    rewrite memyzip //= /xlist mem_nseq -lez_add1r ge1_l /= => <- /mkseqP.
+    elim => i [rng_i ->]; by apply memxele.
+  - rewrite /xlist /= eq_vectorP => i rng_i.
+    by rewrite offunvE 1:rng_i nth_mkseq.
+qed.
+
 (* - Constants - *)
-const h1 : Rq = 
-  BigRq.XnD1CA.bigi predT (fun (i : int) => 
-   Zq.inzmod (2 ^ (eq - ep - 1)) ** exp Rq.iX i) 0 n.
-const h2 : Rq =
-  BigRq.XnD1CA.bigi predT (fun (i : int) => 
-   Zq.inzmod (2 ^ (ep - 2) - 2 ^ (ep - et - 2)) ** exp Rq.iX i) 0 n.
+const h1 : Rq = BigRq.XnD1CA.bigi predT (fun (i : int) => 
+                 Zq.inzmod (2 ^ (eq - ep - 1)) ** exp Rq.iX i) 0 n.
+const h2 : Rq = BigRq.XnD1CA.bigi predT (fun (i : int) => 
+                 Zq.inzmod (2 ^ (ep - 2) - 2 ^ (ep - et - 2)) ** exp Rq.iX i) 0 n.
 const h : Rq_vec = vectc h1.
 
 (* -- Cryptographic Types and Distributions  -- *)
@@ -388,6 +415,7 @@ op Rpv2Rqv (pv : Rp_vec) : Rq_vec = offunv (fun (i : int) => Rp2Rq pv.[i]).
 (* - Scaling (Bit-shift + Modulus Conversion) - *)
 op shl (x : int, ex : int) : int = x * 2 ^ ex.
 op shr (x : int, ex : int) : int = x %/ 2 ^ ex.
+
 op shl_enc (x : R2, ex : int) : Rp =  
   BigRp.XnD1CA.bigi predT (fun (i : int) => 
   Zp.inzmod (shl (Z2.asint x.[i]) ex) ** exp Rp.iX i) 0 n.   
@@ -395,14 +423,15 @@ op shl_dec (x : R2t) : Rp =
   BigRp.XnD1CA.bigi predT (fun (i : int) => 
   Zp.inzmod (shl (Z2t.asint x.[i]) (ep - et - 1)) ** exp Rp.iX i) 0 n.
 
-op scale (x : int, ea : int, eb : int) : int = shr x (ea - eb).
+op downscale (x : int, ea : int, eb : int) : int = shr x (ea - eb).
+op upscale (x : int, ea : int, eb : int) : int = shl x (ea - eb).
 
-op scaleZq2Zp (z : Zq) : Zp = Zp.inzmod (scale (Zq.asint z) eq ep).
-op scaleZp2Zp (z : Zp) : Zp = Zp.inzmod (scale (Zp.asint z) ep ep).
-op scaleZp2Zppq (z : Zp) : Zppq = Zppq.inzmod (scale (Zp.asint z) ep (2 * ep - eq)).
-op scaleZp2Z2t (z : Zp) : Z2t = Z2t.inzmod (scale (Zp.asint z) ep (et + 1)).
-op scaleZp2Z2 (z : Zp) : Z2 = Z2.inzmod (scale (Zp.asint z) ep 1).
-op scaleZppq2Z2t (z : Zppq) : Z2t = Z2t.inzmod (scale (Zppq.asint z) (2 * ep - eq) (et + 1)).
+op scaleZq2Zp (z : Zq) : Zp = Zp.inzmod (downscale (Zq.asint z) eq ep).
+op scaleZp2Zp (z : Zp) : Zp = Zp.inzmod (downscale (Zp.asint z) ep ep).
+op scaleZp2Zppq (z : Zp) : Zppq = Zppq.inzmod (downscale (Zp.asint z) ep (2 * ep - eq)).
+op scaleZp2Z2t (z : Zp) : Z2t = Z2t.inzmod (downscale (Zp.asint z) ep (et + 1)).
+op scaleZp2Z2 (z : Zp) : Z2 = Z2.inzmod (downscale (Zp.asint z) ep 1).
+op scaleZppq2Z2t (z : Zppq) : Z2t = Z2t.inzmod (downscale (Zppq.asint z) (2 * ep - eq) (et + 1)).
 
 (* Lift Scaling to Polynomials *)
 op scaleRq2Rp (p : Rq) : Rp = 
@@ -422,24 +451,51 @@ op scaleRppq2R2t (p : Rppq) : R2t =
 op scaleRqv2Rpv (pv : Rq_vec) : Rp_vec = offunv (fun (i : int) => scaleRq2Rp pv.[i]).
 
 (* - Encoding/Decoding - *)
-op pk_encode ['a] : 'a -> pkey.
-op pk_decode ['a] : pkey -> 'a.
+(* Original Scheme *)
+op pk_encode_s : seed * Rp_vec -> pkey.
+op pk_decode_s : pkey -> seed * Rp_vec.
 
-op sk_encode ['a] : 'a -> skey.
-op sk_decode ['a] : skey -> 'a.
+op sk_encode_s : Rq_vec -> skey.
+op sk_decode_s : skey -> Rq_vec.
 
+op c_encode_s : R2t * Rp_vec -> ciphertext.
+op c_decode_s : ciphertext -> R2t * Rp_vec.
+
+(* Games *)
+op pk_encode_g ['a] : 'a -> pkey.
+op pk_decode_g ['a] : pkey -> 'a.
+
+op sk_encode_g ['a] : 'a -> skey.
+op sk_decode_g ['a] : skey -> 'a.
+
+op c_encode_g ['a] : 'a -> ciphertext.
+op c_decode_g ['a] : ciphertext -> 'a.
+
+(* Both *)
 op m_encode : R2 -> plaintext.
 op m_decode : plaintext -> R2.
 
-op c_encode ['a] : 'a -> ciphertext.
-op c_decode ['a] : ciphertext -> 'a.
-
 (* - Properties - *)
 (* Encoding and Decoding are Each Other's Inverses *)
-axiom pk_enc_dec_inv ['a] (x : 'a) : pk_decode (pk_encode x) = x. 
-axiom sk_enc_dec_inv ['a] (x : 'a) : sk_decode (sk_encode x) = x. 
-axiom m_enc_dec_inv (x : R2) : m_decode (m_encode x) = x. 
-axiom c_enc_dec_inv ['a] (x : 'a) : c_decode (c_encode x) = x. 
+axiom pks_enc_dec_inv (x : seed * Rp_vec) : pk_decode_s (pk_encode_s x) = x. 
+axiom sks_enc_dec_inv (x : Rq_vec) : sk_decode_s (sk_encode_s x) = x.
+axiom cs_enc_dec_inv (x : R2t * Rp_vec) : c_decode_s (c_encode_s x) = x. 
+
+axiom pkg_enc_dec_inv ['a] (x : 'a) : pk_decode_g (pk_encode_g x) = x. 
+axiom skg_enc_dec_inv ['a] (x : 'a) : sk_decode_g (sk_encode_g x) = x.
+axiom cg_enc_dec_inv ['a] (x : 'a) : c_decode_g (c_encode_g x) = x. 
+
+axiom m_enc_dec_inv (x : R2) : m_decode (m_encode x) = x.
+
+(* Encoding and Decoding of Original Scheme and Games are Equivalent for Correct Types *)
+axiom eq_pks_pkg_enc (x : seed * Rp_vec) : pk_encode_s x = pk_encode_g x.
+axiom eq_pks_pkg_dec (x : pkey) : pk_decode_s x = pk_decode_g x.
+
+axiom eq_sks_skg_enc (x : Rq_vec) : sk_encode_s x = sk_encode_g x.
+axiom eq_sks_skg_dec (x : skey) : sk_decode_s x = sk_decode_g x.
+
+axiom eq_cs_cg_enc (x :  R2t * Rp_vec) : c_encode_s x = c_encode_g x.
+axiom eq_cs_cg_dec (x : ciphertext) : c_decode_s x = c_decode_g x.
 
 (* Modular Reduction/Modulo Conversion *)
 lemma Zq2Zp0 : Zq2Zp Zq.zero = Zp.zero.
@@ -462,7 +518,7 @@ qed.
 lemma Zq2Zp_MM : morphism_2 Zq2Zp Zq.( * ) Zp.( * ).
 proof. by move => x y; rewrite /Zq2Zp /( * ) !inzmodK /inzmod modzMm modz_dvd 1:p_div_q. qed.
 
-lemma Zq2Zp_DM_big (F : int -> Zq) (r : int list) :
+lemma Zq2Zp_DM_big_BPCf (F : int -> Zq) (r : int list) :
       Zq2Zp (Rq.BasePoly.BigCf.BCA.big predT F r)
       =
       BCA.big predT (Zq2Zp \o F) r.
@@ -543,7 +599,7 @@ have ->:
 + rewrite fun_ext /( == ) => j. 
   rewrite !Rq2RpE (Zq2Zp_BM (a.[j] * b.[i - j]) (a.[j] * b.[n + i - j])). 
   by rewrite (Zq2Zp_MM a.[j] b.[i - j]) (Zq2Zp_MM a.[j] b.[n + i - j]).
-by rewrite Zq2Zp_DM_big.
+by rewrite Zq2Zp_DM_big_BPCf.
 qed.
 
 lemma Rq2Rp_DotDl (a: Rq_vec) (b : Rq_vec) : Rq2Rp (dotp a b) = dotp (Rqv2Rpv a) (Rqv2Rpv b).
@@ -565,7 +621,7 @@ have ->:
  =
  (BCA.bigi predT (fun (i0 : int) => Zq2Zp (a.[i0] * b.[i0]).[i]) 0 l).
 + by apply BCA.eq_bigr => j _ /=; rewrite Rq2RpE.
-by rewrite Zq2Zp_DM_big.   
+by rewrite Zq2Zp_DM_big_BPCf.   
 qed.
 
 lemma Rp2Rq_Rq2Rp_inv (p : Rp) : Rq2Rp (Rp2Rq p) = p.
@@ -656,11 +712,11 @@ clone import DMapSampling as DMapRqv2Rpv with
    rename [module] "S" as "Rqv2RpvSampl".
 
 (* Scaling *)
-lemma scale_id (x ea eb : int) : ea = eb => scale x ea eb = x.
-proof. by move=> eq_eaeb; rewrite /scale /shr eq_eaeb addzN expr0. qed.
+lemma downscale_id (x ea eb : int) : ea = eb => downscale x ea eb = x.
+proof. by move=> eq_eaeb; rewrite /downscale /shr eq_eaeb addzN expr0. qed.
 
 lemma scaleZp2Zp_id (z : Zp) : scaleZp2Zp z = z.
-proof. by rewrite /scaleZp2Zp scale_id 2: Zp.asintK. qed.
+proof. by rewrite /scaleZp2Zp downscale_id 2: Zp.asintK. qed.
 
 lemma scaleRp2Rp_id (p : Rp) : scaleRp2Rp p = p.
 proof. 
@@ -672,12 +728,12 @@ rewrite BCA.big_seq_cond BCA.big1 => /= [j [/mem_range rngj @/predC1 ne_ji] |];
 + by rewrite Zp.ZModpRing.mulr1 Zp.ZModpRing.addr0.
 qed.
 
-lemma scale_comp (x ea eab eb : int):
+lemma downscale_comp (x ea eab eb : int):
       0 <= x => 0 <= eb => eb <= eab => eab <= ea =>
-      scale x ea eb = scale (scale x ea eab) eab eb. 
+      downscale x ea eb = downscale (downscale x ea eab) eab eb. 
 proof. 
 (* Context *)
-move=> ge0_x ge0_eb geeb_eab geeab_ea; rewrite /scale /shr. 
+move=> ge0_x ge0_eb geeb_eab geeab_ea; rewrite /downscale /shr. 
 move: (divz_eq x (2^(ea - eb))) 
       (divz_eq x (2^(ea - eab))) 
       (divz_eq (x %/ 2 ^ (ea - eab)) (2^(eab - eb))).
@@ -726,7 +782,7 @@ rewrite (modz_small _ (p * p %/ q)) /scale /shr; first split => [| ?].
   apply ltz_divLR; first by apply expr_gt0. 
   have ge2epeq_ep: 2 * ep - eq <= ep by smt(geep1_eq).
   rewrite -eq_22epeq_ppq -exprD_nneg; smt(geeq1_2ep Zp.gtp_asint).
-by apply /(scale_comp (Zp.asint x) _ _ _ (Zp.ge0_asint x)); smt(ge1_et1 geep1_eq sec_assumption_exp).
+by apply /(downscale_comp (Zp.asint x) _ _ _ (Zp.ge0_asint x)); smt(ge1_et1 geep1_eq sec_assumption_exp).
 qed.
 
 lemma scaleRp2Rppq2R2t_comp (x : Rp) :
@@ -757,7 +813,7 @@ lemma comp_red23_Zq (z : Zq) (m : Z2) :
       =
       scaleZp2Zppq ((Zq2Zp z) + Zp.inzmod (shl (Z2.asint m) (ep - 1))).
 proof.
-rewrite /Zp2Zppq /Zq2Zp /scaleZq2Zp /scaleZp2Zppq /scale /shr /shl !Zp.inzmodK !modzDm 
+rewrite /Zp2Zppq /Zq2Zp /scaleZq2Zp /scaleZp2Zppq /downscale /shr /shl !Zp.inzmodK !modzDm 
         {2}(mulzC 2) -(intmulz ep) mulr2z !opprD !addzA /= (addzC _ eq).
 case: (Z2.asint m = 0) => [-> /= | /neq_ltz]; last first. 
 + case => [lt0_m | gt0_m]; move: (Z2.Sub.valP m) => [ge0_m lt2_m]; first smt().
@@ -824,7 +880,7 @@ module Saber_PKE_Scheme : Scheme = {
       s <$ dsmallRq_vec;
       b <- scaleRqv2Rpv (_A *^ s + h);
       
-      return (pk_encode (sd, b), sk_encode s);
+      return (pk_encode_s (sd, b), sk_encode_s s);
    }
 
    proc enc(pk: pkey, m: plaintext) : ciphertext = {
@@ -839,7 +895,7 @@ module Saber_PKE_Scheme : Scheme = {
       var cm: R2t;
       
       m_dec <- m_decode m;
-      pk_dec <- pk_decode pk;
+      pk_dec <- pk_decode_s pk;
       sd <- pk_dec.`1;
       b <- pk_dec.`2;
       _A <- gen sd;
@@ -848,7 +904,7 @@ module Saber_PKE_Scheme : Scheme = {
       v' <- (dotp b (Rqv2Rpv s')) + (Rq2Rp h1);
       cm <- scaleRp2R2t (v' + (shl_enc m_dec (ep - 1)));
       
-      return c_encode (cm, b');
+      return c_encode_s (cm, b');
    }
 
    proc dec(sk: skey, c: ciphertext) : plaintext option = {
@@ -859,8 +915,8 @@ module Saber_PKE_Scheme : Scheme = {
       var s: Rq_vec;
       var m': R2;
 
-      c_dec <- c_decode c;
-      s <- sk_decode sk;
+      c_dec <- c_decode_s c;
+      s <- sk_decode_s sk;
       cm <- c_dec.`1;
       b' <- c_dec.`2;
       v <- (dotp b' (Rqv2Rpv s)) + (Rq2Rp h1);
