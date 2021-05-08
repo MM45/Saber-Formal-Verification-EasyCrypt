@@ -117,7 +117,7 @@ module Game0(A : Adversary) = {
       s' <$ dsmallRq_vec;
       b' <- scaleRqv2Rpv ((trmx _A) *^ s' + h);
       v' <- (dotp b (Rqv2Rpv s')) + (Rq2Rp h1);
-      cmu <- scaleRp2R2t (v' + (shl_enc (m_decode (if u then m1 else m0)) (ep - 1)));
+      cmu <- scaleRp2R2t (v' + (scaleR22Rp (m_decode (if u then m1 else m0))));
       
       u' <@ A.guess(c_encode_g (cmu, b'));
 
@@ -150,7 +150,7 @@ module Game1(A : Adversary) = {
       s' <$ dsmallRq_vec;
       b' <- scaleRqv2Rpv ((trmx _A) *^ s' + h);
       v' <- (dotp b (Rqv2Rpv s')) + (Rq2Rp h1);
-      cmu <- scaleRp2R2t (v' + (shl_enc (m_decode (if u then m1 else m0)) (ep - 1)));
+      cmu <- scaleRp2R2t (v' + (scaleR22Rp (m_decode (if u then m1 else m0))));
       
       u' <@ A.guess(c_encode_g (cmu, b'));
 
@@ -183,7 +183,7 @@ module Game2(A : Adversary) = {
       s' <$ dsmallRq_vec;
       b' <- scaleRqv2Rpv ((trmx _A) *^ s' + h);
       v' <- (dotp b (Rqv2Rpv s')) + (Rq2Rp h1);
-      cmu <- scaleRp2Rppq (v' + (shl_enc (m_decode (if u then m1 else m0)) (ep - 1)));
+      cmu <- scaleRp2Rppq (v' + (scaleR22Rp (m_decode (if u then m1 else m0))));
       
       u' <@ A.guess(c_encode_g (cmu, b'));
 
@@ -216,7 +216,7 @@ module Game2a(A : Adversary) = {
       s' <$ dsmallRq_vec;
       b' <- scaleRqv2Rpv ((trmx _A) *^ s' + h);
       v' <- (dotp b (Rqv2Rpv s')) + (Rq2Rp h1);
-      cmu <- scaleRp2Rppq (v' + (shl_enc (m_decode (if u then m1 else m0)) (ep - 1)));
+      cmu <- scaleRp2Rppq (v' + (scaleR22Rp (m_decode (if u then m1 else m0))));
       
       u' <@ A.guess(c_encode_g (cmu, b'));
 
@@ -250,7 +250,7 @@ module Game2b(A : Adversary) = {
       s' <$ dsmallRq_vec;
       b' <- scaleRqv2Rpv ((trmx _A) *^ s' + h);
       v' <- (dotp b (Rqv2Rpv s')) + (Rq2Rp h1);
-      cmu <- scaleRp2Rppq (v' + (shl_enc (m_decode (if u then m1 else m0)) (ep - 1)));
+      cmu <- scaleRp2Rppq (v' + (scaleR22Rp (m_decode (if u then m1 else m0))));
       
       u' <@ A.guess(c_encode_g (cmu, b'));
 
@@ -284,7 +284,7 @@ module Game3(A : Adversary) = {
       s' <$ dsmallRq_vec;
       b' <- scaleRqv2Rpv ((trmx _A) *^ s' + h);
       v' <- scaleRq2Rp ((dotp b s') + h1);
-      cmu <- scaleRp2Rp (v' + (shl_enc (m_decode (if u then m1 else m0)) (2 * ep - eq - 1)));
+      cmu <- scaleRp2Rp (v' + (scaleR22Rp_var (m_decode (if u then m1 else m0)) (2 * ep - eq - 1)));
    
       u' <@ A.guess(c_encode_g (cmu, b'));
 
@@ -318,7 +318,7 @@ module Game4(A : Adversary) = {
       (* Skip: s' <$ dsmallRq_vec; *)
       b' <$ dRp_vec;
       v' <$ dRp;
-      cmu <- scaleRp2Rp (v' + (shl_enc (m_decode (if u then m1 else m0)) (2 * ep - eq - 1)));
+      cmu <- scaleRp2Rp (v' + (scaleR22Rp_var (m_decode (if u then m1 else m0)) (2 * ep - eq - 1)));
       
       u' <@ A.guess(c_encode_g (cmu, b'));
 
@@ -379,7 +379,7 @@ module B0(A : Adversary) : Adv_GMLWR = {
       s' <$ dsmallRq_vec;
       b' <- scaleRqv2Rpv ((trmx _A) *^ s' + h);
       v' <- (dotp b (Rqv2Rpv s')) + (Rq2Rp h1);
-      cmw <- scaleRp2R2t (v' + (shl_enc (m_decode (if w then m1 else m0)) (ep - 1)));
+      cmw <- scaleRp2R2t (v' + (scaleR22Rp (m_decode (if w then m1 else m0))));
       
       w' <@ A.guess(c_encode_g (cmw, b'));
       
@@ -399,7 +399,7 @@ module B1(A : Adversary) : Adv_XMLWR = {
 
       (m0, m1) <@ A.choose(pk_encode_g (sd, a));
 
-      cmw <- scaleRp2Rp (d + (shl_enc (m_decode (if w then m1 else m0)) (2 * ep - eq - 1)));
+      cmw <- scaleRp2Rp (d + (scaleR22Rp_var (m_decode (if w then m1 else m0)) (2 * ep - eq - 1)));
       
       w' <@ A.guess(c_encode_g (cmw, b));
       
@@ -487,7 +487,6 @@ axiom Adv_XMLWR_ll (A <: Adv_XMLWR) : islossless A.guess.
 (*  Game-Based Security Proof          *)
 (* ----------------------------------- *)
 
-pragma Goals:printall.
 (* Saber's INDCPA == Game 0 *)
 lemma Equivalence_SaberINDCPA_Game0 &m (A <: Adversary) :
       `| Pr[CPA(Saber_PKE_Scheme, A).main() @ &m : res] - 1%r / 2%r |
@@ -581,7 +580,7 @@ have -> //: Pr[Game2b(A).main() @ &m : res] = Pr[Game3( A3(A) ).main() @ &m : re
   progress.
   - by rewrite pkg_enc_dec_inv.
   - rewrite cg_enc_dec_inv scaleRp2Rp_id /=; congr.
-    rewrite &(pw_eq) // comp_red23; do 2! congr.
+    rewrite &(pw_eq) // eq_comp23; do 2! congr.
     by rewrite eq_sym &(Rq2Rp_DG23).
 qed.
 
