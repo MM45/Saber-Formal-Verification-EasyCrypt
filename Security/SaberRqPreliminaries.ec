@@ -857,7 +857,7 @@ lemma upscale_comp (x ea eb eab : int) :
   upscale x ea eb = upscale (upscale x ea eab) eab eb.
 proof.
 move => geeb_eab geeab_ea.
-by rewrite /upscale /shl mulzA -exprD_nneg; smt().
+by rewrite /upscale /shl mulzA -exprD_nneg //#.
 qed.
 
 lemma upscale_comp_comm (x ea eb eab : int) : 
@@ -865,7 +865,7 @@ lemma upscale_comp_comm (x ea eb eab : int) :
   upscale x ea eb = upscale (upscale x eab eb) ea eab.
 proof.
 move => geeb_eab geeab_ea.
-by rewrite /upscale /shl mulzA -exprD_nneg; smt().
+by rewrite /upscale /shl mulzA -exprD_nneg //#.
 qed.
 
 (* Z Scaling *)
@@ -1295,7 +1295,6 @@ module Saber_PKE_Scheme : Scheme = {
 }.
 
 (* --- Actual (Alternative Description) --- *)
-
 module Saber_PKE_Scheme_Alt : Scheme = {
    proc kg() : pkey * skey = {
       var sd: seed;
@@ -1355,7 +1354,7 @@ module Saber_PKE_Scheme_Alt : Scheme = {
       bq' <- scaleRpv2Rqv b';
       
       v <- (dotp bq' s) + (upscaleRq h1 (eq - ep));
-      m' <- scaleRq2R2 (v  - cmq + (upscaleRq h2 (eq - ep)));
+      m' <- scaleRq2R2 (v - cmq + (upscaleRq h2 (eq - ep)));
       
       return Some (m_encode m');
    }
@@ -1364,9 +1363,13 @@ module Saber_PKE_Scheme_Alt : Scheme = {
 
 (* --- Equivalence of Schemes --- *)
 (* - Equivalence of Key Generation - *)
-lemma eq_kg: equiv[Saber_PKE_Scheme.kg ~ Saber_PKE_Scheme_Alt.kg : true ==> ={res}].
+lemma eq_kg: equiv[Saber_PKE_Scheme.kg ~ Saber_PKE_Scheme_Alt.kg : 
+  true 
+  ==> 
+  ={res} /\ sk_decode_s res.`2{1} \in dsmallRq_vec /\ sk_decode_s res.`2{2} \in dsmallRq_vec].
 proof.
-by proc; sim.
+proc.
+auto; progress; by rewrite sks_enc_dec_inv.
 qed.
 
 (* - Equivalence of Encryption - *)
@@ -1380,9 +1383,7 @@ qed.
 
 (* - Equivalence of Decryption - *)
 lemma eq_dec: equiv[Saber_PKE_Scheme.dec ~ Saber_PKE_Scheme_Alt.dec : 
-  ={sk, c} /\ 
-  sk_decode_s sk{1} \in dsmallRq_vec /\
-  sk_decode_s sk{2} \in dsmallRq_vec
+  ={sk, c} /\ sk_decode_s sk{1} \in dsmallRq_vec /\ sk_decode_s sk{2} \in dsmallRq_vec
   ==> 
   ={res}].
 proof.
