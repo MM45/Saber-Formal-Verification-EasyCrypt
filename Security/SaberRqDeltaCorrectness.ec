@@ -107,6 +107,7 @@ op v'_expression (_A : Rq_mat) (s s': Rq_vec) : Rq =
   let bq = (_A *^ s) + (error_bq _A s) in
   (dotp bq s') + (upscaleRq h1 (eq - ep)).
 
+(* Add q / 4t to make error centered around zero *)
 op error_cmq (_A : Rq_mat) (s s': Rq_vec) (m : R2) : Rq =
   let v' = v'_expression _A s s' in
   errorRq (scaleR2t2Rq (scaleRq2R2t (v' + (scaleR22Rq m)))) (v' + (scaleR22Rq m)).
@@ -322,3 +323,37 @@ v <- (dotp bq' s) + (upscaleRq h1 (eq - ep))
 
 *)
 
+(* Proof errors are correct (e.g., show that bq = As + error_bq)*)
+(* 
+u = bq - As
+u' = bq' - ATs'
+u'' = (cmq - (v' + q/2 m)) + q/4t
+==>
+
+(No scale) 
+m' = v - cmq + q/p h2 
+   = v - (v' + q/2 m + u'' - q/4t) + q/p h2
+   = (bq' s + q/p h1) - (bq s' + q/p h1 + q/2 m + u'' - q/4t) + q/p h2
+   = bq' s - bq s' - q/2 m - u'' + q/4t + q/p h2
+   = (AT s' + u') s - (A s + u) s' - q/2 m - u'' + q/4t + q/p h2
+   = u' s - u s' - q/2 m - u'' + q/4t + q/p h2
+   = u' s - u s' + (- q/2 m) - u'' + q/4t + q/p h2 
+   <- q/2 m = q/2 m> 
+   = u' s - u s' + q/2 m - u'' + q/4t + q/p h2
+   = q/2 m + u' s - u s' - u'' + q/4t + q/p h2
+   = q/2 m + u' s - u s' - u'' + q/4t + q/p p/4 - q/p p/4t
+   = q/2 m + u' s - u s' - u'' + q/4t + q/4 - q/4t
+   = q/2 m + u' s - u s' - u'' + q/4
+
+(With scale)
+m' = scaleRq2R2 (q/2 m + u' s - u s' - u'' + q/4)
+   = scaleRq2R2 (q/2 m) + scaleRq2R2 (u' s - u s' - u'' + q/4) 
+   = m + scaleRq2R2 (u' s - u s' - u'' + q/4)
+
+==>
+m' = m iff 0 <= u' s - u s' - u'' + q/4 < q/2
+==>
+m' = m iff - q/4 <= u' s - u s' - u'' < q/4
+
+
+*)
