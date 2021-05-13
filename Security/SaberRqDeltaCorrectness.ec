@@ -1,3 +1,5 @@
+pragma Goals:printall.
+
 (* ----------------------------------- *)
 (*  Require/Import Theories            *)
 (* ----------------------------------- *)
@@ -172,7 +174,20 @@ op m'_expression_Rq (_A : Rq_mat) (s s': Rq_vec) (m : R2) : Rq =
 
 op m'_expression (_A : Rq_mat) (s s': Rq_vec) (m : R2) : R2 = scaleRq2R2 (m'_expression_Rq _A s s' m).
 
-pragma Goals:printall.
+op m'_expression_Rq_reduced1 (_A : Rq_mat) (s s': Rq_vec) (m : R2) : Rq =
+   scaleR22Rq m + dotp (error_bq' _A s') s - dotp (error_bq _A s) s' 
+   - error_cmq _A s s' m + upscaleRq h2 (eq - ep).
+
+op m'_expression_Rq_reduced2 (_A : Rq_mat) (s s': Rq_vec) (m : R2) :
+   Rq = scaleR22Rq m + dotp (error_bq' _A s') s - dotp (error_bq _A s)
+   s' - error_cmq_centered _A s s' m + poly_q4.
+
+op m'_expression_Rq_fin (_A : Rq_mat) (s s': Rq_vec) (m : R2) : Rq = 
+  scaleR22Rq m + (poly_q4 + dotp (error_bq' _A s') s - dotp (error_bq _A s) s' 
+  - error_cmq_centered _A s s' m).
+
+op m'_expression_fin (_A : Rq_mat) (s s': Rq_vec) (m : R2) : R2 = 
+  scaleRq2R2 (m'_expression_Rq_fin _A s s' m).
 
 
 lemma scaleZ22Zq_PN (z : Z2) : scaleZ22Zq z = scaleZ22Zq (- z).
@@ -238,9 +253,6 @@ op m'_expression_reduced (_A : Rq_mat) (s s': Rq_vec) (m : R2) : R2 =
   - scaleR22Rq m - error_cmq _A s s' m + upscaleRq h2 (eq - ep)).
 *)
 
-op m'_expression_Rq_reduced1 (_A : Rq_mat) (s s': Rq_vec) (m : R2) : Rq =
-   scaleR22Rq m + dotp (error_bq' _A s') s - dotp (error_bq _A s) s' 
-   - error_cmq _A s s' m + upscaleRq h2 (eq - ep).
 
 lemma eq_m'_m'red1_Rq (_A : Rq_mat) (s s': Rq_vec) (m : R2) :
   m'_expression_Rq _A s s' m =  m'_expression_Rq_reduced1 _A s s' m.
@@ -262,9 +274,7 @@ rewrite scaleR22Rq_N.
 by ring.
 qed.
 
-op m'_expression_Rq_reduced2 (_A : Rq_mat) (s s': Rq_vec) (m : R2) :
-   Rq = scaleR22Rq m + dotp (error_bq' _A s') s - dotp (error_bq _A s)
-   s' - error_cmq_centered _A s s' m + poly_q4.
+
 
 lemma eq_m'red1_m'red2_Rq (_A : Rq_mat) (s s': Rq_vec) (m : R2) :
   m'_expression_Rq_reduced1 _A s s' m = m'_expression_Rq_reduced2 _A s s' m.
@@ -312,10 +322,6 @@ congr. congr.
 ring.
 qed.
 
-op m'_expression_Rq_fin (_A : Rq_mat) (s s': Rq_vec) (m : R2) : Rq = 
-  scaleR22Rq m + (poly_q4 + dotp (error_bq' _A s') s - dotp (error_bq _A s) s' 
-  - error_cmq_centered _A s s' m).
-
 lemma eq_m'red2_m'fin_Rq (_A : Rq_mat) (s s': Rq_vec) (m : R2) :
   m'_expression_Rq_reduced2 _A s s' m = m'_expression_Rq_fin _A s s' m.
 proof.
@@ -329,8 +335,6 @@ proof.
 by rewrite eq_m'_m'red1_Rq eq_m'red1_m'red2_Rq eq_m'red2_m'fin_Rq.
 qed.
 
-op m'_expression_fin (_A : Rq_mat) (s s': Rq_vec) (m : R2) : R2 = 
-  scaleRq2R2 (m'_expression_Rq_fin _A s s' m).
 
 lemma eq_m'_m'fin (_A : Rq_mat) (s s': Rq_vec) (m : R2) :
   m'_expression _A s s' m = m'_expression_fin _A s s' m.
@@ -358,6 +362,237 @@ module Correctness_Error_Game (S : Scheme, A : Adv_Cor) = {
    }
 }.
 *)
+
+lemma Z2_asint_values (z : Z2) : asint z = 0 \/ asint z = 1.
+proof. 
+case (asint z = 0) => [-> //| /= /neq_ltz].
+case; move: (Z2.rg_asint z); case => [/lezNgt //| _].
+by rewrite -!lez_add1r -(lez_add2l (-1)) /= eqz_leq => -> ->.
+qed.
+
+lemma scaleZ22Zq_scaleZq2Z2_inv (z : Z2) : scaleZq2Z2 (scaleZ22Zq z) = z.
+proof. 
+rewrite /scaleZq2Z2 /scaleZ22Zq /downscale /upscale /shr /shl inzmodK /q modz_pow2_div;
+        1, 2: smt(mulr_ge0 expr_ge0 Z2.ge0_asint ge3_eq).
+by rewrite mulzK 2:opprD 2:addzA /= 2:expr1 2:-inzmodK 2:!asintK // neq_ltz; right; rewrite expr_gt0.
+qed.
+
+lemma scaleR22Rq_scaleRq2R2_inv (p : R2) : scaleRq2R2 (scaleR22Rq p) = p.
+proof. 
+by rewrite polyXnD1_eqP => i rng_i; rewrite rcoeffZ_sum //= rcoeffZ_sum //= scaleZ22Zq_scaleZq2Z2_inv.
+qed.
+
+lemma extr_m_m'_Zq (m : Z2) (err : Zq) : scaleZq2Z2 (scaleZ22Zq m + err) = m + scaleZq2Z2 err.
+proof. 
+rewrite scaleZq2Z2_DM 2:scaleZ22Zq_scaleZq2Z2_inv //; left.
+rewrite /scaleZ22Zq /upscale /shl inzmodK pmod_small 2:dvdz_mull 2:dvdzz.
+move: (Z2_asint_values m); case => -> /= @/q.
++ by rewrite expr_gt0.
++ by rewrite expr_ge0 //= ltz_weexpn2l; smt(ge3_eq).
+qed.
+
+lemma extr_m_m'_Rq (m : R2) (err : Rq) : scaleRq2R2 (scaleR22Rq m + err) = m + scaleRq2R2 err.
+proof.
+rewrite polyXnD1_eqP => i rng_i; rewrite rcoeffZ_sum //= 2!rcoeffD. 
+by rewrite rcoeffZ_sum //= rcoeffZ_sum //=  extr_m_m'_Zq.
+qed.
+
+lemma eqv_q2_2eq1 : q %/ 2 = 2 ^ (eq - 1).
+proof.
+by rewrite /q (_ :  2 ^ eq =  2 ^ (eq - 1) * 2) 2:mulzK 1:-{3}expr1 1:-exprD_nneg //; smt(ge3_eq).
+qed.
+
+lemma eqv_q4_2eq2 : q %/ 4 = 2 ^ (eq - 2).
+proof.
+rewrite /q (_ :  2 ^ eq =  2 ^ (eq - 2) * 4) 2:mulzK //. 
+by rewrite (_ : 4 = 2 ^ 2) 1:expr2 //-exprD_nneg; smt(ge3_eq).
+qed.
+
+lemma eqv_q4t_2eqet2 : q %/ (4 * t) = 2 ^ (eq - et - 2).
+proof.
+rewrite /q /t (_ :  2 ^ eq =  2 ^ (eq - et - 2) * (4 * 2 ^ et)) 2:mulzK //.
++ rewrite 1:(_ : 4 = 2 ^ 2) 1:expr2 // -exprD_nneg 2:ge0_et // -exprD_nneg;
+          1, 2:smt(ge0_et geet2_ep geep1_eq).
+  by congr; ring.
++ by rewrite neq_ltz; right; rewrite mulr_gt0 2:expr_gt0.
+qed.
+
+lemma scaleZq2Z2_rng_zero (z : Zq) : 
+  Zq.asint Zq.zero <= Zq.asint z < Zq.asint (Zq.inzmod (q %/ 2)) <=> scaleZq2Z2 z = Z2.zero.
+proof.
+rewrite eqv_q2_2eq1 zeroE inzmodK pmod_small 1:expr_ge0 2:ltz_weexpn2l //; 1, 2, 3: smt(ge3_eq). 
+split => [|eq0_scale].
++ by case => [ge0_z ltq2_z @/scaleZq2Z2 @/downscale @/shr]; rewrite pdiv_small.  
++ split => [|?].
+  - by rewrite Zq.ge0_asint.
+  - move: eq0_scale; rewrite &(contraLR) ltzNge /=; move: (Zq.gtp_asint z) => @/q ltq_z geq2_z.
+    have ->: (scaleZq2Z2 z <> Z2.zero) = (scaleZq2Z2 z = Z2.one).
+    * move: (Z2_asint_values (scaleZq2Z2 z)); rewrite -zeroE -oneE 2!asint_eq.
+      case => -> /=; rewrite -eq_inzmod //.    
+    rewrite /scaleZq2Z2 /downscale /shr -eq_inzmod; do 2! congr.
+    rewrite eqz_leq -(ler_add2l 1) lez_add1r /= ltz_divLR 2:lez_divRL 1,2:expr_gt0 //=.
+    by rewrite -{1}expr1 -exprD_nneg; 2: smt(ge3_eq).
+qed.
+
+lemma scaleRq2R2_rng_zero (p : Rq) : 
+  (forall (i : int), 0 <= i < n => Zq.asint Zq.zero <= Zq.asint p.[i] < Zq.asint (Zq.inzmod (q %/ 2)))
+  <=> 
+  (scaleRq2R2 p = R2.zeroXnD1).
+proof.
+split => [coeff_rng|]; rewrite polyXnD1_eqP => [i rng_i| coeff_scale i rng_i]; 
+         2: move: (coeff_scale i rng_i); rewrite rcoeffZ_sum //= rcoeff0 -scaleZq2Z2_rng_zero //. 
++ by apply (coeff_rng i rng_i).
+qed.
+
+lemma correct_errrng_Zq (m : Z2) (err : Zq) :
+  Zq.asint Zq.zero <= Zq.asint err < Zq.asint (Zq.inzmod (q %/ 2)) 
+  <=> 
+  m = scaleZq2Z2 (scaleZ22Zq m + err).
+proof.
+rewrite extr_m_m'_Zq (_ : (m = m + (scaleZq2Z2 err)) <=> ((scaleZq2Z2 err) = Z2.zero)); last first.
++ by apply scaleZq2Z2_rng_zero.
++ split => equ.
+  - by rewrite &(Z2.ZModpRing.addrI m) Z2.ZModpRing.addr0 eq_sym.
+  - by rewrite &(Z2.ZModpRing.addrI (- m)) Z2.ZModpRing.addrA Z2.ZModpRing.addrC Z2.ZModpRing.subrr
+               Z2.ZModpRing.add0r eq_sym.
+qed.
+
+lemma correct_errrng_Rq (m : R2) (err : Rq) :
+  (forall (i : int), 0 <= i < n => 
+   Zq.asint Zq.zero <= Zq.asint err.[i] < Zq.asint (Zq.inzmod (q %/ 2)))
+  <=>
+  m = scaleRq2R2 (scaleR22Rq m + err).
+proof.
+split => [coeff_rng|]; rewrite polyXnD1_eqP => [i rng_i| coeff_scale i rng_i];
+         2: move: (coeff_scale i rng_i); rewrite rcoeffZ_sum //= rcoeffD rcoeffZ_sum //=
+         -correct_errrng_Zq //.
++ by apply (coeff_rng i rng_i).
+qed.
+
+lemma eq_minq4_q34_modq : Zq.inzmod (- q %/ 4) = Zq.inzmod (3 * (q %/ 4)).
+proof.
+rewrite -eq_inzmod /q {1 3}(_ : 2 ^ eq = 2 ^ (eq - 2) * 4) 1:(_ : 4 = 2 ^ 2) 1:expr2 // 1:-exprD_nneg;
+        1, 2, 3: smt(ge3_eq).
+rewrite !mulzK // modNz 1,2:expr_gt0 // !pmod_small.
++ by rewrite -(lez_add2r 1) /= exprn_ege1 //= 2:-(ltz_add2r 1) /= 2:-(Ring.IntID.addr0 (2 ^ (eq - 2)))
+            2:ltr_add 2:ltz_weexpn2l //=; smt(ge3_eq).
++ by rewrite mulr_ge0 2:expr_ge0 //= (_ : 2 ^ eq = 4 * 2 ^ (eq - 2)) 1:(_ : 4 = 2 ^ 2)
+            1:expr2 // 1:-exprD_nneg 4:ltr_pmul2r 4:expr_gt0 //; smt(ge3_eq).
+rewrite opprD /= addrA; ring; rewrite mulNr (_ : 4 = 2 ^ 2) 1:expr2 // -exprD_nneg; 1, 2: smt(ge3_eq).
+by rewrite addzA (addzC _ (-2)) addzA.
+qed.
+
+lemma eq_q_14q_34q : q = q %/ 4 + 3 * (q %/ 4).
+proof.
+rewrite eqv_q4_2eq2 -{1}(Ring.IntID.mulr1z (2 ^ (eq - 2))) intmulz mulzC -mulrDl /=. 
+by rewrite (_  : 4 = 2 ^ 2) 1:expr2 // -exprD_nneg //; smt(ge3_eq).
+qed.
+
+(*
+lemma scaleZq2Z2_rng_zero (z : Zq) : 
+  0 <= Zq.asint z < q %/ 2 <=> scaleZq2Z2 z = Z2.zero.
+*)
+lemma scaleZq2Z2_rng_zero_q4 (m : Z2) (err : Zq) :
+  Zq.asint (Zq.inzmod (- q %/ 4)) <= Zq.asint err \/ Zq.asint err < Zq.asint (Zq.inzmod (q %/ 4))
+  <=> 
+  scaleZq2Z2 (Zq.inzmod (q %/ 4) + err) = Z2.zero.
+proof.
+rewrite eq_minq4_q34_modq.
+rewrite -scaleZq2Z2_rng_zero.
+rewrite eqv_q4_2eq2.
+split.
+rewrite zeroE ge0_asint /=.
+case.
+rewrite inzmodK.
+rewrite pmod_small.
+by rewrite mulr_ge0 2:expr_ge0 //= mulrC eq_q_14q_34q eqv_q4_2eq2 mulzC ltz_addr expr_gt0.
+move: (Zq.gtp_asint err) => @/q ltq_err ge34q_err.
+  rewrite eqv_q2_2eq1.
+  rewrite addE !inzmodK modzDml.
+  have tt: exists (x : int), 0 <= x < 2 ^ (eq - 1) /\ 2 ^ (eq - 2) + asint err = q + x.
+  exists (2 ^ (eq - 2) + asint err - q). split. split.
+  - by rewrite -(lez_add2r q) -addzA /= eq_q_14q_34q eqv_q4_2eq2 lez_add2l.
+  - move => ?.
+    rewrite eq_q_14q_34q eqv_q4_2eq2 opprD addzA.
+    smt. smt.
+  move: tt. elim => x. case; case => ge0_x ltq2_x ->.
+  rewrite modzDl !pmod_small 1:ge0_x 2:expr_ge0 //= 1:(ltz_trans (2 ^ (eq - 1))) //
+          /q (_ : 2 ^ eq = 2 ^ (eq - 1) * 2 ^ 1) 1,3: -exprD_nneg //= 2,4:ltr_pmulr 2,5:expr_gt0
+          3,6:expr1; smt(ge3_eq).
+
+rewrite inzmodK pmod_small. smt.
+move: (Zq.ge0_asint err) => ge0_err ltq4_err.
+rewrite addE !inzmodK.
+rewrite (pmod_small (2 ^ (eq - 2))) 1:expr_ge0 //=. smt.
+rewrite !pmod_small. smt. smt.
+rewrite eqv_q2_2eq1 (_ : 2 ^ (eq - 1) = 2 * 2 ^ (eq - 2)) 1:-{2}expr1 1:-exprD_nneg //; 1:smt(ge3_eq).
+rewrite mulrC -intmulz mulr2z ltr_add2l //.
+
+rewrite !addE !inzmodK //= (pmod_small (2 ^ (eq - 2))) 2:(pmod_small (q %/ 2)) 3:(pmod_small (3 * 2 ^ (eq - 2))); 1,2,3: smt.
+rewrite &(contraLR) andaE negb_or negb_and -!ltzNge /= -!lezNgt /=.
+case. move: (Zq.rg_asint err); case => ge0_err ltq_err ltq34_err geq2_err.
+right.
+rewrite pmod_small.
+rewrite addr_ge0 1:expr_ge0 2:ge0_asint //=.
+rewrite eq_q_14q_34q eqv_q4_2eq2 ltr_add2l //.
+rewrite (_ : q %/ 2 = 2 ^ (eq - 2) + 2 ^ (eq - 2)).
+rewrite eqv_q2_2eq1 -mulr2z intmulz -{4}expr1 -exprD_nneg //=; 1: smt(ge3_eq).
+by rewrite lez_add2l.
+qed.
+
+lemma scaleRq2R2_rng_zero_q4 (m : R2) (err : Rq) :
+  (forall (i : int), 0 <= i < n =>
+   Zq.asint (Zq.inzmod (- q %/ 4)) <= Zq.asint err.[i] 
+   \/ Zq.asint err.[i] < Zq.asint (Zq.inzmod (q %/ 4)))
+  <=> 
+  scaleRq2R2 (poly_q4 + err) = R2.zeroXnD1.
+proof.
+split => [coeff_rng|]; rewrite polyXnD1_eqP => [i rng_i| coeff_scale i rng_i];
+         2: move: (coeff_scale i rng_i); rewrite rcoeffZ_sum //= (Rq.rcoeffD poly_q4 err) rcoeff0
+         rcoeffZ_sum //= -/(Zq.Sub.insubd (2 ^ (eq - 2) %% q)) -/(Zq.inzmod ((2 ^ (eq - 2))))
+         -eqv_q4_2eq2 -(scaleZq2Z2_rng_zero_q4 m.[i] err.[i]) //.
++ by apply (coeff_rng i rng_i).
+qed.
+
+(*
+lemma scaleZq2Z2_rng_zero_q4 (m : Z2) (err : Zq) :
+  Zq.asint (Zq.inzmod (- q %/ 4)) <= Zq.asint err < Zq.asint (Zq.inzmod (q %/ 4))
+  <=> 
+  scaleZq2Z2 (Zq.inzmod (q %/ 4) + err) = Z2.zero.
+proof.
+rewrite eq_minq4_q34_modq.
+rewrite -scaleZq2Z2_rng_zero.
+rewrite eqv_q4_2eq2.
+move: (Zq.rg_asint err); case => ge0_err ltq_err.
+rewrite !inzmodK /= pmod_small 2:(pmod_small (2 ^ (eq - 2))) 3:(pmod_small (q %/ 2)); 1,2,3: smt.
+split.
+(* => *)
+rewrite modz_ge0 1:neq_ltz 1:expr_gt0 //=.
+case => ge34q_err ltq4_err.
+  have: exists (x : int), 0 <= x < 2 ^ (eq - 1) /\ 2 ^ (eq - 2) + asint err = q + x.
+  exists (2 ^ (eq - 2) + asint err - q). split. split.
+  - by rewrite -(lez_add2r q) -addzA /= eq_q_14q_34q eqv_q4_2eq2 lez_add2l.
+  - move => ?.
+    rewrite eq_q_14q_34q eqv_q4_2eq2 opprD addzA. smt. smt.
+elim => x; case; case => ge0_x ltq2_x ->.
+rewrite eqv_q2_2eq1 modzDl !pmod_small 1:ge0_x //= 1:(ltz_trans (2 ^ (eq - 1))) //
+        /q (_ : 2 ^ eq = 2 ^ (eq - 1) * 2 ^ 1) -exprD_nneg //=; smt(ge3_eq).
+(* <= *)
+rewrite &(contraLR) !andaE !negb_and -!lezNgt -!ltzNge.
+case => [lt34q_err | geq4_err].
+rewrite -(modzz q); left. 
+right.
+rewrite modz_ge0. 
+=> ge0_q4err ltq2_q4err.
+
+qed.
+
+lemma correct_errrng_q4_Zq (m : Z2) (err : Zq) :
+  Zq.asint (Zq.inzmod (- q %/ 4)) <= Zq.asint err \/ Zq.asint err < q %/ 4
+  <=> 
+  m = scaleZq2Z2 (scaleZ22Zq m + (Zq.inzmod (q %/ 4) + err)).
+proof. admitted.
+
 
 lemma errrng_impl_correct_Zq (m : Z2) (err : Zq) :
   0 <= Zq.asint err < q %/ 2 => m = scaleZq2Z2 (scaleZ22Zq m + err).
@@ -397,17 +632,7 @@ lemma correct_errrng_Zq (m : Z2) (err : Zq) :
  0 <= Zq.asint err < q %/ 2 <=> m = scaleZq2Z2 (scaleZ22Zq m + err).
 proof. by split; [apply errrng_impl_correct_Zq | apply correct_impl_errrng_Zq]. qed.
 
-lemma eq_minq4_q34_modq : Zq.inzmod (- q %/ 4) = Zq.inzmod (3 * q %/ 4).
-proof.
-rewrite -eq_inzmod /q {1 3}(_ : 2 ^ eq = 2 ^ (eq - 2) * 4) 1:(_ : 4 = 2 ^ 2) 1:expr2 // 1:-exprD_nneg;
-        1, 2, 3: smt(ge3_eq).
-rewrite mulrA !mulzK //.
-rewrite modNz 1,2:expr_gt0 //.
-rewrite !pmod_small. admit. admit.
-rewrite opprD /= addrA; ring.
-rewrite mulNr (_ : 4 = 2 ^ 2) 1:expr2 // -exprD_nneg; 1, 2: smt(ge3_eq).
-by rewrite addzA (addzC _ (-2)) addzA.
-qed.
+
 
 lemma correct_errrng_q4_Zq (m : Z2) (err : Zq) :
   Zq.asint (Zq.inzmod (- q %/ 4)) <= Zq.asint err \/ Zq.asint err < q %/ 4
@@ -619,4 +844,5 @@ m' = m iff 0 <= u' s - u s' - u'' + q/4 < q/2
 m' = m iff - q/4 <= u' s - u s' - u'' < q/4
 
 
+*)
 *)
