@@ -541,15 +541,26 @@ op m_decode : plaintext -> R2.
 
 (* - Properties - *)
 (* Encoding and Decoding are Each Other's Inverses *)
-axiom pks_enc_dec_inv (x : seed * Rp_vec) : pk_decode_s (pk_encode_s x) = x. 
-axiom sks_enc_dec_inv (x : Rq_vec) : sk_decode_s (sk_encode_s x) = x.
-axiom cs_enc_dec_inv (x : R2t * Rp_vec) : c_decode_s (c_encode_s x) = x. 
+axiom pks_enc_dec_inv : cancel pk_encode_s pk_decode_s.
+axiom pks_dec_enc_inv : cancel pk_decode_s pk_encode_s.
 
-axiom pkg_enc_dec_inv ['a] (x : 'a) : pk_decode_g (pk_encode_g x) = x. 
+axiom sks_enc_dec_inv : cancel sk_encode_s sk_decode_s.
+axiom sks_dec_enc_inv : cancel sk_decode_s sk_encode_s.
+
+axiom cs_enc_dec_inv : cancel c_encode_s c_decode_s.
+axiom cs_dec_enc_inv : cancel c_decode_s c_encode_s.
+
+axiom pkg_enc_dec_inv ['a] (x : 'a) : pk_decode_g (pk_encode_g x) = x.
+axiom pkg_dec_enc_inv ['a] (x : pkey) (y : 'a) : y = pk_decode_g x => pk_encode_g y = x.
+
 axiom skg_enc_dec_inv ['a] (x : 'a) : sk_decode_g (sk_encode_g x) = x.
-axiom cg_enc_dec_inv ['a] (x : 'a) : c_decode_g (c_encode_g x) = x. 
+axiom skg_dec_enc_inv ['a] (x : skey) (y : 'a) : y = sk_decode_g x => sk_encode_g y = x.
 
-axiom m_enc_dec_inv (x : R2) : m_decode (m_encode x) = x.
+axiom cg_enc_dec_inv ['a] (x : 'a) : c_decode_g (c_encode_g x) = x. 
+axiom cg_dec_enc_inv ['a] (x : ciphertext) (y : 'a) : y = c_decode_g x => c_encode_g y = x.
+
+axiom m_enc_dec_inv : cancel m_encode m_decode.
+axiom m_dec_enc_inv : cancel m_decode m_encode.
 
 (* Encoding and Decoding of Original Scheme and Games are Equivalent for Correct Types *)
 axiom eq_pks_pkg_enc (x : seed * Rp_vec) : pk_encode_s x = pk_encode_g x.

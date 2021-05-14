@@ -492,7 +492,7 @@ qed.
 lemma scaleZq2Z2_rng_zero (z : Zq) : 
   0 <= Zq.asint z < q %/ 2 <=> scaleZq2Z2 z = Z2.zero.
 *)
-lemma scaleZq2Z2_rng_zero_q4 (m : Z2) (err : Zq) :
+lemma scaleZq2Z2_rng_zero_q4 (err : Zq) :
   Zq.asint (Zq.inzmod (- q %/ 4)) <= Zq.asint err \/ Zq.asint err < Zq.asint (Zq.inzmod (q %/ 4))
   <=> 
   scaleZq2Z2 (Zq.inzmod (q %/ 4) + err) = Z2.zero.
@@ -540,7 +540,7 @@ rewrite eqv_q2_2eq1 -mulr2z intmulz -{4}expr1 -exprD_nneg //=; 1: smt(ge3_eq).
 by rewrite lez_add2l.
 qed.
 
-lemma scaleRq2R2_rng_zero_q4 (m : R2) (err : Rq) :
+lemma scaleRq2R2_rng_zero_q4 (err : Rq) :
   (forall (i : int), 0 <= i < n =>
    Zq.asint (Zq.inzmod (- q %/ 4)) <= Zq.asint err.[i] 
    \/ Zq.asint err.[i] < Zq.asint (Zq.inzmod (q %/ 4)))
@@ -550,11 +550,257 @@ proof.
 split => [coeff_rng|]; rewrite polyXnD1_eqP => [i rng_i| coeff_scale i rng_i];
          2: move: (coeff_scale i rng_i); rewrite rcoeffZ_sum //= (Rq.rcoeffD poly_q4 err) rcoeff0
          rcoeffZ_sum //= -/(Zq.Sub.insubd (2 ^ (eq - 2) %% q)) -/(Zq.inzmod ((2 ^ (eq - 2))))
-         -eqv_q4_2eq2 -(scaleZq2Z2_rng_zero_q4 m.[i] err.[i]) //.
+         -eqv_q4_2eq2 -(scaleZq2Z2_rng_zero_q4 err.[i]) //.
 + by apply (coeff_rng i rng_i).
 qed.
 
+op err_exp_fin (_A : Rq_mat) (s s' : Rq_vec) (m : R2) = 
+  dotp (error_bq' _A s') s - dotp (error_bq _A s) s' - error_cmq_centered _A s s' m.
+
+op coeff_in_min14q_14q_rng (p : Rq) = forall (i : int), 0 <= i < n =>
+  Zq.asint (Zq.inzmod (- q %/ 4)) <= Zq.asint p.[i]  \/ 
+  Zq.asint p.[i] < Zq.asint (Zq.inzmod (q %/ 4)).
+
+(* Error Game *)
+module Correctness_Error = {
+   proc main(m : R2) : bool = {
+      var sd: seed;
+      var _A: Rq_mat;
+      var s, s': Rq_vec;
+      
+      sd <$ dseed;
+      _A <- gen sd;
+      s <$ dsmallRq_vec;
+      s' <$ dsmallRq_vec;
+     
+      return coeff_in_min14q_14q_rng (err_exp_fin _A s s' m);
+   }
+}.
+
+op delta_bound : real.
+
+axiom delta_correctness (msg : R2) &m : 
+  Pr[Correctness_Error.main(msg) @ &m : !res] <= delta_bound.
+
+module Correctness_Error_Game (A : Adv_Cor) = {
+   proc main() : bool = {
+      var sd: seed;
+      var _A: Rq_mat;
+      var s, s': Rq_vec;
+      var m: plaintext;
+      var pk: pkey;
+      var sk: skey;
+      var m_dec: R2;
+      
+      sd <$ dseed;
+      _A <- gen sd;
+      s <$ dsmallRq_vec;
+      m <@ A.choose(pk_encode_s (sd, scaleRqv2Rpv (_A *^ s + h)), sk_encode_s s);      
+      s' <$ dsmallRq_vec;
+      m_dec <- m_decode m;
+     
+      return (m_dec = m'_expression _A s s' m_dec);
+   }
+}.
 (*
+lemma m_enc_bij : bijective m_encode.
+rewrite
+axiom m_dec_bij:
+*)
+lemma eq_corrgame_correrrgame (A <: Adv_Cor) &m:
+ Pr[Correctness_Game(Saber_PKE_Scheme_Alt, A).main() @ &m : res] 
+ = 
+ Pr[Correctness_Error_Game(A).main() @ &m : res].
+proof.
+byequiv => //.
+proc; inline *.
+wp.
+rnd. 
+wp.
+call (_ : true).
+wp.
+rnd.
+wp.
+rnd.
+skip.
+progress.
+rewrite !pks_enc_dec_inv !cs_enc_dec_inv !sks_enc_dec_inv /=.
+rewrite /m'_expression /m'_expression_Rq /cmq_expression /v_expression /v'_expression /=.
+rewrite (_ : (dotp (scaleRpv2Rqv (scaleRqv2Rpv (trmx (gen sdL) *^ s'L + h))) sL) 
+             = (dotp (trmx (gen sdL) *^ s'L + error_bq' (gen sdL) s'L) sL)).
+rewrite /error_bq' /errorRqv.
+have -> //: (trmx (gen sdL) *^ s'L +
+   (scaleRpv2Rqv (scaleRqv2Rpv (trmx (gen sdL) *^ s'L + h)) -
+    trmx (gen sdL) *^ s'L)) =
+  scaleRpv2Rqv (scaleRqv2Rpv (trmx (gen sdL) *^ s'L + h)).
+by rewrite Mat_Rq.Vector.ZModule.addrA Mat_Rq.Vector.ZModule.addrAC Mat_Rq.Vector.ZModule.subrr
+           Mat_Rq.Vector.ZModule.add0r.
+rewrite (_ : scaleR2t2Rq
+          (scaleRq2R2t
+             (dotp (scaleRpv2Rqv (scaleRqv2Rpv (gen sdL *^ sL + h))) s'L +
+              upscaleRq h1 (eq - ep) + scaleR22Rq (m_decode result_R))) =
+(dotp (gen sdL *^ sL + error_bq (gen sdL) sL) s'L +
+      upscaleRq h1 (eq - ep) + scaleR22Rq (m_decode result_R) +
+      error_cmq (gen sdL) sL s'L (m_decode result_R))).
+rewrite /error_cmq /v'_expression /error_bq /errorRqv /errorRq /=.
+rewrite eq_sym.
+apply (eq_trans _ 
+((scaleR2t2Rq
+   (scaleRq2R2t
+      (dotp
+         (gen sdL *^ sL +
+          (scaleRpv2Rqv (scaleRqv2Rpv (gen sdL *^ sL + h)) - gen sdL *^ sL))
+         s'L +
+       upscaleRq h1 (eq - ep) + scaleR22Rq (m_decode result_R)))))); 1: by ring.
+do 5! congr.
+by rewrite Mat_Rq.Vector.ZModule.addrA Mat_Rq.Vector.ZModule.addrAC Mat_Rq.Vector.ZModule.subrr
+           Mat_Rq.Vector.ZModule.add0r.
+pose x := (scaleRq2R2
+   ((dotp (trmx (gen sdL) *^ s'L + error_bq' (gen sdL) s'L) sL +
+     upscaleRq h1 (eq - ep) -
+     (dotp (gen sdL *^ sL + error_bq (gen sdL) sL) s'L +
+      upscaleRq h1 (eq - ep) + scaleR22Rq (m_decode result_R) +
+      error_cmq (gen sdL) sL s'L (m_decode result_R)))%Big.CR +
+    upscaleRq h2 (eq - ep))).
+have : (injective m_decode). apply bij_inj. exists m_encode. rewrite m_enc_dec_inv m_dec_enc_inv //.
+move => h.
+case (result_R = m_encode x) => [-> | neq_resx].
+rewrite m_enc_dec_inv //.
+rewrite /injective  in h.
+move: (h result_R (m_encode x)). 
+move /contra. rewrite neq_resx //= m_enc_dec_inv => -> //.
+qed.
+
+module Correctness_Error_Game2 (A : Adv_Cor) = {
+   proc main() : bool = {
+      var sd: seed;
+      var _A: Rq_mat;
+      var s, s': Rq_vec;
+      var m: plaintext;
+      var pk: pkey;
+      var sk: skey;
+      var m_dec: R2;
+      
+      sd <$ dseed;
+      _A <- gen sd;
+      s <$ dsmallRq_vec;
+      m <@ A.choose(pk_encode_s (sd, scaleRqv2Rpv (_A *^ s + h)), sk_encode_s s);      
+      s' <$ dsmallRq_vec;
+      m_dec <- m_decode m;
+     
+      return coeff_in_min14q_14q_rng (err_exp_fin _A s s' m_dec);
+   }
+}.
+
+lemma temp1 (_A : Rq_mat) (s s' : Rq_vec) (m : R2) : 
+  (m = m + scaleRq2R2 (poly_q4 + dotp (error_bq' _A s') s - dotp (error_bq _A s) s' -
+      error_cmq_centered _A s s' m))
+   <=>
+scaleRq2R2
+  (poly_q4 + dotp (error_bq' _A s') s - dotp (error_bq _A s) s' -
+   error_cmq_centered _A s s' m) = R2.zeroXnD1.
+proof.
+split => ?.
++ by rewrite eq_sym &(addrI m) addr0. 
++ by rewrite &(addrI (-m)) addrA addrC subrr add0r eq_sym.
+qed.
+
+lemma eq_results (_A : Rq_mat) (s s' : Rq_vec) (m : R2) :
+(m = m'_expression _A s s' m) =
+  coeff_in_min14q_14q_rng (err_exp_fin _A s s' m).
+proof.
+rewrite /coeff_in_min14q_14q_rng scaleRq2R2_rng_zero_q4.
+rewrite eq_m'_m'fin.
+rewrite /m'_expression_fin /m'_expression_Rq_fin extr_m_m'_Rq /err_exp_fin temp1.
+rewrite (_ : (poly_q4 +
+    (dotp (error_bq' _A s') s - dotp (error_bq _A s) s' -
+     error_cmq_centered _A s s' m)) = (poly_q4 +
+    dotp (error_bq' _A s') s - dotp (error_bq _A s) s' -
+     error_cmq_centered _A s s' m)) //.
+by ring.
+qed.
+
+lemma eq_correrrgame_correrrgame2 (A <: Adv_Cor) &m :
+  Pr[Correctness_Error_Game(A).main() @ &m : res]
+  =
+  Pr[Correctness_Error_Game2(A).main() @ &m : res].
+proof.
+byequiv => //.
+proc.
+auto; call (_ : true); auto; progress.
+by apply eq_results.
+qed.
+
+(*
+
+(* --- Actual (Alternative Description) --- *)
+module Saber_PKE_Scheme_Alt : Scheme = {
+   proc kg() : pkey * skey = {
+      var sd: seed;
+      var _A: Rq_mat;
+      var s: Rq_vec;
+      var b: Rp_vec;
+      
+      sd <$ dseed;
+      _A <- gen sd;
+      s <$ dsmallRq_vec;
+      b <- scaleRqv2Rpv (_A *^ s + h);
+      
+      return (pk_encode_s (sd, b), sk_encode_s s);
+   }
+
+   proc enc(pk: pkey, m: plaintext) : ciphertext = {
+      var pk_dec: seed * Rp_vec;
+      var m_dec: R2;
+
+      var sd: seed;
+      var _A: Rq_mat;
+      var s': Rq_vec;
+      var b, b': Rp_vec;
+      var bq: Rq_vec;
+      var v': Rq;
+      var cm: R2t;
+      
+      m_dec <- m_decode m;
+      pk_dec <- pk_decode_s pk;
+      sd <- pk_dec.`1;
+      b <- pk_dec.`2;
+      _A <- gen sd;
+      s' <$ dsmallRq_vec;
+      b' <- scaleRqv2Rpv ((trmx _A) *^ s' + h);
+      bq <- scaleRpv2Rqv b;
+      v' <- (dotp bq s') + (upscaleRq h1 (eq - ep));
+      cm <- scaleRq2R2t (v' + (scaleR22Rq m_dec));
+      
+      return c_encode_s (cm, b');
+   }
+
+   proc dec(sk: skey, c: ciphertext) : plaintext option = {
+      var c_dec: R2t * Rp_vec;
+      var cm: R2t;
+      var cmq: Rq;
+      var b': Rp_vec;
+      var bq': Rq_vec;
+      var v: Rq;
+      var s: Rq_vec;
+      var m': R2;
+
+      c_dec <- c_decode_s c;
+      s <- sk_decode_s sk;
+      cm <- c_dec.`1;
+      cmq <- scaleR2t2Rq cm;
+      b' <- c_dec.`2;
+      bq' <- scaleRpv2Rqv b';
+      
+      v <- (dotp bq' s) + (upscaleRq h1 (eq - ep));
+      m' <- scaleRq2R2 (v - cmq + (upscaleRq h2 (eq - ep)));
+      
+      return Some (m_encode m');
+   }
+}.
+*)
+(*
+
 lemma scaleZq2Z2_rng_zero_q4 (m : Z2) (err : Zq) :
   Zq.asint (Zq.inzmod (- q %/ 4)) <= Zq.asint err < Zq.asint (Zq.inzmod (q %/ 4))
   <=> 
