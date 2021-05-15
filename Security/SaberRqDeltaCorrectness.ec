@@ -577,11 +577,6 @@ module Correctness_Error = {
    }
 }.
 
-op delta_bound : real.
-
-axiom delta_correctness (msg : R2) &m : 
-  Pr[Correctness_Error.main(msg) @ &m : !res] <= delta_bound.
-
 module Correctness_Error_Game (A : Adv_Cor) = {
    proc main() : bool = {
       var sd: seed;
@@ -677,8 +672,6 @@ module Correctness_Error_Game2 (A : Adv_Cor) = {
       var _A: Rq_mat;
       var s, s': Rq_vec;
       var m: plaintext;
-      var pk: pkey;
-      var sk: skey;
       var m_dec: R2;
       
       sd <$ dseed;
@@ -729,6 +722,104 @@ byequiv => //.
 proc.
 auto; call (_ : true); auto; progress.
 by apply eq_results.
+qed.
+
+op error_cmq_nom (_A : Rq_mat) (s s': Rq_vec) : Rq =
+  let v' = v'_expression _A s s' in
+  errorRq (scaleR2t2Rq (scaleRq2R2t v')) v'.
+
+op error_cmq_nom_centered (_A : Rq_mat) (s s': Rq_vec) : Rq =
+   error_cmq_nom _A s s' + poly_q4t.
+
+op err_exp_fin_nom (_A : Rq_mat) (s s': Rq_vec) : Rq =
+  dotp (error_bq' _A s') s - dotp (error_bq _A s) s' - error_cmq_nom_centered _A s s'.
+
+
+lemma eq_err_cmq_cmqnom (_A : Rq_mat) (s s': Rq_vec) (m : R2) :
+  error_cmq _A s s' m = error_cmq_nom _A s s'.
+proof.
+rewrite /error_cmq /error_cmq_nom /errorRq /=.
+have ->:
+  scaleR2t2Rq (scaleRq2R2t (v'_expression _A s s' + scaleR22Rq m))
+  =
+  scaleR2t2Rq (scaleRq2R2t (v'_expression _A s s')) + scaleR22Rq m.
+rewrite -BigRq.XnD1CA.big_split /=.
+have ->:
+(fun (i : int) =>
+      scaleZ2t2Zq (scaleRq2R2t (v'_expression _A s s')).[i] ** exp Rq.iX i +
+      scaleZ22Zq m.[i] ** exp Rq.iX i)
+=
+(fun (i : int) =>
+      (scaleZ2t2Zq (scaleRq2R2t (v'_expression _A s s')).[i] + scaleZ22Zq m.[i])  ** exp Rq.iX i).
+rewrite fun_ext /(==) => x. by rewrite scaleDl.
+rewrite polyXnD1_eqP => i rng_i.
+rewrite !rcoeffZ_sum //= !rcoeffZ_sum //= rcoeffD rcoeffZ_sum //=.
+admit.
+admit.
+qed.
+
+
+lemma eq_err_cmq_cmqnom_centered (_A : Rq_mat) (s s': Rq_vec) (m : R2) :
+  error_cmq_centered _A s s' m = error_cmq_nom_centered _A s s'.
+proof. by rewrite /error_cmq_centered /error_cmq_nom_centered eq_err_cmq_cmqnom. qed.
+
+lemma eq_err_errnom_fin  (_A : Rq_mat) (s s': Rq_vec) (m : R2) : 
+  err_exp_fin _A s s' m = err_exp_fin_nom _A s s'.
+proof. by rewrite /err_exp_fin /err_exp_fin_nom eq_err_cmq_cmqnom_centered. qed.
+
+module Correctness_Error_Game_Fin = {
+   proc main() : bool = {
+      var sd: seed;
+      var _A: Rq_mat;
+      var s, s': Rq_vec;
+      
+      sd <$ dseed;
+      _A <- gen sd;
+      s <$ dsmallRq_vec; 
+      s' <$ dsmallRq_vec;
+     
+      return coeff_in_min14q_14q_rng (err_exp_fin_nom _A s s');
+   }
+}.
+
+
+op delta_bound : real.
+
+axiom delta_correctness &m : 
+  Pr[Correctness_Error_Game_Fin.main() @ &m : res] >= 1%r - delta_bound.
+
+lemma eqv_correrr2_correrrfin (A <: Adv_Cor) &m :
+  Pr[Correctness_Error_Game2(A).main() @ &m : res]
+  =
+  Pr[Correctness_Error_Game_Fin.main() @ &m : res].
+proof.
+byequiv => //.
+proc.
+wp. 
+rnd.
+call {1} (_ : true ==> true). admit. (* losslessness of adv call *)
+rnd.
+wp.
+rnd.
+skip.
+progress.
+by rewrite eq_err_errnom_fin.
+qed.
+
+lemma eq_Correctness_Game_Reg_Alt2 (A <: Adv_Cor) &m:
+  Pr[Correctness_Game(Saber_PKE_Scheme, A).main() @ &m : res]
+  =
+  Pr[Correctness_Game(Saber_PKE_Scheme_Alt, A).main() @ &m : res].
+proof. by byequiv (eq_Correctness_Game_Reg_Alt A). qed.
+
+lemma delta_correctness_original_scheme (A <: Adv_Cor) &m :
+  Pr[Correctness_Game(Saber_PKE_Scheme, A).main() @ &m : res] >= 1%r - delta_bound.
+proof.
+rewrite (eq_Correctness_Game_Reg_Alt2 A).
+rewrite (eq_corrgame_correrrgame A).
+rewrite (eq_correrrgame_correrrgame2 A).
+rewrite (eqv_correrr2_correrrfin A).
+by apply delta_correctness.
 qed.
 
 (*
@@ -1072,7 +1163,7 @@ m' = v - cmq + q/p h2
    = (AT s' + u') s - (A s + u) s' - q/2 m - u'' + q/4t + q/p h2
    = u' s - u s' - q/2 m - u'' + q/4t + q/p h2
    = u' s - u s' + (- q/2 m) - u'' + q/4t + q/p h2 
-   <- q/2 m = q/2 m> 
+   < -q/2 m = q/2 m > 
    = u' s - u s' + q/2 m - u'' + q/4t + q/p h2
    = q/2 m + u' s - u s' - u'' + q/4t + q/p h2
    = q/2 m + u' s - u s' - u'' + q/4t + q/p p/4 - q/p p/4t
