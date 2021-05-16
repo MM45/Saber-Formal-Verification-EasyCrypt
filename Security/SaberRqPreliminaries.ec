@@ -395,11 +395,47 @@ split => [+ i rng_i| memxele]; rewrite supp_dmap.
 qed.
 
 (* - Constants - *)
-const h1 : Rq = BigRq.XnD1CA.bigi predT (fun (i : int) => 
-                 Zq.inzmod (2 ^ (eq - ep - 1)) ** exp Rq.iX i) 0 n.
-const h2 : Rq = BigRq.XnD1CA.bigi predT (fun (i : int) => 
-                 Zq.inzmod (2 ^ (ep - 2) - 2 ^ (ep - et - 2)) ** exp Rq.iX i) 0 n.
+const h1 : Rq = 
+  BigRq.XnD1CA.bigi predT (fun (i : int) => Zq.inzmod (2 ^ (eq - ep - 1)) ** exp Rq.iX i) 0 n.
+const h2 : Rq = 
+  BigRq.XnD1CA.bigi predT (fun (i : int) => 
+  Zq.inzmod (2 ^ (ep - 2) - 2 ^ (ep - et - 2)) ** exp Rq.iX i) 0 n.
 const h : Rq_vec = vectc h1.
+
+const q4_Rq : Rq =
+  BigRq.XnD1CA.bigi predT (fun (i : int) => Zq.inzmod (2 ^ (eq - 2)) ** exp Rq.iX i) 0 n.
+const q4t_Rq : Rq =
+  BigRq.XnD1CA.bigi predT (fun (i : int) => Zq.inzmod (2 ^ (eq - et - 2)) ** exp Rq.iX i) 0 n.
+
+(* - Auxiliary - *)
+(* Abbreviations *)
+abbrev ( - ) (pv1 pv2 : Rq_vec) = pv1 + (- pv2).
+
+(* Ring Instances for ring Tactic *)
+instance ring with Rq
+  op rzero = Rq.zeroXnD1
+  op rone  = Rq.oneXnD1
+  op add   = Rq.( + )
+  op opp   = Rq.([-])
+  op mul   = Rq.( * )
+  op expr  = Rq.ComRing.exp
+  op ofint = Rq.ComRing.ofint
+
+  proof oner_neq0 by apply Rq.ComRing.oner_neq0
+  proof addrA     by apply Rq.ComRing.addrA
+  proof addrC     by apply Rq.ComRing.addrC
+  proof addr0     by apply Rq.ComRing.addr0
+  proof addrN     by apply Rq.ComRing.addrN
+  proof mulr1     by apply Rq.ComRing.mulr1
+  proof mulrA     by apply Rq.ComRing.mulrA
+  proof mulrC     by apply Rq.ComRing.mulrC
+  proof mulrDl    by apply Rq.ComRing.mulrDl
+  proof expr0     by apply Rq.ComRing.expr0
+  proof ofint0    by apply Rq.ComRing.ofint0
+  proof ofint1    by apply Rq.ComRing.ofint1
+  proof exprS     by apply Rq.ComRing.exprS
+  proof ofintS    by apply Rq.ComRing.ofintS
+  proof ofintN    by apply Rq.ComRing.ofintN.
 
 (* -- Cryptographic Types and Distributions  -- *)
 type seed.
@@ -571,6 +607,14 @@ axiom eq_sks_skg_dec (x : skey) : sk_decode_s x = sk_decode_g x.
 
 axiom eq_cs_cg_enc (x :  R2t * Rp_vec) : c_encode_s x = c_encode_g x.
 axiom eq_cs_cg_dec (x : ciphertext) : c_decode_s x = c_decode_g x.
+
+(* Possible Values of Z types *)
+lemma Z2_asint_values (z : Z2) : asint z = 0 \/ asint z = 1.
+proof. 
+case (asint z = 0) => [-> //| /= /neq_ltz].
+case; move: (Z2.rg_asint z); case => [/lezNgt //| _].
+by rewrite -!lez_add1r -(lez_add2l (-1)) /= eqz_leq => -> ->.
+qed.
 
 (* Modular Reduction/Modulo Conversion *)
 lemma Zq2Zp0 : Zq2Zp Zq.zero = Zp.zero.
@@ -944,6 +988,22 @@ rewrite /scaleZp2Zq -inzmodD /upscale /shl -mulrDl addE -eq_inzmod /p /q modz_po
 + smt(ge2_ep geep1_eq).
 qed.
 
+lemma scaleZ22Zq_PN (z : Z2) : scaleZ22Zq z = scaleZ22Zq (- z).
+proof.
+rewrite /scaleZ22Zq /upscale /shl -eq_inzmod !inzmodK; do 3! congr.
+case (asint z = 0) => [-> //| /neq_ltz [lt0_z | gt0_z]]; move: (Z2.rg_asint z); case => ge0_z lt2_z.
++ by rewrite ltzNge in lt0_z.
++ rewrite -lez_add1r -(lez_add2l (-1)) /= in lt2_z; rewrite -lez_add1r /= in gt0_z.
+  by move: (eqz_leq (asint z) 1); rewrite gt0_z lt2_z /= => ->.
+qed.
+
+lemma scaleZ22Zq_N (z : Z2) : scaleZ22Zq (- z) = - scaleZ22Zq z.
+proof.
+rewrite /scaleZ22Zq /upscale /shl -inzmodN oppE -eq_inzmod /q -modz_pow2_mul; 1: smt(ge3_eq).
+rewrite expr1 modz_mod -{1}(Ring.IntID.expr1 2) modz_pow2_mul; 1: smt(ge3_eq).
+by rewrite mulNr.
+qed.
+
 lemma scaleZp2Zq_N (z : Zp) : scaleZp2Zq (- z) = - scaleZp2Zq z.
 proof.
 rewrite /scaleZp2Zq /upscale /shl -eq_inzmod !inzmodK /p /q modz_pow2_mul; 1: smt(ge2_ep geep1_eq).
@@ -1025,6 +1085,13 @@ rewrite -eq_inzmod !inzmodK /p /q (pmod_small _ (2 ^ ep)); last first.
   rewrite mulzK 1:neq_ltz 1:expr_gt0 3:exprD_nneg 5:2?(expr1, mulzC) 5:-/t; smt(ge0_et Z2t.gtp_asint).
 qed.
 
+lemma scaleZ22Zq_scaleZq2Z2_inv (z : Z2) : scaleZq2Z2 (scaleZ22Zq z) = z.
+proof. 
+rewrite /scaleZq2Z2 /scaleZ22Zq /downscale /upscale /shr /shl inzmodK /q modz_pow2_div;
+        1, 2: smt(mulr_ge0 expr_ge0 Z2.ge0_asint ge3_eq).
+by rewrite mulzK 2:opprD 2:addzA /= 2:expr1 2:-inzmodK 2:!asintK // neq_ltz; right; rewrite expr_gt0.
+qed.
+
 (* Polynomial Scaling *)
 lemma scaleRp2Rp_id (p : Rp) : scaleRp2Rp p = p.
 proof. by rewrite /scaleRp2Rp polyXnD1_eqP => i rngi; rewrite rcoeffZ_sum //= scaleZp2Zp_id. qed.
@@ -1095,6 +1162,18 @@ proof.
 by rewrite polyXnD1_eqP => i rng_i; rewrite rcoeffD !scaleRp2RqE rcoeffD scaleZp2Zq_DM.
 qed.
 
+lemma scaleR22Rq_PN (p : R2) : scaleR22Rq p = scaleR22Rq (- p).
+proof.
+rewrite /scaleR22Rq !BigRq.XnD1CA.big_seq &(BigRq.XnD1CA.eq_bigr) /= => *.
+by rewrite -rcoeffN scaleZ22Zq_PN.
+qed.
+
+lemma scaleR22Rq_N (p : R2) : scaleR22Rq (- p) = - scaleR22Rq p.
+proof.
+rewrite /scaleR22Rq Rq.polyXnD1_sumN /= !BigRq.XnD1CA.big_seq &(BigRq.XnD1CA.eq_bigr) /= => *.
+by rewrite -rcoeffN scaleZ22Zq_N scaleN.
+qed.
+
 lemma scaleRp2Rq_N (p : Rp): scaleRp2Rq (- p) = - scaleRp2Rq p.
 proof.
 rewrite /scaleRp2Rq Rq.polyXnD1_sumN /= !BigRq.XnD1CA.big_seq &(BigRq.XnD1CA.eq_bigr) /= => *. 
@@ -1147,6 +1226,11 @@ qed.
 lemma scaleR22Rp2Rq_comp (p : R2) : scaleR22Rq p = scaleRp2Rq (scaleR22Rp p).
 proof.
 by rewrite polyXnD1_eqP => i rng_i; rewrite !rcoeffZ_sum //= rcoeffZ_sum //= scaleZ22Zp2Zq_comp.
+qed.
+
+lemma scaleR22Rq_scaleRq2R2_inv (p : R2) : scaleRq2R2 (scaleR22Rq p) = p.
+proof. 
+by rewrite polyXnD1_eqP => i rng_i; rewrite rcoeffZ_sum //= rcoeffZ_sum //= scaleZ22Zq_scaleZq2Z2_inv.
 qed.
 
 (* Polynomial Vector Scaling *)
@@ -1374,7 +1458,7 @@ module Saber_PKE_Scheme_Alt : Scheme = {
 
 (* --- Equivalence of Schemes --- *)
 (* - Equivalence of Key Generation - *)
-lemma eq_kg: equiv[Saber_PKE_Scheme.kg ~ Saber_PKE_Scheme_Alt.kg : 
+lemma eqv_kg: equiv[Saber_PKE_Scheme.kg ~ Saber_PKE_Scheme_Alt.kg : 
   true 
   ==> 
   ={res} /\ sk_decode_s res.`2{1} \in dsmallRq_vec /\ sk_decode_s res.`2{2} \in dsmallRq_vec].
@@ -1384,7 +1468,7 @@ auto; progress; by rewrite sks_enc_dec_inv.
 qed.
 
 (* - Equivalence of Encryption - *)
-lemma eq_enc: equiv[Saber_PKE_Scheme.enc ~ Saber_PKE_Scheme_Alt.enc : ={pk, m} ==> ={res}].
+lemma eqv_enc: equiv[Saber_PKE_Scheme.enc ~ Saber_PKE_Scheme_Alt.enc : ={pk, m} ==> ={res}].
 proof.
 proc.
 auto; progress. 
@@ -1393,7 +1477,7 @@ by move: H; apply eq_comp_enc_altenc.
 qed.
 
 (* - Equivalence of Decryption - *)
-lemma eq_dec: equiv[Saber_PKE_Scheme.dec ~ Saber_PKE_Scheme_Alt.dec : 
+lemma eqv_dec: equiv[Saber_PKE_Scheme.dec ~ Saber_PKE_Scheme_Alt.dec : 
   ={sk, c} /\ sk_decode_s sk{1} \in dsmallRq_vec /\ sk_decode_s sk{2} \in dsmallRq_vec
   ==> 
   ={res}].
