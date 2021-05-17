@@ -412,6 +412,31 @@ const q4t_Rq : Rq =
 abbrev ( - ) (pv1 pv2 : Rq_vec) = pv1 + (- pv2).
 
 (* Ring Instances for ring Tactic *)
+instance ring with R2
+  op rzero = R2.zeroXnD1
+  op rone  = R2.oneXnD1
+  op add   = R2.( + )
+  op opp   = R2.([-])
+  op mul   = R2.( * )
+  op expr  = R2.ComRing.exp
+  op ofint = R2.ComRing.ofint
+
+  proof oner_neq0 by apply R2.ComRing.oner_neq0
+  proof addrA     by apply R2.ComRing.addrA
+  proof addrC     by apply R2.ComRing.addrC
+  proof addr0     by apply R2.ComRing.addr0
+  proof addrN     by apply R2.ComRing.addrN
+  proof mulr1     by apply R2.ComRing.mulr1
+  proof mulrA     by apply R2.ComRing.mulrA
+  proof mulrC     by apply R2.ComRing.mulrC
+  proof mulrDl    by apply R2.ComRing.mulrDl
+  proof expr0     by apply R2.ComRing.expr0
+  proof ofint0    by apply R2.ComRing.ofint0
+  proof ofint1    by apply R2.ComRing.ofint1
+  proof exprS     by apply R2.ComRing.exprS
+  proof ofintS    by apply R2.ComRing.ofintS
+  proof ofintN    by apply R2.ComRing.ofintN.
+
 instance ring with Rq
   op rzero = Rq.zeroXnD1
   op rone  = Rq.oneXnD1
@@ -982,6 +1007,13 @@ case => [divz1 | divz2]; rewrite /scaleZq2Z2t -inzmodD -downscale_DM ?(divz1, di
     1, 2, 4, 5: smt(Zq.ge0_asint geet2_ep geep1_eq ge0_et); congr; rewrite modz_dvd_pow; smt(ge0_et).
 qed.
 
+lemma scaleZ2t2Zq_DM (z1 z2 : Z2t) : scaleZ2t2Zq (z1 + z2) = scaleZ2t2Zq z1 + scaleZ2t2Zq z2.
+proof.
+rewrite /scaleZ2t2Zq -inzmodD /upscale /shl -mulrDl addE -eq_inzmod /p /q /t -{1}(Ring.IntID.expr1 2)
+        -exprD_nneg 2:ge0_et // (Ring.IntID.addrC 1 et) modz_pow2_mul //.
++ smt(ge0_et geet2_ep geep1_eq).
+qed.
+
 lemma scaleZp2Zq_DM (z1 z2 : Zp) : scaleZp2Zq (z1 + z2) = scaleZp2Zq z1 + scaleZp2Zq z2.
 proof.
 rewrite /scaleZp2Zq -inzmodD /upscale /shl -mulrDl addE -eq_inzmod /p /q modz_pow2_mul //.
@@ -1090,6 +1122,16 @@ proof.
 rewrite /scaleZq2Z2 /scaleZ22Zq /downscale /upscale /shr /shl inzmodK /q modz_pow2_div;
         1, 2: smt(mulr_ge0 expr_ge0 Z2.ge0_asint ge3_eq).
 by rewrite mulzK 2:opprD 2:addzA /= 2:expr1 2:-inzmodK 2:!asintK // neq_ltz; right; rewrite expr_gt0.
+qed.
+
+lemma scaleZq2Z2_DM_invl (z1 : Z2) (z2 : Zq) : 
+  scaleZq2Z2 (scaleZ22Zq z1 + z2) = z1 + scaleZq2Z2 z2.
+proof. 
+rewrite scaleZq2Z2_DM 2:scaleZ22Zq_scaleZq2Z2_inv //; left.
+rewrite /scaleZ22Zq /upscale /shl inzmodK pmod_small 2:dvdz_mull 2:dvdzz.
+move: (Z2_asint_values z1); case => -> /= @/q.
++ by rewrite expr_gt0.
++ by rewrite expr_ge0 //= ltz_weexpn2l; smt(ge3_eq).
 qed.
 
 (* Polynomial Scaling *)
@@ -1231,6 +1273,13 @@ qed.
 lemma scaleR22Rq_scaleRq2R2_inv (p : R2) : scaleRq2R2 (scaleR22Rq p) = p.
 proof. 
 by rewrite polyXnD1_eqP => i rng_i; rewrite rcoeffZ_sum //= rcoeffZ_sum //= scaleZ22Zq_scaleZq2Z2_inv.
+qed.
+
+lemma scaleRq2R2_DM_invl (p1 : R2) (p2 : Rq) : 
+  scaleRq2R2 (scaleR22Rq p1 + p2) = p1 + scaleRq2R2 p2.
+proof.
+rewrite polyXnD1_eqP => i rng_i; rewrite rcoeffZ_sum //= 2!rcoeffD. 
+by rewrite rcoeffZ_sum //= rcoeffZ_sum //=  scaleZq2Z2_DM_invl.
 qed.
 
 (* Polynomial Vector Scaling *)
