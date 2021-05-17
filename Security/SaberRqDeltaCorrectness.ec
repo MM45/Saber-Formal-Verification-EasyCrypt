@@ -419,25 +419,25 @@ wp; rnd; wp; call (_ : true); auto.
 progress.
 rewrite !pks_enc_dec_inv !cs_enc_dec_inv !sks_enc_dec_inv /=.
 rewrite /m'_expression /m'_expression_Rq /cmq_expression /v_expression /v'_expression /= eq_sym.
-pose a := dotp (trmx (gen sdL) *^ s'L + error_bq' (gen sdL) s'L) sL.
-have ->: a = dotp (scaleRpv2Rqv (scaleRqv2Rpv (trmx (gen sdL) *^ s'L + h))) sL.
+have ->: 
+  dotp (trmx (gen sdL) *^ s'L + error_bq' (gen sdL) s'L) sL   
+  = 
+  dotp (scaleRpv2Rqv (scaleRqv2Rpv (trmx (gen sdL) *^ s'L + h))) sL.
 + rewrite /a /error_bq' /errorRqv; congr. 
   by rewrite Mat_Rq.Vector.ZModule.addrCA Mat_Rq.Vector.ZModule.addrC Mat_Rq.Vector.ZModule.subrr
              Mat_Rq.Vector.ZModule.add0r.
+have cac: 
+  gen sdL *^ sL + (scaleRpv2Rqv (scaleRqv2Rpv (gen sdL *^ sL + h)) - gen sdL *^ sL) 
+  = 
+  (scaleRpv2Rqv (scaleRqv2Rpv (gen sdL *^ sL + h))).
++ by rewrite Mat_Rq.Vector.ZModule.addrCA Mat_Rq.Vector.ZModule.addrC Mat_Rq.Vector.ZModule.subrr
+             Mat_Rq.Vector.ZModule.add0r.
 rewrite eq_sym eq_iff; split => [{1}-> | resR_dec].
 + rewrite m_enc_dec_inv eq_sym; do 3! congr. 
-  rewrite /error_cmq /v'_expression /error_bq /errorRqv /errorRq /=; ring.
-  pose b:= gen sdL *^ sL + (scaleRpv2Rqv (scaleRqv2Rpv (gen sdL *^ sL + h)) - gen sdL *^ sL).
-  have ->: b = (scaleRpv2Rqv (scaleRqv2Rpv (gen sdL *^ sL + h))); 2: by ring.
-  - by rewrite /b Mat_Rq.Vector.ZModule.addrCA Mat_Rq.Vector.ZModule.addrC Mat_Rq.Vector.ZModule.subrr
-               Mat_Rq.Vector.ZModule.add0r.
+  by rewrite /error_cmq /v'_expression /error_bq /errorRqv /errorRq /= cac; ring.
 + have: (injective m_decode); last apply; rewrite {1}resR_dec m_enc_dec_inv; do 3! congr.
   - by apply bij_inj; exists m_encode; rewrite m_enc_dec_inv m_dec_enc_inv.
-  rewrite /error_cmq /v'_expression /error_bq /errorRqv /errorRq /=; ring.
-  pose b:= gen sdL *^ sL + (scaleRpv2Rqv (scaleRqv2Rpv (gen sdL *^ sL + h)) - gen sdL *^ sL).
-  have ->: b = (scaleRpv2Rqv (scaleRqv2Rpv (gen sdL *^ sL + h))); 2: by ring.
-  - by rewrite /b Mat_Rq.Vector.ZModule.addrCA Mat_Rq.Vector.ZModule.addrC Mat_Rq.Vector.ZModule.subrr
-               Mat_Rq.Vector.ZModule.add0r.
+  by rewrite /error_cmq /v'_expression /error_bq /errorRqv /errorRq /= cac; ring.
 qed.
 
 lemma eq_returns_Error_Delta (_A : Rq_mat) (s s' : Rq_vec) (m : R2) :
