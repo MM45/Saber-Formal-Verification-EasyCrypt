@@ -369,10 +369,7 @@ import Z2t R2t R2t.ComRing R2t.BasePoly.
 import Z2 R2 R2.ComRing R2.BasePoly.
 import Rp.BasePoly.BigCf.
 
-(* - Support of dsmallRq - *)
-axiom supp_dsmallRq (x : Rq) : 
-  x \in dsmallRq <=> forall (i : int), 0 <= i < n => Zq.asint x.[i] < p.
-
+(* - Support of dsmallRq_vec - *)
 lemma supp_dsmallRq_vec (x : Rq_vec) :
   x \in dsmallRq_vec <=> forall (i : int), 0 <= i < l => x.[i] \in dsmallRq.
 proof.
@@ -436,6 +433,31 @@ instance ring with R2
   proof exprS     by apply R2.ComRing.exprS
   proof ofintS    by apply R2.ComRing.ofintS
   proof ofintN    by apply R2.ComRing.ofintN.
+
+instance ring with Rp
+  op rzero = Rp.zeroXnD1
+  op rone  = Rp.oneXnD1
+  op add   = Rp.( + )
+  op opp   = Rp.([-])
+  op mul   = Rp.( * )
+  op expr  = Rp.ComRing.exp
+  op ofint = Rp.ComRing.ofint
+
+  proof oner_neq0 by apply Rp.ComRing.oner_neq0
+  proof addrA     by apply Rp.ComRing.addrA
+  proof addrC     by apply Rp.ComRing.addrC
+  proof addr0     by apply Rp.ComRing.addr0
+  proof addrN     by apply Rp.ComRing.addrN
+  proof mulr1     by apply Rp.ComRing.mulr1
+  proof mulrA     by apply Rp.ComRing.mulrA
+  proof mulrC     by apply Rp.ComRing.mulrC
+  proof mulrDl    by apply Rp.ComRing.mulrDl
+  proof expr0     by apply Rp.ComRing.expr0
+  proof ofint0    by apply Rp.ComRing.ofint0
+  proof ofint1    by apply Rp.ComRing.ofint1
+  proof exprS     by apply Rp.ComRing.exprS
+  proof ofintS    by apply Rp.ComRing.ofintS
+  proof ofintN    by apply Rp.ComRing.ofintN.
 
 instance ring with Rq
   op rzero = Rq.zeroXnD1
@@ -767,12 +789,6 @@ move => j [/mem_range rgj @/predC1 ne_ji].
 by rewrite rcoeffZ rcoeff_polyXn // (eq_sym i j) ne_ji Zp.ZModpRing.mulr0 //.
 qed.
 
-lemma Rq2Rp_Rp2Rq_small_inv (p : Rq) : p \in dsmallRq => Rp2Rq (Rq2Rp p) = p.
-proof.
-move /supp_dsmallRq => val_coeff; rewrite polyXnD1_eqP => i rngi.
-by rewrite rcoeffZ_sum //= rcoeffZ_sum //= Zq2Zp_Zp2Zq_small_inv 1:(val_coeff i).
-qed.
-
 (* Polynomial Vector Lift Modular Reduction/Modulo Conversion *)
 lemma Rqv2RpvE (p : Rq_vec) (i : int) : (Rqv2Rpv p).[i] = Rq2Rp p.[i].
 proof.
@@ -798,11 +814,17 @@ by rewrite {1}/Mat_Rp.Vector."_.[_]" offunvK /vclamp rngi /= Rpv2RqvE Rp2Rq_Rq2R
 qed.
 
 (* Remaining Dependent Modulo Reduction/Conversion Properties *)
-lemma Rq2Rp_DotDl (a: Rq_vec) (b : Rq_vec) : Rq2Rp (dotp a b) = dotp (Rqv2Rpv a) (Rqv2Rpv b).
+lemma Rq2Rp_DotDl (a : Rq_vec) (b : Rq_vec) : Rq2Rp (dotp a b) = dotp (Rqv2Rpv a) (Rqv2Rpv b).
 proof.
 rewrite /dotp Rq2Rp_DM_big_Mat /(\o) !Big.BAdd.big_seq &(Big.BAdd.eq_bigr) /= => j /mem_range rng_j. 
 by rewrite Rq2Rp_MM 2!Rqv2RpvE.
 qed.
+
+lemma Rq2Rp_DotDll (a : Rq_vec) (b : Rp_vec) : Rq2Rp (dotp a (Rpv2Rqv b)) = dotp (Rqv2Rpv a) b.
+proof. by rewrite Rq2Rp_DotDl dotpC Rpv2Rqv_Rqv2Rpv_inv dotpC. qed.
+
+lemma Rq2Rp_DotDlr (a : Rp_vec) (b : Rq_vec) : Rq2Rp (dotp (Rpv2Rqv a) b) = dotp a (Rqv2Rpv b).
+proof. by rewrite Rq2Rp_DotDl Rpv2Rqv_Rqv2Rpv_inv. qed.
 
 (* - Distribution Mapping - *)
 lemma duni_Zq2Zp : dmap DZqP.dunifin Zq2Zp = DZpP.dunifin.
@@ -948,6 +970,9 @@ move => geeb_eab geeab_ea.
 by rewrite /upscale /shl mulzA -exprD_nneg //#.
 qed.
 
+lemma upscale_MAl (x y ea eb : int) : upscale (x * y) ea eb = upscale x ea eb * y.
+proof. by rewrite /upscale /shl mulrAC. qed.
+
 (* Z Scaling *)
 lemma scaleZp2Zp_id (z : Zp) : scaleZp2Zp z = z.
 proof. by rewrite /scaleZp2Zp downscale_id 2: Zp.asintK. qed.
@@ -958,17 +983,29 @@ proof. by rewrite /scaleZ22Zp_var zeroE. qed.
 lemma scaleZ22Zp0 : scaleZ22Zp Z2.zero = Zp.zero.
 proof. by rewrite /scaleZ22Zp zeroE. qed.
 
+lemma scaleZ22Zq0 : scaleZ22Zq Z2.zero = Zq.zero.
+proof. by rewrite /scaleZ22Zq zeroE. qed.
+
 lemma scaleZq2Zp0 : scaleZq2Zp Zq.zero = Zp.zero.
 proof. by rewrite /scaleZq2Zp zeroE. qed.
 
 lemma scaleZp2Zq0 : scaleZp2Zq Zp.zero = Zq.zero.
 proof. by rewrite /scaleZp2Zq zeroE. qed.
 
+lemma upscaleZq0 (ez : int) : upscaleZq Zq.zero ez = Zq.zero.
+proof. by rewrite /upscaleZq zeroE. qed. 
+
 lemma upscaleZq_eqep_small (z : Zq) : 
   asint z < p => upscaleZq z (eq - ep) = scaleZp2Zq (Zq2Zp z).
 proof.
 move => ltp_z.
 by rewrite -eq_inzmod /upscale /shl /Zq2Zp inzmodK (pmod_small (Zq.asint z)) 1:ge0_asint.
+qed.
+
+lemma upscaleZq_eqep_DM (z1 z2 : Zq) :
+  upscaleZq (z1 + z2) (eq - ep) = upscaleZq z1 (eq - ep) + upscaleZq z2 (eq - ep).
+proof.
+by rewrite /upscaleZq -inzmodD -upscale_DM addE -eq_inzmod /upscale /shl /= /q modzMml.
 qed.
 
 lemma scaleZp2Z2_DM (z1 z2 : Zp) : 
@@ -1029,6 +1066,23 @@ case (asint z = 0) => [-> //| /neq_ltz [lt0_z | gt0_z]]; move: (Z2.rg_asint z); 
   by move: (eqz_leq (asint z) 1); rewrite gt0_z lt2_z /= => ->.
 qed.
 
+lemma scaleZ2t2Zp_N (z : Z2t) : scaleZ2t2Zp (- z) = - scaleZ2t2Zp z.
+proof.
+rewrite /scaleZ2t2Zp /upscale /shl -inzmodN oppE -eq_inzmod -modz_pow2_mul; 1: smt(ge0_et geet2_ep).
+rewrite /t /p -{1}(Ring.IntID.expr1 2) -exprD_nneg 2:ge0_et // (Ring.IntID.addrC 1 et) modz_mod
+        modz_pow2_mul; 1: smt(ge0_et geet2_ep).
+by rewrite mulNr.
+qed.
+
+lemma scaleZ2t2Zq_N (z : Z2t) : scaleZ2t2Zq (- z) = - scaleZ2t2Zq z.
+proof.
+rewrite /scaleZ2t2Zq /upscale /shl -inzmodN oppE -eq_inzmod -modz_pow2_mul;
+         1: smt(ge0_et geet2_ep geep1_eq).
+rewrite /t /q -{1}(Ring.IntID.expr1 2) -exprD_nneg 2:ge0_et // (Ring.IntID.addrC 1 et) modz_mod
+        modz_pow2_mul; 1: smt(ge0_et geet2_ep geep1_eq).
+by rewrite mulNr.
+qed.
+
 lemma scaleZ22Zq_N (z : Z2) : scaleZ22Zq (- z) = - scaleZ22Zq z.
 proof.
 rewrite /scaleZ22Zq /upscale /shl -inzmodN oppE -eq_inzmod /q -modz_pow2_mul; 1: smt(ge3_eq).
@@ -1042,6 +1096,12 @@ rewrite /scaleZp2Zq /upscale /shl -eq_inzmod !inzmodK /p /q modz_pow2_mul; 1: sm
 by rewrite modzNm mulNr.
 qed.
 
+lemma upscaleZq_eqep_BM (z1 z2 : Zq) : 
+  upscaleZq (z1 - z2) (eq - ep) = upscaleZq z1 (eq - ep) - upscaleZq z2 (eq - ep).
+proof.
+by rewrite /upscaleZq -inzmodB /upscale /shl addE oppE -mulrBl -eq_inzmod /p /q modzDmr modzMml.
+qed.
+
 lemma scaleZp2Zq_BM (z1 z2 : Zp) : scaleZp2Zq (z1 - z2) = scaleZp2Zq z1 - scaleZp2Zq z2.
 proof.
 rewrite /scaleZp2Zq -inzmodB /upscale /shl addE oppE -mulrBl -eq_inzmod /p /q.
@@ -1049,10 +1109,27 @@ rewrite modzDmr modz_pow2_mul //.
 + smt(ge2_ep geep1_eq).
 qed.
 
+lemma upscaleZq_eqep_MAl (z1 z2 : Zq) :
+  upscaleZq (z1 * z2) (eq - ep) = upscaleZq z1 (eq - ep) * z2.
+proof.
+by rewrite /upscaleZq -{2}(Zq.asintK z2) -inzmodM -upscale_MAl mulE 
+           -eq_inzmod /upscale /shl /q modzMml.
+qed.
+
 lemma scaleZp2Zq_MA (z1 z2 : Zp) : scaleZp2Zq (z1 * z2) = scaleZp2Zq z1 * Zp2Zq z2.
 proof.
 rewrite /scaleZp2Zq /Zp2Zq -inzmodM /upscale /shl mulrAC mulE -eq_inzmod /p /q modz_pow2_mul //.
 + smt(ge2_ep geep1_eq).
+qed.
+
+lemma upscaleZq_eqep_DM_big_BPCf (F : int -> Zq) (r: int list) :
+  upscaleZq (Rq.BasePoly.BigCf.BCA.big predT F r) (eq - ep)
+  =
+  Rq.BasePoly.BigCf.BCA.big predT ((fun (z : Zq) => upscaleZq z (eq - ep)) \o F) r.
+proof.
+elim: r => [| @/(\o) x l ih]. 
++ by rewrite !Rq.BasePoly.BigCf.BCA.big_nil upscaleZq0.
++ by rewrite !Rq.BasePoly.BigCf.BCA.big_consT upscaleZq_eqep_DM; congr.
 qed.
 
 lemma scaleZp2Zq_DM_big_BPCf (F : int -> Zp) (r: int list) :
@@ -1141,6 +1218,9 @@ proof. by rewrite /scaleRp2Rp polyXnD1_eqP => i rngi; rewrite rcoeffZ_sum //= sc
 lemma scaleRp2Rq0 : scaleRp2Rq Rp.zeroXnD1 = Rq.zeroXnD1.
 proof. by rewrite polyXnD1_eqP => i rng_i; rewrite rcoeffZ_sum //= !rcoeff0 scaleZp2Zq0. qed.
 
+lemma upscaleRq0 (ez : int) : upscaleRq Rq.zeroXnD1 ez = Rq.zeroXnD1.
+proof. by rewrite polyXnD1_eqP => i rng_i; rewrite rcoeffZ_sum //= !rcoeff0 upscaleZq0. qed.
+
 lemma upscaleRq_eqep_small (x : Rq) : 
   (forall (i : int), 0 <= i < n => asint x.[i] < p) => 
   upscaleRq x (eq - ep) = scaleRp2Rq (Rq2Rp x).
@@ -1148,6 +1228,13 @@ proof.
 move => val_coeff. 
 rewrite polyXnD1_eqP => i rng_i; rewrite !rcoeffZ_sum //= rcoeffZ_sum //=.
 by move: (val_coeff i rng_i); apply upscaleZq_eqep_small.
+qed.
+
+lemma upscaleRqE (p : Rq) (ex : int) (i : int) : (upscaleRq p ex).[i] = upscaleZq p.[i] ex.
+proof.
+case (i < 0) => [lt0_i | /lezNgt ge0_i]; 1: by rewrite !lt0_rcoeff 3:upscaleZq0.
+case (i < n) => [ltn_i | /lezNgt gen_i]; last by rewrite !gered_rcoeff 3:upscaleZq0.
+by rewrite rcoeffZ_sum //.
 qed.
 
 lemma scaleRq2RpE (p : Rq) (i : int) : (scaleRq2Rp p).[i] = scaleZq2Zp p.[i].
@@ -1172,6 +1259,13 @@ case (i < n) => [ltn_i | /lezNgt gen_i]; last by rewrite !gered_rcoeff 3:scaleZ2
 by rewrite rcoeffZ_sum //.
 qed.
 
+lemma scaleR22RqE (p : R2) (i : int) : (scaleR22Rq p).[i] = scaleZ22Zq p.[i].
+proof.
+case (i < 0) => [lt0_i | /lezNgt ge0_i]; 1: by rewrite !lt0_rcoeff 3:scaleZ22Zq0.
+case (i < n) => [ltn_i | /lezNgt gen_i]; last by rewrite !gered_rcoeff 3:scaleZ22Zq0.
+by rewrite rcoeffZ_sum //.
+qed.
+
 lemma scaleRp2RqE (p : Rp) (i : int) : (scaleRp2Rq p).[i] = scaleZp2Zq p.[i].
 proof.
 case (i < 0) => [lt0_i | /lezNgt ge0_i]; 1: by rewrite !lt0_rcoeff 3:scaleZp2Zq0.
@@ -1187,6 +1281,20 @@ proof.
 case => [divz1 | divz2]; rewrite /scaleRq2R2t eq_sym -BigR2t.XnD1CA.big_split /=;
     rewrite !BigR2t.XnD1CA.big_seq &(BigR2t.XnD1CA.eq_bigr) /= => i /mem_range rng_i;
     rewrite -scaleDl eq_sym rcoeffD scaleZq2Z2t_DM ?(divz1, divz2) //.
+qed.
+
+lemma upscaleRq_eqep_DM (p1 p2 : Rq) :
+  upscaleRq (p1 + p2) (eq - ep) = upscaleRq p1 (eq - ep) + upscaleRq p2 (eq - ep).
+proof.
+rewrite -BigRq.XnD1CA.big_split /= polyXnD1_eqP => i rng_i; rewrite rcoeffZ_sum //= rcoeffD. 
+have ->:
+  (fun (i0 : int) => 
+   upscaleZq p1.[i0] (eq - ep) ** exp Rq.iX i0 + upscaleZq p2.[i0] (eq - ep) ** exp Rq.iX i0)
+  =
+  (fun (i0 : int) => 
+   (upscaleZq p1.[i0] (eq - ep) + upscaleZq p2.[i0] (eq - ep)) ** exp Rq.iX i0).
++ by rewrite fun_ext /(==) => x; rewrite scaleDl.
+by rewrite rcoeffZ_sum //= upscaleZq_eqep_DM.
 qed.
 
 lemma scaleRp2R2t_DM (p1 p2 : Rp) : 
@@ -1210,6 +1318,18 @@ rewrite /scaleR22Rq !BigRq.XnD1CA.big_seq &(BigRq.XnD1CA.eq_bigr) /= => *.
 by rewrite -rcoeffN scaleZ22Zq_PN.
 qed.
 
+lemma scaleR2t2Rp_N (p : R2t) : scaleR2t2Rp (- p) = - scaleR2t2Rp p.
+proof.
+rewrite /scaleR2t2Rp Rp.polyXnD1_sumN /= !BigRp.XnD1CA.big_seq &(BigRp.XnD1CA.eq_bigr) /= => *.
+by rewrite -rcoeffN scaleZ2t2Zp_N scaleN.
+qed.
+
+lemma scaleR2t2Rq_N (p : R2t) : scaleR2t2Rq (- p) = - scaleR2t2Rq p.
+proof.
+rewrite /scaleR2t2Rq Rq.polyXnD1_sumN /= !BigRq.XnD1CA.big_seq &(BigRq.XnD1CA.eq_bigr) /= => *.
+by rewrite -rcoeffN scaleZ2t2Zq_N scaleN.
+qed.
+
 lemma scaleR22Rq_N (p : R2) : scaleR22Rq (- p) = - scaleR22Rq p.
 proof.
 rewrite /scaleR22Rq Rq.polyXnD1_sumN /= !BigRq.XnD1CA.big_seq &(BigRq.XnD1CA.eq_bigr) /= => *.
@@ -1225,11 +1345,29 @@ qed.
 lemma scaleRp2Rq_BM (p1 p2 : Rp) : scaleRp2Rq (p1 - p2) = scaleRp2Rq p1 - scaleRp2Rq p2.
 proof. by rewrite scaleRp2Rq_DM -Rq.ComRing.addrC scaleRp2Rq_N Rq.ComRing.addrC. qed.
 
+lemma upscaleRq_eqep_MAl (p1 p2 : Rq) :
+  upscaleRq (p1 * p2) (eq - ep) = upscaleRq p1 (eq - ep) * p2.
+proof.
+rewrite polyXnD1_eqP => i rng_i; rewrite rcoeffZ_sum //= !rcoeffM // upscaleZq_eqep_DM_big_BPCf /(\o).
+rewrite !Rq.BasePoly.BigCf.BCA.big_seq &(Rq.BasePoly.BigCf.BCA.eq_bigr) /= => j /mem_range rng_j.
+by rewrite upscaleZq_eqep_BM !upscaleZq_eqep_MAl upscaleRqE.
+qed.
+
 lemma scaleRp2Rq_MA (p1 p2 : Rp) : scaleRp2Rq (p1 * p2) = scaleRp2Rq p1 * Rp2Rq p2.
 proof.
 rewrite polyXnD1_eqP => i rng_i; rewrite rcoeffZ_sum //= !rcoeffM // scaleZp2Zq_DM_big_BPCf /(\o). 
 rewrite !Rq.BasePoly.BigCf.BCA.big_seq &(Rq.BasePoly.BigCf.BCA.eq_bigr) /= => j /mem_range rng_j.
 by rewrite scaleZp2Zq_BM !scaleZp2Zq_MA -scaleRp2RqE -!Rp2RqE.
+qed.
+
+lemma upscaleRq_eqep_DM_big_Mat (F : int -> Rq) (r : int list) :
+  upscaleRq (Mat_Rq.Big.BAdd.big predT F r) (eq - ep)
+  =
+  Mat_Rq.Big.BAdd.big predT ((fun (p : Rq) => upscaleRq p (eq - ep)) \o F) r.
+proof.
+elim: r => [| @/(\o) x l ih].
++ by rewrite !Mat_Rq.Big.BAdd.big_nil upscaleRq0.
++ by rewrite !Mat_Rq.Big.BAdd.big_consT /= upscaleRq_eqep_DM; congr.
 qed.
 
 lemma scaleRp2Rq_DM_big_Mat (F : int -> Rp) (r : int list) :
@@ -1240,6 +1378,17 @@ proof.
 elim: r => [| @/(\o) x l ih].
 + by rewrite Mat_Rp.Big.BAdd.big_nil Mat_Rq.Big.BAdd.big_nil scaleRp2Rq0.
 + rewrite Mat_Rp.Big.BAdd.big_consT Mat_Rq.Big.BAdd.big_consT /=.
+  by rewrite scaleRp2Rq_DM; congr.
+qed.
+
+lemma scaleRp2Rq_DM_big_XnD1 (F : int -> Rp) (r : int list) :
+  scaleRp2Rq (BigRp.XnD1CA.big predT F r)
+  =
+  BigRq.XnD1CA.big predT (scaleRp2Rq \o F) r.
+proof.
+elim: r => [| @/(\o) x l ih].
++ by rewrite BigRp.XnD1CA.big_nil BigRq.XnD1CA.big_nil scaleRp2Rq0.
++ rewrite BigRp.XnD1CA.big_consT BigRq.XnD1CA.big_consT /=.
   by rewrite scaleRp2Rq_DM; congr.
 qed.
 
@@ -1289,13 +1438,16 @@ rewrite /scaleRpv2Rqv /Mat_Rq.Vector."_.[_]" offunvK /vclamp.
 by case (0 <= i && i < l) => // rng_i; rewrite getv_out // scaleRp2Rq0.
 qed.
 
-(* Remaining Dependent Scaling Properties*)
-lemma scaleRp2Rq_DotDM (b : Rp_vec) (s : Rq_vec) : 
-  s \in dsmallRq_vec => dotp (scaleRpv2Rqv b) s = scaleRp2Rq (dotp b (Rqv2Rpv s)).
+(* Remaining Dependent Scaling Properties *)
+lemma upscaleRq_eqep_DotDll (a : Rp_vec) (b : Rq_vec) : 
+  upscaleRq (dotp (Rpv2Rqv a) b) (eq - ep) = dotp (scaleRpv2Rqv a) b.
 proof.
-move /supp_dsmallRq_vec => val_coeff; rewrite /dotp scaleRp2Rq_DM_big_Mat /(\o).
-rewrite !Mat_Rq.Big.BAdd.big_seq &(Mat_Rq.Big.BAdd.eq_bigr) /= => i /mem_range rng_i.
-by rewrite Rqv2RpvE scaleRp2Rq_MA scaleRpv2RqvE Rq2Rp_Rp2Rq_small_inv 1:val_coeff.
+rewrite /dotp upscaleRq_eqep_DM_big_Mat.
+rewrite !Mat_Rq.Big.BAdd.big_seq &(Mat_Rq.Big.BAdd.eq_bigr) /= /(\o) => i /mem_range rng_i.
+rewrite upscaleRq_eqep_MAl; congr; rewrite eq_sym scaleRpv2RqvE polyXnD1_eqP => j rng_j.
+rewrite !rcoeffZ_sum //= Rpv2RqvE Rp2RqE /scaleZp2Zq /upscaleZq /Zp2Zq !inzmodK -eq_inzmod /upscale.
+do 3! congr; rewrite //= pmod_small // ge0_asint /= (ltz_trans p) ?gtp_asint ltz_weexpn2l;
+                     smt(ge2_ep geet2_ep geep1_eq).
 qed.
 
 (* - Specific to Security Proof - *)
@@ -1334,38 +1486,57 @@ by rewrite 2!rcoeffD scaleRq2RpE scaleR22Rp_varE Rq2RpE scaleR22RpE eq_comp23_Zq
 qed.
 
 (* - Specific to Equivalence Between Descriptions of PKE - *)
-lemma eq_comp_enc_altenc (b : Rp_vec) (s : Rq_vec) (m : R2): 
-  s \in dsmallRq_vec =>
+lemma eq_scaleZp2ZqZq2Zp_upscaleZq (z : Zq) : scaleZp2Zq (Zq2Zp z) = upscaleZq z (eq - ep).
+proof.
+rewrite /scaleZp2Zq /Zq2Zp /upscaleZq /upscale /shl /= -eq_inzmod inzmodK /p /q.
+by rewrite modz_pow2_mul; first smt(ge2_ep geep1_eq).
+qed.
+
+lemma eq_scaleRp2RqRq2Rp_upscaleRq (p : Rq) : scaleRp2Rq (Rq2Rp p) = upscaleRq p (eq - ep).
+proof.
+rewrite polyXnD1_eqP => i rng_i.
+by rewrite scaleRp2RqE Rq2RpE eq_sym upscaleRqE eq_scaleZp2ZqZq2Zp_upscaleZq.
+qed.
+
+lemma eq_scaleRp2R2tRq2Rp_scaleRq2R2tupscaleRq (p : Rq) :
+  scaleRp2R2t (Rq2Rp p)
+  =
+  scaleRq2R2t (upscaleRq p (eq - ep)).
+proof. by rewrite -eq_scaleRp2RqRq2Rp_upscaleRq scaleRp2Rq2R2t_comp. qed.
+
+lemma eq_comp_enc_altenc (b : Rp_vec) (s : Rq_vec) (m : R2) : 
   scaleRp2R2t ((dotp b (Rqv2Rpv s)) + Rq2Rp h1 + scaleR22Rp m) 
   =
   scaleRq2R2t ((dotp (scaleRpv2Rqv b) s) + upscaleRq h1 (eq - ep) + scaleR22Rq m).
 proof.
-move => mems; rewrite eq_sym scaleRp2Rq_DotDM // (upscaleRq_eqep_small h1) => [i rng_i|].
-rewrite rcoeffZ_sum //= inzmodK pmod_small /q /p;
-        smt(expr_ge0 ltz_weexpn2l ge2_ep geep1_eq ge3_eq geeq1_2ep).
-by rewrite scaleR22Rp2Rq_comp -2!scaleRp2Rq_DM scaleRp2Rq2R2t_comp.
+rewrite -upscaleRq_eqep_DotDll -upscaleRq_eqep_DM -Rq2Rp_DotDlr -Rq2Rp_DM.
+rewrite scaleRq2R2t_DM 2:scaleRp2R2t_DM; first 2 right => i rng_i; 
+        rewrite ?(scaleR22RqE, scaleR22RpE) /scaleZ22Zq /scaleZ22Zp; move: (Z2_asint_values m.[i]); 
+        case => ->; rewrite ?zeroE ?dvdz0 /upscale /shl /= inzmodK pmod_small ?expr_ge0 /= 
+        ?ltz_weexpn2l //= ?dvdz_exp2l; smt(ge0_et ge3_eq ge2_ep geet2_ep geep1_eq).
+by congr; [apply eq_scaleRp2R2tRq2Rp_scaleRq2R2tupscaleRq | 
+           rewrite scaleR22Rp2Rq_comp scaleRp2Rq2R2t_comp].
 qed.
 
 lemma eq_comp_dec_altdec (b' : Rp_vec) (s : Rq_vec) (c : R2t):
-  s \in dsmallRq_vec =>
   scaleRp2R2 ((dotp b' (Rqv2Rpv s)) + Rq2Rp h1 - scaleR2t2Rp c + Rq2Rp h2)
   =
   scaleRq2R2 ((dotp (scaleRpv2Rqv b') s) + upscaleRq h1 (eq - ep) - scaleR2t2Rq c 
   + upscaleRq h2 (eq - ep)).
 proof.
-move => mems.
-rewrite eq_sym scaleRp2Rq_DotDM // scaleR2t2Rp2Rq_comp !upscaleRq_eqep_small => [i rng_i | i rng_i |].
-+ rewrite rcoeffZ_sum //= inzmodK /q /p pmod_small; 
-          smt(expr_ge0 ltz_weexpn2l geep1_eq ge3_eq geeq1_2ep).
-+ rewrite rcoeffZ_sum //= inzmodK /q /p pmod_small.
-  - split; first rewrite subr_ge0 (_ : 2 ^ (ep - 2) = 2 ^ (ep - et - 2) * 2 ^ et).
-    * rewrite -exprD_nneg; 1, 2: smt(geet2_ep ge0_et); congr; ring.
-      rewrite ler_pmulr 1:expr_gt0 2:exprn_ege1 // ge0_et.
-    * move => ?; rewrite ltr_subl_addr (addzC (2 ^ eq)) ltr_spaddl 1:expr_gt0 2:ler_weexpn2l;
-                 smt(ge2_ep geep1_eq).
-  - rewrite ltr_subl_addr (addzC (2 ^ ep)) ltr_spaddl 1:expr_gt0 2:ler_weexpn2l; smt(ge2_ep).
-rewrite Rq.ComRing.addrC Rp.ComRing.addrC Rq.ComRing.addrA Rp.ComRing.addrA. 
-by rewrite -2!scaleRp2Rq_DM -scaleRp2Rq_BM scaleRp2Rq2R2_comp.
+have ->: 
+  (dotp b' (Rqv2Rpv s)) + Rq2Rp h1 - scaleR2t2Rp c + Rq2Rp h2
+  =
+  (dotp b' (Rqv2Rpv s)) + Rq2Rp h1 + Rq2Rp h2 - scaleR2t2Rp c by ring.
+have ->:
+  (dotp (scaleRpv2Rqv b') s + upscaleRq h1 (eq - ep) - scaleR2t2Rq c) + upscaleRq h2 (eq - ep)
+  =
+  (dotp (scaleRpv2Rqv b') s + upscaleRq h1 (eq - ep) + upscaleRq h2 (eq - ep) - scaleR2t2Rq c) 
+  by ring.
+rewrite -upscaleRq_eqep_DotDll -2!upscaleRq_eqep_DM -Rq2Rp_DotDlr -2!Rq2Rp_DM scaleRp2Rq2R2_comp. 
+congr; rewrite scaleRp2Rq_DM; congr.
++ by rewrite eq_scaleRp2RqRq2Rp_upscaleRq.
++ by rewrite -scaleR2t2Rp_N -scaleR2t2Rq_N scaleR2t2Rp2Rq_comp.
 qed.
 
 (* ------------------------------------------------------------------------------------- *)
@@ -1507,10 +1678,7 @@ module Saber_PKE_Scheme_Alt : Scheme = {
 
 (* --- Equivalence of Schemes --- *)
 (* - Equivalence of Key Generation - *)
-lemma eqv_kg: equiv[Saber_PKE_Scheme.kg ~ Saber_PKE_Scheme_Alt.kg : 
-  true 
-  ==> 
-  ={res} /\ sk_decode_s res.`2{1} \in dsmallRq_vec /\ sk_decode_s res.`2{2} \in dsmallRq_vec].
+lemma eqv_kg: equiv[Saber_PKE_Scheme.kg ~ Saber_PKE_Scheme_Alt.kg : true ==> ={res}].
 proof.
 proc.
 auto; progress; by rewrite sks_enc_dec_inv.
@@ -1521,19 +1689,14 @@ lemma eqv_enc: equiv[Saber_PKE_Scheme.enc ~ Saber_PKE_Scheme_Alt.enc : ={pk, m} 
 proof.
 proc.
 auto; progress. 
-congr; rewrite &(pw_eq) //.
-by move: H; apply eq_comp_enc_altenc.
+by congr; rewrite &(pw_eq) //; apply eq_comp_enc_altenc.
 qed.
 
 (* - Equivalence of Decryption - *)
-lemma eqv_dec: equiv[Saber_PKE_Scheme.dec ~ Saber_PKE_Scheme_Alt.dec : 
-  ={sk, c} /\ sk_decode_s sk{1} \in dsmallRq_vec /\ sk_decode_s sk{2} \in dsmallRq_vec
-  ==> 
-  ={res}].
+lemma eqv_dec: equiv[Saber_PKE_Scheme.dec ~ Saber_PKE_Scheme_Alt.dec : ={sk, c} ==> ={res}].
 proof.
 proc.
 auto; progress.
-congr.
-by move: H; apply eq_comp_dec_altdec.
+by congr; apply eq_comp_dec_altdec.
 qed.
 
