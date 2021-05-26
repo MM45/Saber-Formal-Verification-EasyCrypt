@@ -633,14 +633,14 @@ axiom sks_dec_enc_inv : cancel sk_decode_s sk_encode_s.
 axiom cs_enc_dec_inv : cancel c_encode_s c_decode_s.
 axiom cs_dec_enc_inv : cancel c_decode_s c_encode_s.
 
-axiom pkg_enc_dec_inv ['a] (x : 'a) : pk_decode_g (pk_encode_g x) = x.
-axiom pkg_dec_enc_inv ['a] (x : pkey) (y : 'a) : y = pk_decode_g x => pk_encode_g y = x.
+axiom pkg_enc_dec_inv ['a] : cancel pk_encode_g<:'a> pk_decode_g.
+axiom pkg_dec_dec_inv ['a] : cancel pk_decode_g pk_encode_g<:'a>.
 
-axiom skg_enc_dec_inv ['a] (x : 'a) : sk_decode_g (sk_encode_g x) = x.
-axiom skg_dec_enc_inv ['a] (x : skey) (y : 'a) : y = sk_decode_g x => sk_encode_g y = x.
+axiom skg_enc_dec_inv ['a] : cancel sk_encode_g<:'a> sk_decode_g.
+axiom skg_dec_dec_inv ['a] : cancel sk_decode_g sk_encode_g<:'a>.
 
-axiom cg_enc_dec_inv ['a] (x : 'a) : c_decode_g (c_encode_g x) = x. 
-axiom cg_dec_enc_inv ['a] (x : ciphertext) (y : 'a) : y = c_decode_g x => c_encode_g y = x.
+axiom cg_enc_dec_inv ['a] : cancel c_encode_g<:'a> c_decode_g.
+axiom cg_dec_dec_inv ['a] : cancel c_decode_g c_encode_g<:'a>.
 
 axiom m_enc_dec_inv : cancel m_encode m_decode.
 axiom m_dec_enc_inv : cancel m_decode m_encode.
@@ -1392,8 +1392,7 @@ elim: r => [| @/(\o) x l ih].
   by rewrite scaleRp2Rq_DM; congr.
 qed.
 
-lemma scaleRp2Rppq2R2t_comp (p : Rp) :
-      scaleRp2R2t p = scaleRppq2R2t (scaleRp2Rppq p).
+lemma scaleRp2Rppq2R2t_comp (p : Rp) : scaleRp2R2t p = scaleRppq2R2t (scaleRp2Rppq p).
 proof.
 by rewrite polyXnD1_eqP => i rng_i; rewrite !rcoeffZ_sum //= rcoeffZ_sum //= scaleZp2Zppq2Z2t_comp.
 qed.
@@ -1408,8 +1407,7 @@ proof.
 by rewrite polyXnD1_eqP => i rng_i; rewrite !rcoeffZ_sum //= rcoeffZ_sum //= scaleZp2Zq2Z2t_comp.
 qed.
 
-lemma scaleR2t2Rp2Rq_comp (p : R2t) :
-  scaleR2t2Rq p = scaleRp2Rq (scaleR2t2Rp p).
+lemma scaleR2t2Rp2Rq_comp (p : R2t) : scaleR2t2Rq p = scaleRp2Rq (scaleR2t2Rp p).
 proof.
 by rewrite polyXnD1_eqP => i rng_i; rewrite !rcoeffZ_sum //= rcoeffZ_sum //= scaleZ2t2Zp2Zq_comp.
 qed.
