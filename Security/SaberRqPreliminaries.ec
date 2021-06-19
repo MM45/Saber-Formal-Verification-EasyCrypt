@@ -517,13 +517,6 @@ op Rpv2Rqv (pv : Rp_vec) : Rq_vec = offunv (fun (i : int) => Rp2Rq pv.[i]).
 op shl (x : int, ex : int) : int = x * 2 ^ ex.
 op shr (x : int, ex : int) : int = x %/ 2 ^ ex.
 
-op shl_enc (x : R2, ex : int) : Rp =  
-  BigRp.XnD1CA.bigi predT (fun (i : int) => 
-  Zp.inzmod (shl (Z2.asint x.[i]) ex) ** exp Rp.iX i) 0 n.   
-op shl_dec (x : R2t) : Rp =
-  BigRp.XnD1CA.bigi predT (fun (i : int) => 
-  Zp.inzmod (shl (Z2t.asint x.[i]) (ep - et - 1)) ** exp Rp.iX i) 0 n.
-
 op downscale (x : int, ea : int, eb : int) : int = shr x (ea - eb).
 op upscale (x : int, ea : int, eb : int) : int = shl x (ea - eb).
 
@@ -701,7 +694,6 @@ rewrite ger0_norm 2:(ltr_le_trans p _ _ (Zp.gtp_asint z)) /p /q; first smt(ge8_q
 by apply (ler_weexpn2l 2 _ ep eq _); 2: smt(ge2_ep geep1_eq).
 qed.
 
-(* -p < z < p ???? *)
 lemma Zq2Zp_Zp2Zq_small_inv (z : Zq) : asint z < p => Zp2Zq (Zq2Zp z) = z.
 proof.
 move => ltp_z; by rewrite /Zq2Zp /Zp2Zq -{2}asintK inzmodK pmod_small 2?(ge0_asint, ltp_z).

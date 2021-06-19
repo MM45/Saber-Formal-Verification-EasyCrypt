@@ -1,5 +1,3 @@
-pragma Goals:printall.
-
 (* ----------------------------------- *)
 (*  Require/Import Theories            *)
 (* ----------------------------------- *)
@@ -39,7 +37,7 @@ lemma eq_q4t_2eqet2 : q %/ (4 * t) = 2 ^ (eq - et - 2).
 proof.
 rewrite /q /t (_ :  2 ^ eq =  2 ^ (eq - et - 2) * (4 * 2 ^ et)) 2:mulzK //.
 + rewrite 1:(_ : 4 = 2 ^ 2) 1:expr2 // -exprD_nneg 2:ge0_et // -exprD_nneg;
-          1, 2:smt(ge0_et geet2_ep geep1_eq).
+          1, 2: smt(ge0_et geet2_ep geep1_eq).
   by congr; ring.
 + by rewrite neq_ltz; right; rewrite mulr_gt0 2:expr_gt0.
 qed.

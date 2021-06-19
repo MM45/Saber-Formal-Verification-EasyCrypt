@@ -648,15 +648,15 @@ have -> //: Pr[Game4(A).main() @ &m : res] = Pr[Auxiliary_Game(A).main() @ &m : 
   proc; inline *.
   swap {2} 7 -6.
   call (_ : true); wp.
-  rnd (fun (x : Rp) => x + (shl_enc (m_decode (if u{1} then m1{1} else m0{1})) (2 * ep - eq - 1)))  
-      (fun (x : Rp) => x - (shl_enc (m_decode (if u{1} then m1{1} else m0{1})) (2 * ep - eq - 1))).
+  rnd (fun (x : Rp) => x + (scaleR22Rp_var (m_decode (if u{1} then m1{1} else m0{1})) (2 * ep - eq - 1)))  
+      (fun (x : Rp) => x - (scaleR22Rp_var (m_decode (if u{1} then m1{1} else m0{1})) (2 * ep - eq - 1))).
   auto; call(_ : true); auto.
   progress.
-  - pose x := shl_enc (m_decode (if uL then result_R.`2 else result_R.`1)) (2 * ep - eq - 1).
+  - pose x := scaleR22Rp_var (m_decode (if uL then result_R.`2 else result_R.`1)) (2 * ep - eq - 1).
     by rewrite -addrA addNr addrC add0r. 
   - by apply /rnd_funi /Rp.dpolyXnD1_funi.
   - by apply /is_fullP /Rp.dpolyXnD1_fu.
-  - pose x := shl_enc (m_decode (if uL then result_R.`2 else result_R.`1)) (2 * ep - eq - 1).
+  - pose x := scaleR22Rp_var (m_decode (if uL then result_R.`2 else result_R.`1)) (2 * ep - eq - 1).
     have xx_0: forall (x : Rp), x + (- x) = Rp.zeroXnD1.
     * by move => x0; rewrite -(addrN x0).
     by rewrite -addrA (xx_0 x) addrC add0r.
