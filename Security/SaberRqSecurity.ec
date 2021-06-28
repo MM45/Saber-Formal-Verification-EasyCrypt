@@ -622,7 +622,7 @@ by apply distrC.
 qed.
 
 (* Auxiliary_Game Analysis *)
-lemma Aux_Prob_Half &m  (A <: Adversary) :
+lemma Aux_Prob_Half &m (A <: Adversary) :
       Pr[Auxiliary_Game(A).main() @ &m : res]  = 1%r / 2%r. 
 proof.
 byphoare => //.
@@ -638,31 +638,25 @@ by progress; [apply dseed_ll        |
 qed.
 
 (* Game4 <==> Auxiliary_Game *)
-lemma Equivalence_Game4_Aux &m  (A <: Adversary) :
-      `| Pr[Game4(A).main() @ &m : res] - 1%r /2%r | 
-      =
-      `| Pr[Auxiliary_Game(A).main() @ &m : res] - 1%r / 2%r |.
+lemma Equal_Prob_Game4_Aux &m (A <: Adversary) :
+      Pr[Game4(A).main() @ &m : res] = Pr[Auxiliary_Game(A).main() @ &m : res].
 proof.
-have -> //: Pr[Game4(A).main() @ &m : res] = Pr[Auxiliary_Game(A).main() @ &m : res].
-+ byequiv => //. 
-  proc; inline *.
-  swap {2} 7 -6.
-  call (_ : true); wp.
-  rnd (fun (x : Rp) => x + (scaleR22Rp_var (m_decode (if u{1} then m1{1} else m0{1})) (2 * ep - eq - 1)))  
-      (fun (x : Rp) => x - (scaleR22Rp_var (m_decode (if u{1} then m1{1} else m0{1})) (2 * ep - eq - 1))).
-  auto; call(_ : true); auto.
-  progress; 1, 4: by ring.
-  - by apply /rnd_funi /Rp.dpolyXnD1_funi.
-  - by apply /is_fullP /Rp.dpolyXnD1_fu.  
+byequiv => //. 
+proc; inline *.
+swap {2} 7 -6.
+call (_ : true); wp.
+rnd (fun (x : Rp) => x + (scaleR22Rp_var (m_decode (if u{1} then m1{1} else m0{1})) (2 * ep - eq - 1)))  
+    (fun (x : Rp) => x - (scaleR22Rp_var (m_decode (if u{1} then m1{1} else m0{1})) (2 * ep - eq - 1))).
+auto; call(_ : true); auto.
+progress; 1, 4: by ring.
+- by apply /rnd_funi /Rp.dpolyXnD1_funi.
+- by apply /is_fullP /Rp.dpolyXnD1_fu.  
 qed.
 
 (* Game4 Analysis *)
 lemma Game4_Prob_Half &m (A <: Adversary) :
       Pr[Game4(A).main() @ &m : res] = 1%r / 2%r. 
-proof.
-rewrite -(Real.RField.subr_eq0 Pr[Game4(A).main() @ &m : res] (1%r / 2%r)) -RealOrder.normr0P.
-by rewrite (Equivalence_Game4_Aux &m A) (Aux_Prob_Half &m A).
-qed.
+proof. by rewrite (Equal_Prob_Game4_Aux &m A) (Aux_Prob_Half &m A). qed.
 
 (* Intelligibility Intermediate Result *)
 lemma Difference_Game1_Game4_To_XMLWR &m (A <: Adversary):
