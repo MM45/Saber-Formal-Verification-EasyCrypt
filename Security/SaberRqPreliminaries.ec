@@ -527,7 +527,6 @@ op upscaleZq (z : Zq, ez : int) : Zq = Zq.inzmod (upscale (Zq.asint z) ez 0).
 op scaleZq2Zp (z : Zq) : Zp = Zp.inzmod (downscale (Zq.asint z) eq ep).
 op scaleZq2Z2 (z : Zq) : Z2 = Z2.inzmod (downscale (Zq.asint z) eq 1).
 op scaleZq2Z2t (z : Zq) : Z2t = Z2t.inzmod (downscale (Zq.asint z) eq (et + 1)).
-op scaleZp2Zp (z : Zp) : Zp = Zp.inzmod (downscale (Zp.asint z) ep ep).
 op scaleZp2Zppq (z : Zp) : Zppq = Zppq.inzmod (downscale (Zp.asint z) ep (2 * ep - eq)).
 op scaleZp2Z2t (z : Zp) : Z2t = Z2t.inzmod (downscale (Zp.asint z) ep (et + 1)).
 op scaleZp2Z2 (z : Zp) : Z2 = Z2.inzmod (downscale (Zp.asint z) ep 1).
@@ -555,8 +554,6 @@ op scaleRq2R2t (p : Rq) : R2t =
   BigR2t.XnD1CA.bigi predT (fun i => scaleZq2Z2t p.[i] ** exp R2t.iX i) 0 n.
 op scaleRq2R2 (p : Rq) : R2 =
   BigR2.XnD1CA.bigi predT (fun i => scaleZq2Z2 p.[i] ** exp R2.iX i) 0 n. 
-op scaleRp2Rp (p : Rp) : Rp = 
-  BigRp.XnD1CA.bigi predT (fun (i : int) => scaleZp2Zp p.[i] ** exp Rp.iX i) 0 n.
 op scaleRp2Rppq (p : Rp) : Rppq = 
   BigRppq.XnD1CA.bigi predT (fun (i : int) => scaleZp2Zppq p.[i] ** exp Rppq.iX i) 0 n.
 op scaleRp2R2t (p : Rp) : R2t = 
@@ -966,9 +963,6 @@ lemma upscale_MAl (x y ea eb : int) : upscale (x * y) ea eb = upscale x ea eb * 
 proof. by rewrite /upscale /shl mulrAC. qed.
 
 (* Z Scaling *)
-lemma scaleZp2Zp_id (z : Zp) : scaleZp2Zp z = z.
-proof. by rewrite /scaleZp2Zp downscale_id 2: Zp.asintK. qed.
-
 lemma scaleZ22Zp_var0 (ez : int) : scaleZ22Zp_var Z2.zero ez = Zp.zero.
 proof. by rewrite /scaleZ22Zp_var zeroE. qed.
 
@@ -1204,9 +1198,6 @@ move: (Z2_asint_values z1); case => -> /= @/q.
 qed.
 
 (* Polynomial Scaling *)
-lemma scaleRp2Rp_id (p : Rp) : scaleRp2Rp p = p.
-proof. by rewrite /scaleRp2Rp polyXnD1_eqP => i rngi; rewrite rcoeffZ_sum //= scaleZp2Zp_id. qed.
-
 lemma scaleRp2Rq0 : scaleRp2Rq Rp.zeroXnD1 = Rq.zeroXnD1.
 proof. by rewrite polyXnD1_eqP => i rng_i; rewrite rcoeffZ_sum //= !rcoeff0 scaleZp2Zq0. qed.
 

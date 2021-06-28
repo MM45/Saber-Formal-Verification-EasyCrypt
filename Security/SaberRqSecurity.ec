@@ -284,7 +284,7 @@ module Game3(A : Adversary) = {
       s' <$ dsmallRq_vec;
       b' <- scaleRqv2Rpv ((trmx _A) *^ s' + h);
       v' <- scaleRq2Rp ((dotp b s') + h1);
-      cmu <- scaleRp2Rp (v' + (scaleR22Rp_var (m_decode (if u then m1 else m0)) (2 * ep - eq - 1)));
+      cmu <- v' + (scaleR22Rp_var (m_decode (if u then m1 else m0)) (2 * ep - eq - 1));
    
       u' <@ A.guess(c_encode_g (cmu, b'));
 
@@ -318,7 +318,7 @@ module Game4(A : Adversary) = {
       (* Skip: s' <$ dsmallRq_vec; *)
       b' <$ dRp_vec;
       v' <$ dRp;
-      cmu <- scaleRp2Rp (v' + (scaleR22Rp_var (m_decode (if u then m1 else m0)) (2 * ep - eq - 1)));
+      cmu <- v' + (scaleR22Rp_var (m_decode (if u then m1 else m0)) (2 * ep - eq - 1));
       
       u' <@ A.guess(c_encode_g (cmu, b'));
 
@@ -399,7 +399,7 @@ module B1(A : Adversary) : Adv_XMLWR = {
 
       (m0, m1) <@ A.choose(pk_encode_g (sd, a));
 
-      cmw <- scaleRp2Rp (d + (scaleR22Rp_var (m_decode (if w then m1 else m0)) (2 * ep - eq - 1)));
+      cmw <- d + (scaleR22Rp_var (m_decode (if w then m1 else m0)) (2 * ep - eq - 1));
       
       w' <@ A.guess(c_encode_g (cmw, b));
       
@@ -579,7 +579,7 @@ have -> //: Pr[Game2b(A).main() @ &m : res] = Pr[Game3( A3(A) ).main() @ &m : re
   auto; call(_ : true); auto; call(_ : true); auto.
   progress.
   - by rewrite pkg_enc_dec_inv.
-  - rewrite cg_enc_dec_inv scaleRp2Rp_id /=; congr.
+  - rewrite cg_enc_dec_inv /=; congr.
     rewrite &(pw_eq) // eq_comp23; do 2! congr.
     by rewrite eq_sym &(Rq2Rp_DG23).
 qed.
@@ -651,16 +651,9 @@ have -> //: Pr[Game4(A).main() @ &m : res] = Pr[Auxiliary_Game(A).main() @ &m : 
   rnd (fun (x : Rp) => x + (scaleR22Rp_var (m_decode (if u{1} then m1{1} else m0{1})) (2 * ep - eq - 1)))  
       (fun (x : Rp) => x - (scaleR22Rp_var (m_decode (if u{1} then m1{1} else m0{1})) (2 * ep - eq - 1))).
   auto; call(_ : true); auto.
-  progress.
-  - pose x := scaleR22Rp_var (m_decode (if uL then result_R.`2 else result_R.`1)) (2 * ep - eq - 1).
-    by rewrite -addrA addNr addrC add0r. 
+  progress; 1, 4: by ring.
   - by apply /rnd_funi /Rp.dpolyXnD1_funi.
-  - by apply /is_fullP /Rp.dpolyXnD1_fu.
-  - pose x := scaleR22Rp_var (m_decode (if uL then result_R.`2 else result_R.`1)) (2 * ep - eq - 1).
-    have xx_0: forall (x : Rp), x + (- x) = Rp.zeroXnD1.
-    * by move => x0; rewrite -(addrN x0).
-    by rewrite -addrA (xx_0 x) addrC add0r.
-  - by rewrite scaleRp2Rp_id.  
+  - by apply /is_fullP /Rp.dpolyXnD1_fu.  
 qed.
 
 (* Game4 Analysis *)
