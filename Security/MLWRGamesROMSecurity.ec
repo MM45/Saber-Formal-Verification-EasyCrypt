@@ -212,50 +212,71 @@ module AXM(AX : Adv_XMLWR_RO) : Adv_MLWR1 = {
 (* ----------------------------------- *)
 
 (* Reduction From GMLWR_RO to MLWR *)
-lemma GMLWR_RO_to_MLWR &m (A <: Adv_GMLWR_RO{RO}) :
+lemma Equivalent_GMLWR_RO_MLWR (A <: Adv_GMLWR_RO{RO}) :
+  equiv[GMLWR_RO(A).main ~ MLWR( AGM(A) ).main : ={glob A, u} ==> ={res}].
+proof.
+proc; inline *.
+case (u{1}).
++ conseq (_ : ={glob A} /\ u{1} /\ u{2} ==> _) => //.
+  rcondt {1} 8; 2: rcondt {2} 3; first 2 by auto.
+  rcondt {1} 5; first by auto; progress; apply SmtMap.mem_empty.
+  swap {1} [7..8] -2; swap {1} [4..6] -2.
+  by wp; call (_ : ={RO.m}); 1: proc; auto.
++ conseq (_ :  ={glob A} /\ !u{1} /\ !u{2} ==> _) => //. 
+  rcondf {1} 8; 2: rcondf {2} 3; first 2 by auto.
+  rcondt {1} 5; first by auto; progress; apply SmtMap.mem_empty.
+  swap {1} 4 -3; swap {1} 7 -5. 
+  wp; call (_ : ={RO.m}); 1: proc; auto; progress.
+  by do 3! congr; rewrite SmtMap.get_set_sameE oget_some. 
+qed.
+
+lemma Equal_Advantage_GMLWR_RO_MLWR &m (A <: Adv_GMLWR_RO{RO}) :
   `| Pr[GMLWR_RO(A).main(true) @ &m : res] - Pr[GMLWR_RO(A).main(false) @ &m : res] |
    =
   `| Pr[MLWR( AGM(A) ).main(true) @ &m : res] - Pr[MLWR( AGM(A) ).main(false) @ &m : res] |.
 proof.
-have ->: Pr[GMLWR_RO(A).main(true) @ &m : res] =  Pr[MLWR( AGM(A) ).main(true) @ &m : res].
-+ byequiv => //.
-  proc; inline *.
-  rcondt {1} 8; 2: rcondt {2} 3; first 2 auto.
-  rcondt {1} 5; first auto; progress; smt.
-  swap {1} [7..8] -2; swap {1} [4..6] -2.
-  by wp; call (_ : ={RO.m}); 1: proc; auto.
-have -> //: Pr[GMLWR_RO(A).main(false) @ &m : res] =  Pr[MLWR( AGM(A) ).main(false) @ &m : res].
-+ byequiv => //.
-  proc; inline *.
-  rcondf {1} 8; 2: rcondf {2} 3; first 2 auto.
-  rcondt {1} 5; first auto; progress; smt.
-  swap {1} 4 -3; swap {1} 7 -5. 
-  wp; call (_ : ={RO.m}); 1: proc; auto.
-  progress; smt.
-qed.  
+have ->: Pr[GMLWR_RO(A).main(true) @ &m : res] = Pr[MLWR( AGM(A) ).main(true) @ &m : res].
++ by byequiv (Equivalent_GMLWR_RO_MLWR A).
+have -> //: Pr[GMLWR_RO(A).main(false) @ &m : res] = Pr[MLWR( AGM(A) ).main(false) @ &m : res].
++ by byequiv (Equivalent_GMLWR_RO_MLWR A).
+qed.
+
 
 (* Reduction From XMLWR_RO to MLWR1 *)
-lemma XMLWR_RO_to_MLWR1 &m (A <: Adv_XMLWR_RO{RO}) :
+lemma Equivalent_XMLWR_RO_MLWR1 (A <: Adv_XMLWR_RO{RO}) :
+  equiv[XMLWR_RO(A).main ~ MLWR1( AXM(A) ).main : ={glob A, u} ==> ={res}].
+proof.
+proc; inline *.
+case (u{1}).
++ conseq (_ : ={glob A} /\ u{1} /\ u{2} ==> _) => //.
+  rcondt {1} 8; 2: rcondt {1} 10; 3: rcondt {2} 4; first 3 auto.
+  rcondt {1} 5; first by auto; progress; apply SmtMap.mem_empty.
+  swap {1} [7..10] -2; swap {1} [4..8] - 3; swap {1} 4 -2.
+  wp; call (_ : ={RO.m}); first by proc; auto. 
+  wp; rnd; wp; do 4! rnd; rnd (fun (m : Rq_mat) => trmx m). 
+  skip; progress; 1, 4, 5: by rewrite trmxK.
+  - by apply /rnd_funi /is_full_funiform /dRq_mat_uni /dRq_mat_fu.
+  - by apply /is_fullP /dRq_mat_fu.
++ conseq (_ :  ={glob A} /\ !u{1} /\ !u{2} ==> _) => //. 
+  rcondf {1} 8; 2: rcondf {1} 10; 3: rcondf {2} 4; first 3 by auto.
+  rcondt {1} 5; first by auto; progress; apply SmtMap.mem_empty.
+  swap {1} 9 -2; swap {1} [7..8] -2; swap {1} [4..6] -2.
+  wp; call (_ : ={RO.m}); first by proc; auto.  
+  wp; rnd; wp; do 2! rnd; rnd (fun (m : Rq_mat) => trmx m). 
+  auto; progress; 1, 4, 6: by rewrite trmxK.
+  - by apply /rnd_funi /is_full_funiform /dRq_mat_uni /dRq_mat_fu.
+  - by apply /is_fullP /dRq_mat_fu.
+  - by do 3! congr; rewrite SmtMap.get_set_sameE oget_some.
+qed.
+
+
+lemma Equal_Advantage_XMLWR_RO_MLWR1 &m (A <: Adv_XMLWR_RO{RO}) :
   `| Pr[XMLWR_RO(A).main(true) @ &m : res] - Pr[XMLWR_RO(A).main(false) @ &m : res] |
    =
   `| Pr[MLWR1( AXM(A) ).main(true) @ &m : res] - Pr[MLWR1( AXM(A) ).main(false) @ &m : res] |.
 proof.
 have ->: Pr[XMLWR_RO(A).main(true) @ &m : res] =  Pr[MLWR1( AXM(A) ).main(true) @ &m : res].
-+ byequiv => //.
-  proc; inline *.
-  rcondt {1} 8; 2: rcondt {1} 10; 3: rcondt {2} 4; first 3 auto.
-  rcondt {1} 5; first auto; progress; smt.
-  swap {1} [7..10] -2; swap {1} [4..8] - 3; swap {1} 4 -2.
-  wp; call (_ : ={RO.m}); first proc; auto. 
-  wp; rnd; wp; do 4! rnd; rnd (fun (m : Rq_mat) => trmx m). 
-  skip; progress; smt.
++ by byequiv (Equivalent_XMLWR_RO_MLWR1 A).
 have -> //:  Pr[XMLWR_RO(A).main(false) @ &m : res] =  Pr[MLWR1( AXM(A) ).main(false) @ &m : res].
-+ byequiv => //.
-  proc; inline *.
-  rcondf {1} 8; 2: rcondf {1} 10; 3: rcondf {2} 4; first 3 auto.
-  rcondt {1} 5; first auto; progress; smt.
-  swap {1} 9 -2; swap {1} [7..8] -2; swap {1} [4..6] -2.
-  wp; call (_ : ={RO.m}); first proc; auto.  
-  wp; rnd; wp; do 2! rnd; rnd (fun (m : Rq_mat) => trmx m). 
-  auto; progress; smt.
++ by byequiv (Equivalent_XMLWR_RO_MLWR1 A).
 qed.
