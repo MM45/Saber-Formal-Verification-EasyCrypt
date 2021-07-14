@@ -235,8 +235,32 @@ clone Matrix as Mat_Rq with
     op ZR.ofint  <- Rq.ComRing.ofint,
     op ZR.exp    <- Rq.ComRing.exp,
     op ZR.lreg   <- Rq.ComRing.lreg
-
-  proof ge0_size by apply (lez_trans 1 _ _ _ ge1_l).
+  
+  proof ge0_size by apply (lez_trans 1 _ _ _ ge1_l),
+        ZR.addrA by exact Rq.ComRing.addrA,
+        ZR.addrC by exact Rq.ComRing.addrC, 
+        ZR.add0r by exact Rq.ComRing.add0r,
+        ZR.addNr by exact Rq.ComRing.addNr,
+        ZR.oner_neq0 by exact Rq.ComRing.oner_neq0,
+        ZR.mulrA by exact Rq.ComRing.mulrA,
+        ZR.mulrC by exact Rq.ComRing.mulrC,
+        ZR.mul1r by exact Rq.ComRing.mul1r,
+        ZR.mulrDl by exact Rq.ComRing.mulrDl,
+        ZR.mulVr by exact Rq.ComRing.mulVr,
+        ZR.unitP by exact Rq.ComRing.unitP,
+        ZR.unitout by exact Rq.ComRing.unitout, 
+        Big.CR.addrA by exact Rq.ComRing.addrA,
+        Big.CR.addrC by exact Rq.ComRing.addrC, 
+        Big.CR.add0r by exact Rq.ComRing.add0r,
+        Big.CR.addNr by exact Rq.ComRing.addNr,
+        Big.CR.oner_neq0 by exact Rq.ComRing.oner_neq0,
+        Big.CR.mulrA by exact Rq.ComRing.mulrA,
+        Big.CR.mulrC by exact Rq.ComRing.mulrC,
+        Big.CR.mul1r by exact Rq.ComRing.mul1r,
+        Big.CR.mulrDl by exact Rq.ComRing.mulrDl,
+        Big.CR.mulVr by exact Rq.ComRing.mulVr,
+        Big.CR.unitP by exact Rq.ComRing.unitP,
+        Big.CR.unitout by exact Rq.ComRing.unitout.
     
 type Rq_vec = Mat_Rq.vector.
 type Rq_mat = Mat_Rq.Matrix.matrix.
@@ -278,7 +302,31 @@ clone Matrix as Mat_Rp with
     op ZR.exp    <- Rp.ComRing.exp,
     op ZR.lreg   <- Rp.ComRing.lreg
 
-  proof ge0_size by apply (lez_trans 1 _ _ _ ge1_l).
+  proof ge0_size by apply (lez_trans 1 _ _ _ ge1_l),
+        ZR.addrA by exact Rp.ComRing.addrA,
+        ZR.addrC by exact Rp.ComRing.addrC, 
+        ZR.add0r by exact Rp.ComRing.add0r,
+        ZR.addNr by exact Rp.ComRing.addNr,
+        ZR.oner_neq0 by exact Rp.ComRing.oner_neq0,
+        ZR.mulrA by exact Rp.ComRing.mulrA,
+        ZR.mulrC by exact Rp.ComRing.mulrC,
+        ZR.mul1r by exact Rp.ComRing.mul1r,
+        ZR.mulrDl by exact Rp.ComRing.mulrDl,
+        ZR.mulVr by exact Rp.ComRing.mulVr,
+        ZR.unitP by exact Rp.ComRing.unitP,
+        ZR.unitout by exact Rp.ComRing.unitout, 
+        Big.CR.addrA by exact Rp.ComRing.addrA,
+        Big.CR.addrC by exact Rp.ComRing.addrC, 
+        Big.CR.add0r by exact Rp.ComRing.add0r,
+        Big.CR.addNr by exact Rp.ComRing.addNr,
+        Big.CR.oner_neq0 by exact Rp.ComRing.oner_neq0,
+        Big.CR.mulrA by exact Rp.ComRing.mulrA,
+        Big.CR.mulrC by exact Rp.ComRing.mulrC,
+        Big.CR.mul1r by exact Rp.ComRing.mul1r,
+        Big.CR.mulrDl by exact Rp.ComRing.mulrDl,
+        Big.CR.mulVr by exact Rp.ComRing.mulVr,
+        Big.CR.unitP by exact Rp.ComRing.unitP,
+        Big.CR.unitout by exact Rp.ComRing.unitout.
 
 type Rp_vec = Mat_Rp.vector.
 
@@ -510,7 +558,7 @@ op Rp2Rppq (p : Rp) : Rppq =
   BigRppq.XnD1CA.bigi predT (fun (i : int) => Zp2Zppq p.[i] ** exp Rppq.iX i) 0 n.
 
 (* Lift Modular Reduction/Modulus Conversion to Polynomial Vectors *)
-op Rqv2Rpv (p : Rq_vec) : Rp_vec = offunv (fun (i : int) => Rq2Rp p.[i]).
+op Rqv2Rpv (pv : Rq_vec) : Rp_vec = offunv (fun (i : int) => Rq2Rp pv.[i]).
 op Rpv2Rqv (pv : Rp_vec) : Rq_vec = offunv (fun (i : int) => Rp2Rq pv.[i]).
 
 (* - Scaling (Bit-shift + Modulus Conversion) - *)
