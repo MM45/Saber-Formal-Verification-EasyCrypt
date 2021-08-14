@@ -275,8 +275,8 @@ lemma Equal_Advantage_XMLWR_RO_MLWR1 &m (A <: Adv_XMLWR_RO{RO}) :
    =
   `| Pr[MLWR1( AXM(A) ).main(true) @ &m : res] - Pr[MLWR1( AXM(A) ).main(false) @ &m : res] |.
 proof.
-have ->: Pr[XMLWR_RO(A).main(true) @ &m : res] =  Pr[MLWR1( AXM(A) ).main(true) @ &m : res].
+have ->: Pr[XMLWR_RO(A).main(true) @ &m : res] = Pr[MLWR1( AXM(A) ).main(true) @ &m : res].
 + by byequiv (Equivalent_XMLWR_RO_MLWR1 A).
-have -> //:  Pr[XMLWR_RO(A).main(false) @ &m : res] =  Pr[MLWR1( AXM(A) ).main(false) @ &m : res].
+have -> //:  Pr[XMLWR_RO(A).main(false) @ &m : res] = Pr[MLWR1( AXM(A) ).main(false) @ &m : res].
 + by byequiv (Equivalent_XMLWR_RO_MLWR1 A).
 qed.
