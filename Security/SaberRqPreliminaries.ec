@@ -671,14 +671,14 @@ axiom sks_dec_enc_inv : cancel sk_decode_s sk_encode_s.
 axiom cs_enc_dec_inv : cancel c_encode_s c_decode_s.
 axiom cs_dec_enc_inv : cancel c_decode_s c_encode_s.
 
-axiom pkg_enc_dec_inv ['a] : cancel pk_encode_g<:'a> pk_decode_g.
-axiom pkg_dec_dec_inv ['a] : cancel pk_decode_g pk_encode_g<:'a>.
+axiom pkg_enc_dec_inv ['a] : cancel pk_encode_g<:'a> pk_decode_g<:'a>.
+axiom pkg_dec_dec_inv ['a] : cancel pk_decode_g<:'a> pk_encode_g<:'a>.
 
-axiom skg_enc_dec_inv ['a] : cancel sk_encode_g<:'a> sk_decode_g.
-axiom skg_dec_dec_inv ['a] : cancel sk_decode_g sk_encode_g<:'a>.
+axiom skg_enc_dec_inv ['a] : cancel sk_encode_g<:'a> sk_decode_g<:'a>.
+axiom skg_dec_dec_inv ['a] : cancel sk_decode_g<:'a> sk_encode_g<:'a>.
 
-axiom cg_enc_dec_inv ['a] : cancel c_encode_g<:'a> c_decode_g.
-axiom cg_dec_dec_inv ['a] : cancel c_decode_g c_encode_g<:'a>.
+axiom cg_enc_dec_inv ['a] : cancel c_encode_g<:'a> c_decode_g<:'a>.
+axiom cg_dec_dec_inv ['a] : cancel c_decode_g<:'a> c_encode_g<:'a>.
 
 axiom m_enc_dec_inv : cancel m_encode m_decode.
 axiom m_dec_enc_inv : cancel m_decode m_encode.
