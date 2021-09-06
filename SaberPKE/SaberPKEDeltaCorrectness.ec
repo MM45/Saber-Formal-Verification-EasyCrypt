@@ -8,7 +8,7 @@ require import AllCore Distr ZModP IntDiv StdOrder List.
 require (*--*) ROM.
 
 (* --- Local --- *)
-require import SaberRqPreliminaries.
+require import SaberPreliminaries.
 (*---*) import Saber_PKE.
 (*---*) import Mat_Rp Mat_Rq.
 (*---*) import Zp Rp Rp.ComRing Rp.BasePoly.
@@ -473,7 +473,16 @@ module Delta_Prob_PProg = {
    }
 }.
 
-(* Equivalence Between Correctness Programs ROM and Delta-Prob Program*)
+(* Constant Probability of Delta-Prob Program *)
+lemma DeltaProb_Constant &m1 &m2 :
+  Pr[Delta_Prob_PProg.main() @ &m1 : res] = Pr[Delta_Prob_PProg.main() @ &m2 : res].
+proof.
+byequiv => //.
+proc.
+by auto.
+qed.
+
+(* Equivalence Between Correctness Programs ROM and Delta-Prob Program *)
 lemma Equivalence_CorrGenRom_DeltaProb :
   equiv[Correctness_Gen_ROM.main ~ Delta_Prob_PProg.main : true ==> ={res}].
 proof.

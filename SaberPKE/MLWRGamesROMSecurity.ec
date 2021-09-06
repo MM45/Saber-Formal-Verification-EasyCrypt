@@ -7,7 +7,7 @@ require import AllCore Distr DBool PROM.
 require (*--*) Matrix.
 
 (* --- Local --- *)
-require import SaberRqPreliminaries.
+require import SaberPreliminaries.
 (*---*) import Mat_Rq Mat_Rp.
 (*---*) import Rq Rp.
 (*---*) import Rq.ComRing Rp.ComRing.

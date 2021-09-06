@@ -1728,4 +1728,3 @@ proc.
 auto; progress.
 by congr; apply eq_comp_dec_altdec.
 qed.
-

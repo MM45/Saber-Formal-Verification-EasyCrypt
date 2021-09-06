@@ -7,7 +7,7 @@ require import AllCore Distr DBool ZModP IntDiv StdOrder.
 (*---*) import RealOrder.
 
 (* --- Local --- *)
-require import SaberRqPreliminaries.
+require import SaberPreliminaries.
 (*---*) import Mat_Rq Mat_Rp.
 (*---*) import Rq Rp.
 (*---*) import Rq.ComRing Rp.ComRing.
