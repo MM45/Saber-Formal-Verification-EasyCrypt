@@ -8,7 +8,7 @@ require import AllCore Distr ZModP IntDiv StdOrder List.
 require (*--*) ROM.
 
 (* --- Local --- *)
-require import SaberPreliminaries.
+require import SaberPKEPreliminaries.
 (*---*) import Saber_PKE.
 (*---*) import Mat_Rp Mat_Rq.
 (*---*) import Zp Rp Rp.ComRing Rp.BasePoly.
