@@ -94,7 +94,7 @@ qed.
 
 (* -------------------------------------------------------------------- *)
 clone BigComRing as BigXnD1 with
-  type t         <- polyXnD1,
+  type CR.t      <- polyXnD1,
     op CR.zeror  <- zeroXnD1,
     op CR.oner   <- oneXnD1,
     op CR.( + )  <- ( + ),
@@ -514,7 +514,6 @@ clone include PolyReduce with
   proof BasePoly.Coeff.mulVr     by exact Zp.ZModpRing.mulVr
   proof BasePoly.Coeff.unitP     by exact Zp.ZModpRing.unitP
   proof BasePoly.Coeff.unitout   by exact Zp.ZModpRing.unitout
-  proof BasePoly.Coeff.*
 
   remove abbrev BasePoly.Coeff.(-)
   remove abbrev BasePoly.Coeff.(/).

@@ -171,23 +171,7 @@ clone import PolyReduce.PolyReduceZp as Rmod with
   type Zp <- Zmod.zmod,
     op p  <- Zmod.p,
     op n  <- n,
-
-    op Zp.unit   <- Zmod.unit,
-    op Zp.zero   <- Zmod.zero,
-    op Zp.one    <- Zmod.one,
-    op Zp.( + )  <- Zmod.( + ),
-    op Zp.([-])  <- Zmod.([-]),
-    op Zp.( * )  <- Zmod.( * ),
-    op Zp.inv    <- Zmod.inv,
-    op Zp.inzmod <- Zmod.inzmod,
-    op Zp.asint  <- Zmod.asint,
-  
-    op Zp.DZmodP.dunifin <- Zmod.DZmodP.dunifin,
-  
-    op Zp.ZModpRing.ofint  <- Zmod.ZModpRing.ofint,
-    op Zp.ZModpRing.intmul <- Zmod.ZModpRing.intmul,
-    op Zp.ZModpRing.exp    <- Zmod.ZModpRing.exp,
-    op Zp.ZModpRing.lreg   <- Zmod.ZModpRing.lreg
+theory Zp <= Zmod
 
   proof gt0_n by smt(ge1_n)
   proof ge2_p by apply/Zmod.ge2_p
@@ -221,9 +205,9 @@ clone include PolyZ with
   rename [theory] "BigXnD1" as "BigRq".
 
 clone Matrix as Mat_Rq with 
-  type R         <- Rq,
     op size      <- l,
 
+  type ZR.t      <- Rq,
   pred ZR.unit   <- Rq.unit,
     op ZR.zeror  <- Rq.zeroXnD1,
     op ZR.oner   <- Rq.oneXnD1,
@@ -248,19 +232,7 @@ clone Matrix as Mat_Rq with
         ZR.mulrDl by exact Rq.ComRing.mulrDl,
         ZR.mulVr by exact Rq.ComRing.mulVr,
         ZR.unitP by exact Rq.ComRing.unitP,
-        ZR.unitout by exact Rq.ComRing.unitout, 
-        Big.CR.addrA by exact Rq.ComRing.addrA,
-        Big.CR.addrC by exact Rq.ComRing.addrC, 
-        Big.CR.add0r by exact Rq.ComRing.add0r,
-        Big.CR.addNr by exact Rq.ComRing.addNr,
-        Big.CR.oner_neq0 by exact Rq.ComRing.oner_neq0,
-        Big.CR.mulrA by exact Rq.ComRing.mulrA,
-        Big.CR.mulrC by exact Rq.ComRing.mulrC,
-        Big.CR.mul1r by exact Rq.ComRing.mul1r,
-        Big.CR.mulrDl by exact Rq.ComRing.mulrDl,
-        Big.CR.mulVr by exact Rq.ComRing.mulVr,
-        Big.CR.unitP by exact Rq.ComRing.unitP,
-        Big.CR.unitout by exact Rq.ComRing.unitout.
+        ZR.unitout by exact Rq.ComRing.unitout.
     
 type Rq_vec = Mat_Rq.vector.
 type Rq_mat = Mat_Rq.Matrix.matrix.
@@ -287,9 +259,9 @@ clone include PolyZ with
   rename [theory] "BigXnD1" as "BigRp".
 
 clone Matrix as Mat_Rp with 
-  type R         <- Rp,
-    op size      <- l,
+  op size      <- l,
 
+  type ZR.t      <- Rp,
   pred ZR.unit   <- Rp.unit,
     op ZR.zeror  <- Rp.zeroXnD1,
     op ZR.oner   <- Rp.oneXnD1,
@@ -314,19 +286,7 @@ clone Matrix as Mat_Rp with
         ZR.mulrDl by exact Rp.ComRing.mulrDl,
         ZR.mulVr by exact Rp.ComRing.mulVr,
         ZR.unitP by exact Rp.ComRing.unitP,
-        ZR.unitout by exact Rp.ComRing.unitout, 
-        Big.CR.addrA by exact Rp.ComRing.addrA,
-        Big.CR.addrC by exact Rp.ComRing.addrC, 
-        Big.CR.add0r by exact Rp.ComRing.add0r,
-        Big.CR.addNr by exact Rp.ComRing.addNr,
-        Big.CR.oner_neq0 by exact Rp.ComRing.oner_neq0,
-        Big.CR.mulrA by exact Rp.ComRing.mulrA,
-        Big.CR.mulrC by exact Rp.ComRing.mulrC,
-        Big.CR.mul1r by exact Rp.ComRing.mul1r,
-        Big.CR.mulrDl by exact Rp.ComRing.mulrDl,
-        Big.CR.mulVr by exact Rp.ComRing.mulVr,
-        Big.CR.unitP by exact Rp.ComRing.unitP,
-        Big.CR.unitout by exact Rp.ComRing.unitout.
+        ZR.unitout by exact Rp.ComRing.unitout.
 
 type Rp_vec = Mat_Rp.vector.
 
