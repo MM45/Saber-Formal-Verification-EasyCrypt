@@ -403,9 +403,17 @@ by case=> ge0_i lt_in; rewrite reducedP (ler_trans (i+1)) 1:deg_polyXn //#.
 qed.
 
 (* -------------------------------------------------------------------- *)
+lemma eq_expiXn_expXn i : 0 <= i < n => ComRing.exp iX i = pi (exp X i).
+move => [ge0i ltni]; elim: i ge0i ltni => [| i ge0_i ih ltn_i1].
++ by rewrite ComRing.expr0 expr0.
++ by rewrite ComRing.exprS 2:exprS // -mulE ih /#.
+qed.
+
 lemma rcoeff_polyXn i k : 0 <= i < n =>
   (ComRing.exp iX i).[k] = if k = i then oner else zeror.
-proof. admitted.
+proof. 
+move => rng_i; rewrite eq_expiXn_expXn 1:rng_i piK 1:reducedXn 2:polyXnE //#.
+qed.
 
 (* -------------------------------------------------------------------- *)
 lemma rcoeffZ_sum (F : int -> coeff) (k : int) : 
