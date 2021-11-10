@@ -171,7 +171,7 @@ clone import PolyReduce.PolyReduceZp as Rmod with
   type Zp <- Zmod.zmod,
     op p  <- Zmod.p,
     op n  <- n,
-theory Zp <= Zmod
+theory Zp <= Zmod 
 
   proof gt0_n by smt(ge1_n)
   proof ge2_p by apply/Zmod.ge2_p

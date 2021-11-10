@@ -13,29 +13,29 @@ clone import PolyComRing as BasePoly.
 
 (* -------------------------------------------------------------------- *)
 clone import IdealComRing as PIdeal with
-  type t               <- poly,
+  type t               <- BasePoly.poly,
     op IComRing.zeror  <- BasePoly.poly0,
     op IComRing.oner   <- BasePoly.poly1,
     op IComRing.( + )  <- BasePoly.( + ),
     op IComRing.([-])  <- BasePoly.([-]),
     op IComRing.( * )  <- BasePoly.( * ),
-    op IComRing.invr   <- PolyComRing.invr,
-  pred IComRing.unit   <- PolyComRing.unit,
+    op IComRing.invr   <- BasePoly.PolyComRing.invr,
+  pred IComRing.unit   <- BasePoly.PolyComRing.unit,
     op BigDom.BAdd.big <- BasePoly.BigPoly.PCA.big<:'a>,
     op BigDom.BMul.big <- BasePoly.BigPoly.PCM.big<:'a>
 
-  proof IComRing.addrA     by exact: PolyComRing.addrA    ,
-        IComRing.addrC     by exact: PolyComRing.addrC    ,
-        IComRing.add0r     by exact: PolyComRing.add0r    ,
-        IComRing.addNr     by exact: PolyComRing.addNr    ,
-        IComRing.oner_neq0 by exact: PolyComRing.oner_neq0,
-        IComRing.mulrA     by exact: PolyComRing.mulrA    ,
-        IComRing.mulrC     by exact: PolyComRing.mulrC    ,
-        IComRing.mul1r     by exact: PolyComRing.mul1r    ,
-        IComRing.mulrDl    by exact: PolyComRing.mulrDl   ,
-        IComRing.mulVr     by exact: PolyComRing.mulVr    ,
-        IComRing.unitP     by exact: PolyComRing.unitP    ,
-        IComRing.unitout   by exact: PolyComRing.unitout
+  proof IComRing.addrA     by exact: BasePoly.PolyComRing.addrA    ,
+        IComRing.addrC     by exact: BasePoly.PolyComRing.addrC    ,
+        IComRing.add0r     by exact: BasePoly.PolyComRing.add0r    ,
+        IComRing.addNr     by exact: BasePoly.PolyComRing.addNr    ,
+        IComRing.oner_neq0 by exact: BasePoly.PolyComRing.oner_neq0,
+        IComRing.mulrA     by exact: BasePoly.PolyComRing.mulrA    ,
+        IComRing.mulrC     by exact: BasePoly.PolyComRing.mulrC    ,
+        IComRing.mul1r     by exact: BasePoly.PolyComRing.mul1r    ,
+        IComRing.mulrDl    by exact: BasePoly.PolyComRing.mulrDl   ,
+        IComRing.mulVr     by exact: BasePoly.PolyComRing.mulVr    ,
+        IComRing.unitP     by exact: BasePoly.PolyComRing.unitP    ,
+        IComRing.unitout   by exact: BasePoly.PolyComRing.unitout
 
   remove abbrev IComRing.(-)
   remove abbrev IComRing.(/)
