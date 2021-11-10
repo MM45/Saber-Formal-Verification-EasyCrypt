@@ -8,7 +8,8 @@ require import Ring StdOrder IntDiv ZModP Ideal Poly.
 
 (* ==================================================================== *)
 abstract theory PolyReduce.
-clone import PolyComRing as BasePoly.
+clone import PolyComRing as BasePoly
+  remove abbrev (+) remove abbrev ( * ) remove abbrev [-].
 (*-*) import Coeff PolyComRing BigPoly BigCf.
 
 (* -------------------------------------------------------------------- *)
@@ -16,9 +17,9 @@ clone import IdealComRing as PIdeal with
   type t               <- BasePoly.poly,
     op IComRing.zeror  <- BasePoly.poly0,
     op IComRing.oner   <- BasePoly.poly1,
-    op IComRing.( + )  <- BasePoly.( + ),
-    op IComRing.([-])  <- BasePoly.([-]),
-    op IComRing.( * )  <- BasePoly.( * ),
+    op IComRing.( + )  <- BasePoly.PolyComRing.( + ),
+    op IComRing.([-])  <- BasePoly.PolyComRing.([-]),
+    op IComRing.( * )  <- BasePoly.PolyComRing.( * ),
     op IComRing.invr   <- BasePoly.PolyComRing.invr,
   pred IComRing.unit   <- BasePoly.PolyComRing.unit,
     op BigDom.BAdd.big <- BasePoly.BigPoly.PCA.big<:'a>,
@@ -86,7 +87,7 @@ proof.
 move=> p un_p; rewrite ideal_eq1P 1:&(idI) //; apply/negP.
 move/fun_ext => /(_ poly1); rewrite mem_idT /I mem_idgen1.
 case/eqT=> q /(congr1 deg); rewrite deg1 => /eq_sym.
-case: (q = poly0) => [->|nz_q]; first by rewrite mul0r deg0.
+case: (q = poly0) => [->|nz_q]; first by rewrite /( * ) mul0r deg0.
 rewrite degM_proper; 1: by rewrite lc_polyXnDC // mulr1 lc_eq0.
 rewrite deg_polyXnDC // -!addrA /= gtr_eqF //.
 by rewrite (_ : 1 = 1 + 0) 1:// ler_lt_add // deg_ge1.
@@ -142,7 +143,7 @@ op ( ** ) (c : coeff) (p : polyXnD1) =
   pinject (c ** (repr p)).
 
 (* -------------------------------------------------------------------- *)
-lemma scale0p (p : polyXnD1) : zeror ** p = zeroXnD1.
+lemma scale0p (p : polyXnD1) : Coeff.zeror ** p = zeroXnD1.
 proof. by rewrite /( ** ) scale0p. qed.
 
 (* -------------------------------------------------------------------- *)
@@ -159,7 +160,7 @@ proof. by rewrite /( ** ) !scalepE -2!mulE reprK. qed.
 
 (* -------------------------------------------------------------------- *)
 lemma eqv_Xn : eqv (exp X n) (-poly1).
-proof. by rewrite eqv_sym /eqv opprK /I mem_idgen1_gen. qed.
+proof.  rewrite eqv_sym /eqv /[-] opprK /I mem_idgen1_gen. qed.
 
 (* -------------------------------------------------------------------- *)
 op reduce (p : poly) : poly =
@@ -198,7 +199,7 @@ rewrite {1}(polyE p) /reduce !PCA.big_seq &(eqv_sum) /=.
 move=> i /mem_range [rg_i _]; rewrite mulrC -scalepA.
 pose q := exp X (i %/ n * n) * exp X (i %% n).
 rewrite !scalepE &(eqvMl) &(eqv_trans q).
-- rewrite (_ : q = exp X i) // /q -exprD_nneg // -?divz_eq //.
+- rewrite (_ : q = exp X i) // /q /( * ) -exprD_nneg // -?divz_eq //.
   - by rewrite mulr_ge0 // divz_ge0.
   - by rewrite modz_ge0 gtr_eqF.
 apply/eqvMr; rewrite -polyCX ?divz_ge0 // (IntID.mulrC _ n).
@@ -224,7 +225,7 @@ split=> [eq_rd|eqv_pq].
 have @/eqv @/I: eqv (reduce p) (reduce q).
 - by rewrite !(eqv_reducel, eqv_reducer).
 case/mem_idgen1=> r /(congr1 deg); case: (r = poly0) => [->>|nz_r].
-- by rewrite mul0r deg0 deg_eq0 subr_eq0 => ->.
+- by rewrite /( * ) mul0r deg0 deg_eq0 subr_eq0 => ->.
 have: deg (reduce q - reduce p) <= n.
 - by rewrite &(ler_trans _ _ _ (degB _ _)) ler_maxrP !deg_reduce.
 rewrite degM_proper.
@@ -318,11 +319,11 @@ lemma reduced1 : reduced poly1.
 proof. by apply: reducedC. qed.
 
 (* -------------------------------------------------------------------- *)
-lemma lt0_rcoeff p i : i < 0 => p.[i] = zeror.
+lemma lt0_rcoeff p i : i < 0 => p.[i] = Coeff.zeror.
 proof. by move=> gt0_i; rewrite lt0_coeff. qed.
 
 (* -------------------------------------------------------------------- *)
-lemma gered_rcoeff p i : n <= i => p.[i] = zeror.
+lemma gered_rcoeff p i : n <= i => p.[i] = Coeff.zeror.
 proof.
 move=> ge_ni; rewrite gedeg_coeff //.
 by apply/(ler_trans n)/ge_ni/deg_crepr.
@@ -391,7 +392,7 @@ proof. by rewrite !reducedP => degp; apply/(ler_trans (deg p))/degp/degZ_le. qed
 (* -------------------------------------------------------------------- *)
 lemma rcoeffZ c p k : (c ** p).[k] = c * p.[k].
 proof.
-case: (c = zeror) => [->|nz_c]; 1: by rewrite scale0p rcoeff0 mul0r.
+case: (c = Coeff.zeror) => [->|nz_c]; 1: by rewrite scale0p rcoeff0 mul0r.
 elim/polyXnD1W: p => p redp; rewrite scaleE.
 by rewrite !piK 1:&(reducedZ) // polyZE.
 qed.
@@ -410,7 +411,7 @@ move => [ge0i ltni]; elim: i ge0i ltni => [| i ge0_i ih ltn_i1].
 qed.
 
 lemma rcoeff_polyXn i k : 0 <= i < n =>
-  (ComRing.exp iX i).[k] = if k = i then oner else zeror.
+  (ComRing.exp iX i).[k] = if k = i then Coeff.oner else Coeff.zeror.
 proof. 
 move => rng_i; rewrite eq_expiXn_expXn 1:rng_i piK 1:reducedXn 2:polyXnE //#.
 qed.
@@ -443,8 +444,8 @@ rewrite polyDE; pose c := (bigi _ _ _ _); have ->: c.[k] = Coeff.zeror.
   move=> i [/mem_range [ge0_i lt_in] @/predC1 ne_ik].
   by rewrite polyZE polyXnE // (eq_sym k i) ne_ik /= mulr0.
 rewrite addr0 polyZE polyXnE //= mulr1 (reducewE (2 * n)).
-- case: (p = poly0) => [->|nz_p]; first by rewrite mul0r deg0 /#.
-  case: (q = poly0) => [->|nz_q]; first by rewrite mulr0 deg0 /#.
+- case: (p = poly0) => [->|nz_p]; first by rewrite /( * ) mul0r deg0 /#.
+  case: (q = poly0) => [->|nz_q]; first by rewrite /( * ) mulr0 deg0 /#.
   apply: (ler_trans (deg p + deg q)); last first.
   - by rewrite (_ : 2 * n = n + n) 1:#ring ler_add &(deg_reduced).
   by rewrite &(ler_trans (deg (p * q) + 1)) ?ler_addl // &(degM_le).
