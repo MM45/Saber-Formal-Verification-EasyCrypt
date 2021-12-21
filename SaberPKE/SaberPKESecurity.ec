@@ -684,12 +684,14 @@ qed.
 
 (* Final Result (Security Theorem) *)
 lemma Saber_INDCPA_Security_Theorem &m :
+  exists (BG <: Adv_GMLWR) (BX <: Adv_XMLWR),
   `| Pr[CPA(Saber_PKE_Scheme, A).main() @ &m : res] - 1%r / 2%r |
   <=
-  `| Pr[GMLWR( B0(A) ).main(true) @ &m : res] - Pr[GMLWR( B0(A) ).main(false) @ &m : res] | 
+  `| Pr[GMLWR(BG).main(true) @ &m : res] - Pr[GMLWR(BG).main(false) @ &m : res] | 
   +
-  `| Pr[XMLWR( B1(A3(A2(A))) ).main(true) @ &m : res] - Pr[XMLWR( B1(A3(A2(A))) ).main(false) @ &m : res] |. 
+  `| Pr[XMLWR(BX).main(true) @ &m : res] - Pr[XMLWR(BX).main(false) @ &m : res] |. 
 proof.
+exists (B0(A)) (B1(A3(A2(A)))).
 move: Adv_INDCPA_choose_ll Adv_INDCPA_guess_ll => c_ll g_ll.
 rewrite (Equivalence_SaberINDCPA_Game0 A) 3: -(Game4_Prob_Half (A3(A2(A))) _ _ &m) //;
           first 2 by proc; inline *; wp; call (_ : true); auto.
