@@ -413,9 +413,6 @@ const q4t_Rq : Rq =
   BigRq.XnD1CA.bigi predT (fun (i : int) => Zq.inzmod (2 ^ (eq - et - 2)) ** exp Rq.iX i) 0 n.
 
 (* - Auxiliary - *)
-(* Abbreviations *)
-abbrev ( - ) (pv1 pv2 : Rq_vec) = pv1 + (- pv2).
-
 (* Ring Instances for ring Tactic *)
 instance ring with R2
   op rzero = R2.zeroXnD1

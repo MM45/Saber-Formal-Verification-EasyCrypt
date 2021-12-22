@@ -4,7 +4,7 @@ This repository corresponds to the master's thesis "Formal Verification of Saber
 Specifically, this repository comprises EasyCrypt scripts aimed at the formal verification of certain schemes from the Saber post-quantum cipher suite. 
 At present, these scripts cover the formal verification of the desired security and correctness properties of Saber's PKE scheme.\
 \
-The version of EasyCrypt used to construct the code in this repository corresponds to the following commit (of the 1.0 branch) of the EasyCrypt repository (available from https://github.com/EasyCrypt/easycrypt): `commit ec1f979ba03298c8db81c4c698d748592a3e7201`
+The version of EasyCrypt used to construct the code in this repository corresponds to the following commit (of the 1.0 branch) of the EasyCrypt repository (available from https://github.com/EasyCrypt/easycrypt): `commit 49aec58e`
 
 ## Repository Structure and Contents
 This repository is assembled as follows.

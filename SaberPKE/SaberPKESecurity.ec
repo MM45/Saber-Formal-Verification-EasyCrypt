@@ -490,9 +490,9 @@ declare axiom Adv_INDCPA_guess_ll : islossless A.guess.
 
 (* Saber's INDCPA <==> Game 0 *)
 lemma Equivalence_SaberINDCPA_Game0 &m :
-      `| Pr[CPA(Saber_PKE_Scheme, A).main() @ &m : res] - 1%r / 2%r |
-      =
-      `| Pr[Game0(A).main() @ &m : res] - 1%r /2%r |.
+  `| Pr[CPA(Saber_PKE_Scheme, A).main() @ &m : res] - 1%r / 2%r |
+  =
+  `| Pr[Game0(A).main() @ &m : res] - 1%r /2%r |.
 proof.
 have -> //: Pr[CPA(Saber_PKE_Scheme, A).main() @ &m : res] = Pr[Game0(A).main() @ &m : res].
 + byequiv => //.
@@ -506,9 +506,9 @@ qed.
 
 (* Step 1: Game0 <> Game1 -- GMLWR *)
 lemma Step_Distinguish_Game0_Game1_GMLWR &m :
-      `| Pr[Game0(A).main() @ &m : res] - Pr[Game1(A).main() @ &m : res] |
-      = 
-      `| Pr[GMLWR( B0(A) ).main(true) @ &m : res] - Pr[GMLWR( B0(A) ).main(false) @ &m : res] |. 
+  `| Pr[Game0(A).main() @ &m : res] - Pr[Game1(A).main() @ &m : res] |
+  = 
+  `| Pr[GMLWR( B0(A) ).main(true) @ &m : res] - Pr[GMLWR( B0(A) ).main(false) @ &m : res] |. 
 proof.
 have ->: Pr[Game0(A).main() @ &m : res] =  Pr[GMLWR( B0(A) ).main(false) @ &m : res].
 + byequiv => //.
@@ -530,9 +530,9 @@ qed.
 
 (* Step 2: Game1 -- Game2 *)
 lemma Step_Game1_Game2 &m :
-      `| Pr[Game1(A).main() @ &m : res] - 1%r / 2%r |
-      =
-      `| Pr[Game2( A2(A) ).main() @ &m : res] - 1%r / 2%r |.
+  `| Pr[Game1(A).main() @ &m : res] - 1%r / 2%r |
+  =
+  `| Pr[Game2( A2(A) ).main() @ &m : res] - 1%r / 2%r |.
 proof.
 have -> //: Pr[Game1(A).main() @ &m : res] = Pr[Game2( A2(A) ).main() @ &m : res].
 + byequiv => //.
@@ -543,9 +543,9 @@ qed.
 
 (* Auxiliary Step (Reduction 2-3): Game2 -- Game2a *)
 lemma AuxStep_Game2_Game2a &m :
-      `| Pr[Game2(A).main() @ &m : res] - 1%r / 2%r |
-      =
-      `| Pr[Game2a(A).main() @ &m : res] - 1%r / 2%r |.
+  `| Pr[Game2(A).main() @ &m : res] - 1%r / 2%r |
+  =
+  `| Pr[Game2a(A).main() @ &m : res] - 1%r / 2%r |.
 proof.
 have -> //: Pr[Game2(A).main() @ &m : res] = Pr[Game2a(A).main() @ &m : res].
 + byequiv => //.
@@ -558,9 +558,9 @@ qed.
 
 (* Auxiliary Step (Reduction 2-3): Game2a -- Game2b *)
 lemma AuxStep_Game2a_Game2b &m :
-      `| Pr[Game2a(A).main() @ &m : res] - 1%r / 2%r |
-      =
-      `| Pr[Game2b(A).main() @ &m : res] - 1%r / 2%r |.
+  `| Pr[Game2a(A).main() @ &m : res] - 1%r / 2%r |
+  =
+  `| Pr[Game2b(A).main() @ &m : res] - 1%r / 2%r |.
 proof.
 have -> //: Pr[Game2a(A).main() @ &m : res] = Pr[Game2b(A).main() @ &m : res].
 + byequiv => //.
@@ -570,9 +570,9 @@ qed.
 
 (* Auxiliary Step (Reduction 2-3): Game2b -- Game3 *)
 lemma AuxStep_Game2b_Game3 &m :
-      `| Pr[Game2b(A).main() @ &m : res] - 1%r / 2%r |
-      =
-      `| Pr[Game3( A3(A) ).main() @ &m : res] - 1%r / 2%r |.
+  `| Pr[Game2b(A).main() @ &m : res] - 1%r / 2%r |
+  =
+  `| Pr[Game3( A3(A) ).main() @ &m : res] - 1%r / 2%r |.
 proof.
 have -> //: Pr[Game2b(A).main() @ &m : res] = Pr[Game3( A3(A) ).main() @ &m : res].
 + byequiv => //.
@@ -587,18 +587,18 @@ qed.
 
 (* Step 3: Game2 -- Game3 *)
 lemma Step_Game2_Game3 &m :
-      `| Pr[Game2(A).main() @ &m : res] - 1%r / 2%r |
-      =
-      `| Pr[Game3( A3(A) ).main() @ &m : res] - 1%r / 2%r |.
+  `| Pr[Game2(A).main() @ &m : res] - 1%r / 2%r |
+  =
+  `| Pr[Game3( A3(A) ).main() @ &m : res] - 1%r / 2%r |.
 proof.
 by rewrite (AuxStep_Game2_Game2a &m) (AuxStep_Game2a_Game2b &m) (AuxStep_Game2b_Game3 &m).
 qed.
 
 (* Step 4: Game3 <> Game4 -- XMLWR *)
 lemma Step_Distinguish_Game3_Game4_XMLWR &m :
-      `| Pr[Game3(A).main() @ &m : res] - Pr[Game4(A).main() @ &m : res] |
-      = 
-      `| Pr[XMLWR( B1(A) ).main(true) @ &m : res] - Pr[XMLWR( B1(A) ).main(false) @ &m : res] |. 
+  `| Pr[Game3(A).main() @ &m : res] - Pr[Game4(A).main() @ &m : res] |
+  = 
+  `| Pr[XMLWR( B1(A) ).main(true) @ &m : res] - Pr[XMLWR( B1(A) ).main(false) @ &m : res] |. 
 proof.
 have ->: Pr[Game3(A).main() @ &m : res] = Pr[XMLWR( B1(A) ).main(false) @ &m : res].
 + byequiv => //.
@@ -624,7 +624,7 @@ qed.
 
 (* Auxiliary_Game Analysis *)
 lemma Aux_Prob_Half &m :
-      Pr[Auxiliary_Game(A).main() @ &m : res]  = 1%r / 2%r. 
+  Pr[Auxiliary_Game(A).main() @ &m : res]  = 1%r / 2%r. 
 proof.
 byphoare => //.
 proc.
@@ -639,7 +639,7 @@ qed.
 
 (* Game4 <==> Auxiliary_Game *)
 lemma Equal_Prob_Game4_Aux &m :
-      Pr[Game4(A).main() @ &m : res] = Pr[Auxiliary_Game(A).main() @ &m : res].
+  Pr[Game4(A).main() @ &m : res] = Pr[Auxiliary_Game(A).main() @ &m : res].
 proof.
 byequiv => //. 
 proc; inline *.
@@ -655,7 +655,7 @@ qed.
 
 (* Game4 Analysis *)
 lemma Game4_Prob_Half &m :
-      Pr[Game4(A).main() @ &m : res] = 1%r / 2%r. 
+  Pr[Game4(A).main() @ &m : res] = 1%r / 2%r. 
 proof. by rewrite (Equal_Prob_Game4_Aux &m) (Aux_Prob_Half &m). qed.
 
 end section Game_Hopping.
@@ -669,9 +669,9 @@ declare axiom Adv_INDCPA_guess_ll : islossless A.guess.
 
 (* Intelligibility Intermediate Result *)
 lemma Difference_Game1_Game4_XMLWR &m :
-      `| Pr[Game1(A).main() @ &m : res] - Pr[Game4( A3(A2(A)) ).main() @ &m : res] |
-      =
-      `| Pr[XMLWR( B1(A3(A2(A))) ).main(true) @ &m : res] - Pr[XMLWR( B1(A3(A2(A))) ).main(false) @ &m : res] |.
+  `| Pr[Game1(A).main() @ &m : res] - Pr[Game4( A3(A2(A)) ).main() @ &m : res] |
+  =
+  `| Pr[XMLWR( B1(A3(A2(A))) ).main(true) @ &m : res] - Pr[XMLWR( B1(A3(A2(A))) ).main(false) @ &m : res] |.
 proof.
 move: Adv_INDCPA_choose_ll Adv_INDCPA_guess_ll => c_ll g_ll.
 rewrite (Game4_Prob_Half (A3(A2(A))))
@@ -696,13 +696,13 @@ move: Adv_INDCPA_choose_ll Adv_INDCPA_guess_ll => c_ll g_ll.
 rewrite (Equivalence_SaberINDCPA_Game0 A) 3: -(Game4_Prob_Half (A3(A2(A))) _ _ &m) //;
           first 2 by proc; inline *; wp; call (_ : true); auto.
 have:
-     `| Pr[Game0(A).main() @ &m : res] - Pr[Game1(A).main() @ &m : res] |
-     +
-     `| Pr[Game1(A).main() @ &m : res] - Pr[Game4( A3(A2(A)) ).main() @ &m : res] |
-     <=
-     `| Pr[GMLWR( B0(A) ).main(true) @ &m : res] - Pr[GMLWR( B0(A) ).main(false) @ &m : res] | 
-     +
-     `| Pr[XMLWR( B1(A3(A2(A))) ).main(true) @ &m : res] - Pr[XMLWR( B1(A3(A2(A))) ).main(false) @ &m : res] |.
+  `| Pr[Game0(A).main() @ &m : res] - Pr[Game1(A).main() @ &m : res] |
+  +
+  `| Pr[Game1(A).main() @ &m : res] - Pr[Game4( A3(A2(A)) ).main() @ &m : res] |
+  <=
+  `| Pr[GMLWR( B0(A) ).main(true) @ &m : res] - Pr[GMLWR( B0(A) ).main(false) @ &m : res] | 
+  +
+  `| Pr[XMLWR( B1(A3(A2(A))) ).main(true) @ &m : res] - Pr[XMLWR( B1(A3(A2(A))) ).main(false) @ &m : res] |.
 + by apply ler_add; 
     [rewrite (Step_Distinguish_Game0_Game1_GMLWR A) | rewrite -(Difference_Game1_Game4_XMLWR &m) ].
 move: (ler_dist_add (Pr[Game1(A).main() @ &m : res]) (Pr[Game0(A).main() @ &m : res])
