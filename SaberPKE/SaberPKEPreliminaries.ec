@@ -491,10 +491,6 @@ instance ring with Rq
 
 (* -- Cryptographic Types and Distributions  -- *)
 type seed.
-type pkey.
-type skey.
-type plaintext.
-type ciphertext.
 
 op [lossless full uniform] dseed : seed distr.
 
