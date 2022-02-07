@@ -216,18 +216,18 @@ qed.
 (* ----------------------------------- *)
 
 module type Adv_Cor = {
-   proc choose(pk : pkey, sk : skey) : plaintext
+   proc choose(pk : seed * Rp_vec, sk : Rq_vec) : R2
 }.
 
 (* ----------------------------------- *)
 (*  Standard Correctness Definition    *)
 (* ----------------------------------- *)
 module Correctness_Standard (S : Scheme) = {
-   proc main(m : plaintext) : bool = {
-      var m': plaintext option;
-      var c: ciphertext;
-      var pk: pkey;
-      var sk: skey;
+   proc main(m : R2) : bool = {
+      var m': R2 option;
+      var c: R2t * Rp_vec;
+      var pk: seed * Rp_vec;
+      var sk: Rq_vec;
       
       (pk, sk) <@ S.kg();
       c <@ S.enc(pk, m);
@@ -247,7 +247,7 @@ call eqv_dec; call eqv_enc; call eqv_kg.
 by auto.
 qed.
 
-lemma eq_Pr_Correctness_Standard_Reg_Alt &m (msg : plaintext) :
+lemma eq_Pr_Correctness_Standard_Reg_Alt &m (msg : R2) :
   Pr[Correctness_Standard(Saber_PKE_Scheme).main(msg) @ &m : res]
   =
   Pr[Correctness_Standard(Saber_PKE_Scheme_Alt).main(msg) @ &m : res].
@@ -258,11 +258,11 @@ proof. by byequiv Equivalence_Correctness_Standard_Reg_Alt. qed.
 (* ----------------------------------- *)
 module Correctness_Game (S : Scheme, A : Adv_Cor) = {
    proc main() : bool = {
-      var m: plaintext;
-      var m': plaintext option;
-      var c: ciphertext;
-      var pk: pkey;
-      var sk: skey;
+      var m: R2;
+      var m': R2 option;
+      var c: R2t * Rp_vec;
+      var pk: seed * Rp_vec;
+      var sk: Rq_vec;
       
       (pk, sk) <@ S.kg();
       m <@ A.choose(pk, sk);
@@ -502,7 +502,7 @@ axiom delta_correctness &m :
 (* --- Proof of Equivalence of Standard Correctness for Original Scheme and Delta-Prob Program --- *)
 (* - Intermediate Game, Standard Correctness in Terms of Error - *)
 module Correctness_Standard_Error = {
-   proc main(m : plaintext) : bool = {
+   proc main(m : R2) : bool = {
       var sd: seed;
       var _A: Rq_mat;
       var s, s': Rq_vec;
@@ -512,7 +512,7 @@ module Correctness_Standard_Error = {
       s <$ dsmallRq_vec;
       s' <$ dsmallRq_vec;
 
-      return (m_decode m = m'_expression _A s s' (m_decode m));
+      return (m = m'_expression _A s s' m);
    }
 }.
 
@@ -521,21 +521,19 @@ lemma Equivalence_CorrStd_Error :
         : ={m} ==> ={res}].
 proof.
 proc; inline *.
-auto; progress.
-rewrite !pks_enc_dec_inv !cs_enc_dec_inv !sks_enc_dec_inv /=.
+auto => /> &m sd _ s _ s' _.
 have ?: 
-  trmx (gen sdL) *^ s'L + error_bq' (gen sdL) s'L   
+  trmx (gen sd) *^ s' + error_bq' (gen sd) s'   
   = 
-  scaleRpv2Rqv (scaleRqv2Rpv (trmx (gen sdL) *^ s'L + h)).
+  scaleRpv2Rqv (scaleRqv2Rpv (trmx (gen sd) *^ s' + h)).
 + by rewrite /error_bq' /errorRqv addrCA addrC subrr add0r.
 rewrite /m'_expression /m'_expression_Rq /v_expression /cmq_expression /error_cmq 
         /v'_expression /errorRq /= eq_iff. 
 split => [{1}-> | resR_dec].
-+ rewrite m_enc_dec_inv; do 4! congr => [/#|].
++ do 4! congr => [/#|].
   ring; rewrite addrC ofint0 subr_eq0; do 5! congr; rewrite /error_bq /errorRqv.
   by rewrite eq_sym addrCA addrC subrr add0r.
-have: (injective m_decode); last apply; rewrite {1}resR_dec m_enc_dec_inv; do 3! congr => [/#|].
-+ by apply bij_inj; exists m_encode; rewrite m_enc_dec_inv m_dec_enc_inv.
+rewrite {1}resR_dec; do 3! congr => [/#|].
 rewrite eqr_opp; ring; rewrite addrC ofint0 subr_eq0; do 5! congr. 
 by rewrite /error_bq addrCA addrC subrr add0r.
 qed.
@@ -544,7 +542,7 @@ lemma Equivalence_CorrStdError_CorrGenStdModel :
   equiv[Correctness_Standard_Error.main ~ Correctness_Gen_StdModel.main : true ==> ={res}].
 proof.
 proc.
-auto; progress.
+auto => /> &m sd _ s _ s' _.
 by rewrite eqv_verification_mm'_coeffsrngdelta. 
 qed.
 
@@ -564,7 +562,7 @@ transitivity Correctness_Gen_ROM.main (true ==> ={res}) (true ==> ={res}) => //=
 by apply Equivalence_CorrGenRom_DeltaProb.
 qed.
 
-lemma Delta_Correctness_Standard_Original_Scheme &m (msg : plaintext) :
+lemma Delta_Correctness_Standard_Original_Scheme &m (msg : R2) :
   Pr[Correctness_Standard(Saber_PKE_Scheme).main(msg) @ &m : res] = 1%r - delta_prob.
 proof.
 have ->:
@@ -583,21 +581,21 @@ module Correctness_Game_Error (A : Adv_Cor) = {
       var sd: seed;
       var _A: Rq_mat;
       var s, s': Rq_vec;
-      var m: plaintext;
+      var m: R2;
       
       sd <$ dseed;
       _A <- gen sd;
       s <$ dsmallRq_vec;
-      m <@ A.choose(pk_encode_s (sd, scaleRqv2Rpv (_A *^ s + h)), sk_encode_s s);      
+      m <@ A.choose((sd, scaleRqv2Rpv (_A *^ s + h)), s);      
       s' <$ dsmallRq_vec;
      
-      return (m_decode m = m'_expression _A s s' (m_decode m));
+      return (m = m'_expression _A s s' m);
    }
 }.
 
 section Equivalence_Correctness_Games_Delta_PProg.
 
-(* - Exclusively Consider Terminating Adversaries - *)
+(* - Declare (Terminating) Adversary Against Correctness_Game - *)
 declare module A <: Adv_Cor.
 declare axiom Adv_Cor_ll: islossless A.choose.
 
@@ -606,21 +604,19 @@ lemma Equivalence_CorrGame_Error :
         : ={glob A} ==> ={res}].
 proof.
 proc; inline *.
-auto; call (_ : true); auto; progress.
-rewrite !pks_enc_dec_inv !cs_enc_dec_inv !sks_enc_dec_inv /=.
+auto; call (_ : true); auto => /> sd _ s _ r s' _.
 have ?: 
-  trmx (gen sdL) *^ s'L + error_bq' (gen sdL) s'L   
+  trmx (gen sd) *^ s' + error_bq' (gen sd) s'   
   = 
-  scaleRpv2Rqv (scaleRqv2Rpv (trmx (gen sdL) *^ s'L + h)).
+  scaleRpv2Rqv (scaleRqv2Rpv (trmx (gen sd) *^ s' + h)).
 + by rewrite /error_bq' /errorRqv addrCA addrC subrr add0r.
 rewrite /m'_expression /m'_expression_Rq /v_expression /cmq_expression /error_cmq 
         /v'_expression /errorRq /= eq_iff. 
 split => [{1}-> | resR_dec].
-+ rewrite m_enc_dec_inv; do 4! congr => [/#|].
++ do 4! congr => [/#|].
   ring; rewrite addrC ofint0 subr_eq0; do 5! congr; rewrite /error_bq /errorRqv.
   by rewrite eq_sym addrCA addrC subrr add0r.
-have: (injective m_decode); last apply; rewrite {1}resR_dec m_enc_dec_inv; do 3! congr => [/#|].
-+ by apply bij_inj; exists m_encode; rewrite m_enc_dec_inv m_dec_enc_inv.
+rewrite {1}resR_dec; do 3! congr => [/#|].
 rewrite eqr_opp; ring; rewrite addrC ofint0 subr_eq0; do 5! congr. 
 by rewrite /error_bq addrCA addrC subrr add0r.
 qed.
@@ -629,7 +625,7 @@ lemma Equivalence_CorrGameError_CorrGenStdModel :
   equiv[Correctness_Game_Error(A).main ~ Correctness_Gen_StdModel.main : true ==> ={res}].
 proof.
 proc.
-wp; rnd; call {1} (_ : true ==> true); auto; first by apply Adv_Cor_ll.
+wp; rnd; call {1} (_ : true ==> true); auto; first by apply Adv_Cor_ll => />.
 progress.
 by rewrite eqv_verification_mm'_coeffsrngdelta. 
 qed.

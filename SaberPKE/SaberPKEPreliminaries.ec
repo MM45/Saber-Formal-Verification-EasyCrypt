@@ -592,64 +592,6 @@ op scaleRqv2Rpv (pv : Rq_vec) : Rp_vec = offunv (fun (i : int) => scaleRq2Rp pv.
 (* Lift Upscaling to Polynomial Vectors *)
 op scaleRpv2Rqv (pv : Rp_vec) : Rq_vec = offunv (fun i => scaleRp2Rq pv.[i]).
 
-(* - Encoding/Decoding - *)
-(* Original Scheme *)
-op pk_encode_s : seed * Rp_vec -> pkey.
-op pk_decode_s : pkey -> seed * Rp_vec.
-
-op sk_encode_s : Rq_vec -> skey.
-op sk_decode_s : skey -> Rq_vec.
-
-op c_encode_s : R2t * Rp_vec -> ciphertext.
-op c_decode_s : ciphertext -> R2t * Rp_vec.
-
-(* Games *)
-op pk_encode_g ['a] : 'a -> pkey.
-op pk_decode_g ['a] : pkey -> 'a.
-
-op sk_encode_g ['a] : 'a -> skey.
-op sk_decode_g ['a] : skey -> 'a.
-
-op c_encode_g ['a] : 'a -> ciphertext.
-op c_decode_g ['a] : ciphertext -> 'a.
-
-(* Both *)
-op m_encode : R2 -> plaintext.
-op m_decode : plaintext -> R2.
-
-(* - Properties - *)
-(* Encoding and Decoding are Each Other's Inverses *)
-axiom pks_enc_dec_inv : cancel pk_encode_s pk_decode_s.
-axiom pks_dec_enc_inv : cancel pk_decode_s pk_encode_s.
-
-axiom sks_enc_dec_inv : cancel sk_encode_s sk_decode_s.
-axiom sks_dec_enc_inv : cancel sk_decode_s sk_encode_s.
-
-axiom cs_enc_dec_inv : cancel c_encode_s c_decode_s.
-axiom cs_dec_enc_inv : cancel c_decode_s c_encode_s.
-
-axiom pkg_enc_dec_inv ['a] : cancel pk_encode_g<:'a> pk_decode_g<:'a>.
-axiom pkg_dec_enc_inv ['a] : cancel pk_decode_g<:'a> pk_encode_g<:'a>.
-
-axiom skg_enc_dec_inv ['a] : cancel sk_encode_g<:'a> sk_decode_g<:'a>.
-axiom skg_dec_enc_inv ['a] : cancel sk_decode_g<:'a> sk_encode_g<:'a>.
-
-axiom cg_enc_dec_inv ['a] : cancel c_encode_g<:'a> c_decode_g<:'a>.
-axiom cg_dec_enc_inv ['a] : cancel c_decode_g<:'a> c_encode_g<:'a>.
-
-axiom m_enc_dec_inv : cancel m_encode m_decode.
-axiom m_dec_enc_inv : cancel m_decode m_encode.
-
-(* Encoding and Decoding of Original Scheme and Games are Equivalent for Correct Types *)
-axiom eq_pks_pkg_enc (x : seed * Rp_vec) : pk_encode_s x = pk_encode_g x.
-axiom eq_pks_pkg_dec (x : pkey) : pk_decode_s x = pk_decode_g x.
-
-axiom eq_sks_skg_enc (x : Rq_vec) : sk_encode_s x = sk_encode_g x.
-axiom eq_sks_skg_dec (x : skey) : sk_decode_s x = sk_decode_g x.
-
-axiom eq_cs_cg_enc (x :  R2t * Rp_vec) : c_encode_s x = c_encode_g x.
-axiom eq_cs_cg_dec (x : ciphertext) : c_decode_s x = c_decode_g x.
-
 (* Possible Values of Z types *)
 lemma Z2_asint_values (z : Z2) : asint z = 0 \/ asint z = 1.
 proof. 
@@ -1531,14 +1473,15 @@ qed.
 
 (* --- General --- *)
 clone import PKE as Saber_PKE with
-  type pkey <- pkey,
-  type skey <- skey,
-  type plaintext <- plaintext,
-  type ciphertext <- ciphertext.
+  type pkey <- seed * Rp_vec,
+  type skey <- Rq_vec,
+  type plaintext <- R2,
+  type ciphertext <- R2t * Rp_vec.
+
 
 (* --- Actual --- *)
 module Saber_PKE_Scheme : Scheme = {
-   proc kg() : pkey * skey = {
+   proc kg() : (seed * Rp_vec) * Rq_vec = {
       var sd: seed;
       var _A: Rq_mat;
       var s: Rq_vec;
@@ -1549,13 +1492,10 @@ module Saber_PKE_Scheme : Scheme = {
       s <$ dsmallRq_vec;
       b <- scaleRqv2Rpv (_A *^ s + h);
       
-      return (pk_encode_s (sd, b), sk_encode_s s);
+      return ((sd, b), s);
    }
 
-   proc enc(pk: pkey, m: plaintext) : ciphertext = {
-      var pk_dec: seed * Rp_vec;
-      var m_dec: R2;
-
+   proc enc(pk: seed * Rp_vec, m: R2) : R2t * Rp_vec = {
       var sd: seed;
       var _A: Rq_mat;
       var s': Rq_vec;
@@ -1563,41 +1503,38 @@ module Saber_PKE_Scheme : Scheme = {
       var v': Rp;
       var cm: R2t;
       
-      m_dec <- m_decode m;
-      pk_dec <- pk_decode_s pk;
-      sd <- pk_dec.`1;
-      b <- pk_dec.`2;
+      sd <- pk.`1;
+      b <- pk.`2;
       _A <- gen sd;
       s' <$ dsmallRq_vec;
       b' <- scaleRqv2Rpv ((trmx _A) *^ s' + h);
       v' <- (dotp b (Rqv2Rpv s')) + (Rq2Rp h1);
-      cm <- scaleRp2R2t (v' + (scaleR22Rp m_dec));
+      cm <- scaleRp2R2t (v' + (scaleR22Rp m));
       
-      return c_encode_s (cm, b');
+      return (cm, b');
    }
 
-   proc dec(sk: skey, c: ciphertext) : plaintext option = {
+   proc dec(sk: Rq_vec, c: R2t * Rp_vec) : R2 option = {
       var c_dec: R2t * Rp_vec;
       var cm: R2t;
       var b': Rp_vec;
       var v: Rp;
       var s: Rq_vec;
       var m': R2;
-
-      c_dec <- c_decode_s c;
-      s <- sk_decode_s sk;
-      cm <- c_dec.`1;
-      b' <- c_dec.`2;
+      
+      s <- sk;
+      cm <- c.`1;
+      b' <- c.`2;
       v <- (dotp b' (Rqv2Rpv s)) + (Rq2Rp h1);
       m' <- scaleRp2R2 (v  - (scaleR2t2Rp cm) + (Rq2Rp h2));
       
-      return Some (m_encode m');
+      return Some m';
    }
 }.
 
 (* --- Actual (Alternative Description) --- *)
 module Saber_PKE_Scheme_Alt : Scheme = {
-   proc kg() : pkey * skey = {
+   proc kg() : (seed * Rp_vec) * Rq_vec = {
       var sd: seed;
       var _A: Rq_mat;
       var s: Rq_vec;
@@ -1608,13 +1545,10 @@ module Saber_PKE_Scheme_Alt : Scheme = {
       s <$ dsmallRq_vec;
       b <- scaleRqv2Rpv (_A *^ s + h);
       
-      return (pk_encode_s (sd, b), sk_encode_s s);
+      return ((sd, b), s);
    }
 
-   proc enc(pk: pkey, m: plaintext) : ciphertext = {
-      var pk_dec: seed * Rp_vec;
-      var m_dec: R2;
-
+   proc enc(pk: seed * Rp_vec, m: R2) : R2t * Rp_vec = {
       var sd: seed;
       var _A: Rq_mat;
       var s': Rq_vec;
@@ -1623,21 +1557,19 @@ module Saber_PKE_Scheme_Alt : Scheme = {
       var v': Rq;
       var cm: R2t;
       
-      m_dec <- m_decode m;
-      pk_dec <- pk_decode_s pk;
-      sd <- pk_dec.`1;
-      b <- pk_dec.`2;
+      sd <- pk.`1;
+      b <- pk.`2;
       _A <- gen sd;
       s' <$ dsmallRq_vec;
       b' <- scaleRqv2Rpv ((trmx _A) *^ s' + h);
       bq <- scaleRpv2Rqv b;
       v' <- (dotp bq s') + (upscaleRq h1 (eq - ep));
-      cm <- scaleRq2R2t (v' + (scaleR22Rq m_dec));
+      cm <- scaleRq2R2t (v' + (scaleR22Rq m));
       
-      return c_encode_s (cm, b');
+      return (cm, b');
    }
 
-   proc dec(sk: skey, c: ciphertext) : plaintext option = {
+    proc dec(sk: Rq_vec, c: R2t * Rp_vec) : R2 option = {
       var c_dec: R2t * Rp_vec;
       var cm: R2t;
       var cmq: Rq;
@@ -1647,17 +1579,16 @@ module Saber_PKE_Scheme_Alt : Scheme = {
       var s: Rq_vec;
       var m': R2;
 
-      c_dec <- c_decode_s c;
-      s <- sk_decode_s sk;
-      cm <- c_dec.`1;
+      s <- sk;
+      cm <- c.`1;
       cmq <- scaleR2t2Rq cm;
-      b' <- c_dec.`2;
+      b' <- c.`2;
       bq' <- scaleRpv2Rqv b';
       
       v <- (dotp bq' s) + (upscaleRq h1 (eq - ep));
       m' <- scaleRq2R2 (v - cmq + (upscaleRq h2 (eq - ep)));
       
-      return Some (m_encode m');
+      return Some m';
    }
 }.
 
@@ -1665,23 +1596,20 @@ module Saber_PKE_Scheme_Alt : Scheme = {
 (* --- Equivalence of Schemes --- *)
 (* - Equivalence of Key Generation - *)
 lemma eqv_kg: equiv[Saber_PKE_Scheme.kg ~ Saber_PKE_Scheme_Alt.kg : true ==> ={res}].
-proof.
-proc.
-auto; progress; by rewrite sks_enc_dec_inv.
-qed.
+proof. by proc; auto. qed.
 
 (* - Equivalence of Encryption - *)
 lemma eqv_enc: equiv[Saber_PKE_Scheme.enc ~ Saber_PKE_Scheme_Alt.enc : ={pk, m} ==> ={res}].
 proof.
 proc.
-auto; progress. 
-by congr; rewrite &(pw_eq) //; apply eq_comp_enc_altenc.
+auto => /> *. 
+by apply eq_comp_enc_altenc.
 qed.
 
 (* - Equivalence of Decryption - *)
 lemma eqv_dec: equiv[Saber_PKE_Scheme.dec ~ Saber_PKE_Scheme_Alt.dec : ={sk, c} ==> ={res}].
 proof.
 proc.
-auto; progress.
-by congr; apply eq_comp_dec_altdec.
+auto => /> ?. 
+by apply eq_comp_dec_altdec.
 qed.
