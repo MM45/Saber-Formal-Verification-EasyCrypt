@@ -63,7 +63,7 @@ module GMLWR(A : Adv_GMLWR) = {
       if (u) {
          b <$ dRp_vec;
       } else {
-         b <- scaleRqv2Rpv (_A *^ s + h);
+         b <- scaleroundRqv2Rpv (_A *^ s);
       }
       
       u' <@ A.guess(sd, b);
@@ -90,7 +90,7 @@ module XMLWR(A : Adv_XMLWR) = {
       if (u) {
          b <$ dRp_vec;
       } else {
-         b <- scaleRqv2Rpv ((trmx _A) *^ s + h);
+         b <- scaleroundRqv2Rpv ((trmx _A) *^ s);
       }
       
       a <$ dRq_vec;
@@ -98,7 +98,7 @@ module XMLWR(A : Adv_XMLWR) = {
       if (u) {
          d <$ dRp;
       } else {
-         d <- scaleRq2Rp ((dotp a s) + h1);
+         d <- scaleroundRq2Rp (dotp a s);
       }
     
       u' <@ A.guess(sd, b, a, d);
@@ -524,7 +524,8 @@ have ->: Pr[Game0(Adv_01).main() @ &m : res] =  Pr[GMLWR( B0(Adv_01) ).main(fals
   rcondf {2} 4.
   - by move=> &m0; auto.
   swap {2} 7 -6; wp.
-  by call (_ : true); auto; call (_: true); auto.
+  call (_ : true); auto; call (_: true); auto => /> u _ sd _ s _.
+  by rewrite eq_scaleRqv2Rpv_scaleroundRqv2Rpv.
 have ->: Pr[Game1(Adv_01).main() @ &m : res] =  Pr[GMLWR( B0(Adv_01) ).main(true) @ &m : res].
 + byequiv => //.
   proc; inline *.
@@ -620,7 +621,8 @@ have ->: Pr[Game3(Adv_34).main() @ &m : res] = Pr[XMLWR( B1(Adv_34) ).main(false
   rcondf {2} 6.
   - by move => &m0; auto.
   swap {2} 11 -10; swap {1} 5 3; swap {2} 6 -2; wp.
-  by sim.
+  sim; auto => /> *. 
+  by rewrite eq_scaleRq2Rp_scaleroundRq2Rp eq_scaleRqv2Rpv_scaleroundRqv2Rpv.
 have ->: Pr[Game4(Adv_34).main() @ &m : res] = Pr[XMLWR( B1(Adv_34) ).main(true) @ &m : res].
 + byequiv => //.
   proc; inline *.

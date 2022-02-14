@@ -21,7 +21,7 @@ clone import FullRO as PRO with
     op dout  <- (fun (sd : seed) => dRq_mat).
 
 (* ----------------------------------- *)
-(*  Adversary Prototypes               *)
+(*  Adversary Classes                  *)
 (* ----------------------------------- *)
 module type Adv_MLWR = {
   proc guess(_A : Rq_mat, b : Rp_vec) : bool
@@ -57,7 +57,7 @@ module MLWR(A : Adv_MLWR) = {
        if (u) {
           b <$ dRp_vec; 
        } else {
-          b <- scaleRqv2Rpv (_A *^ s + h);
+          b <- scaleroundRqv2Rpv (_A *^ s);
        }
        
        u' <@ A.guess(_A, b);
@@ -85,8 +85,8 @@ module MLWR1(A : Adv_MLWR1) = {
           b <$ dRp_vec;
           d <$ dRp;
        } else {
-          b <- scaleRqv2Rpv (_A *^ s + h);
-          d <- scaleRq2Rp ((dotp a s) + h1);
+          b <- scaleroundRqv2Rpv (_A *^ s);
+          d <- scaleroundRq2Rp (dotp a s);
        }
        
        u' <@ A.guess(_A, a, b, d);
@@ -115,7 +115,7 @@ module GMLWR_RO(A : Adv_GMLWR_RO) = {
       if (u) {
          b <$ dRp_vec;
       } else {
-         b <- scaleRqv2Rpv (_A *^ s + h);
+         b <- scaleroundRqv2Rpv (_A *^ s);
       }
       
       u' <@ A.guess(sd, b);
@@ -146,7 +146,7 @@ module XMLWR_RO(A : Adv_XMLWR_RO) = {
       if (u) {
          b <$ dRp_vec;
       } else {
-         b <- scaleRqv2Rpv ((trmx _A) *^ s + h);
+         b <- scaleroundRqv2Rpv ((trmx _A) *^ s);
       }
       
       a <$ dRq_vec;
@@ -154,7 +154,7 @@ module XMLWR_RO(A : Adv_XMLWR_RO) = {
       if (u) {
          d <$ dRp;
       } else {
-         d <- scaleRq2Rp ((dotp a s) + h1);
+         d <- scaleroundRq2Rp (dotp a s);
       }
     
       u' <@ A.guess(sd, b, a, d);
@@ -227,7 +227,7 @@ case (u{1}).
   rcondt {1} 5; first by auto; progress; apply SmtMap.mem_empty.
   swap {1} 4 -3; swap {1} 7 -5. 
   wp; call (_ : ={RO.m}); 1: proc; auto; progress.
-  by do 3! congr; rewrite SmtMap.get_set_sameE oget_some. 
+  by do 2! congr; rewrite SmtMap.get_set_sameE oget_some. 
 qed.
 
 lemma Equal_Advantage_GMLWR_RO_MLWR &m (A <: Adv_GMLWR_RO{RO}) :

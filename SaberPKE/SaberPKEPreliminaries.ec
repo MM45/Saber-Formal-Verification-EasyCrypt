@@ -3,10 +3,10 @@
 (* ------------------------------------------------------------------------------------- *)
 
 (* --- Built-in --- *)
-require import AllCore List Ring ZModP IntDiv Bigalg StdOrder.
+require import AllCore List Ring RealExp ZModP IntDiv Bigalg StdRing StdOrder FloorCeil.
 require import Distr DInterval DList DMap.
 require (*--*) Matrix PKE.
-(*---*) import IntOrder.
+(*---*) import RField RealOrder IntOrder IntID.
 
 (* --- Local --- *)
 require (*--*) PolyReduce.
@@ -46,6 +46,41 @@ move => rng_p; case (p = 0) => [-> /= | neq0_p].
   by rewrite (addzC p) -addzA.
 qed.
 
+
+op round (x : real) : int = floor (x + 0.5).
+
+lemma floor_intDlt1 (n : int) (x : real) :
+  0%r <= x < 1%r => floor (n%r + x) = n.
+proof.
+case=> ge0_x lt1_x; rewrite &(floorE) ler_addl ge0_x /=.
+by rewrite fromintD ltr_add2l.
+qed.
+
+lemma round_int (n : int) : round n%r = n.
+proof.
+by apply: floor_intDlt1 => /=; rewrite RealOrder.invr_ge0 RealOrder.invr_lt1.
+qed.
+
+lemma round0 : round 0%r = 0. 
+proof. by apply (round_int 0). qed.
+
+lemma floor_divz (m n : int) : 0 <= n => m %/ n = floor (m%r / n%r).
+proof.
+rewrite ler_eqVlt; case=> [<-/=|]; first by rewrite from_int_floor.
+move=> gt0_n; rewrite eq_sym &(floorE); split=> [|_].
+- by rewrite ler_pdivl_mulr 1:/# -fromintM le_fromint lez_floor //#.
+- rewrite fromintD ltr_pdivr_mulr 1:/# -fromintD -fromintM.
+  by rewrite lt_fromint &(ltz_ceil).
+qed.
+
+lemma round_div_pow2 (x r : int) : 0 < r =>
+  round (x%r / (2^r)%r) = (x + 2^(r - 1)) %/ 2^r.
+proof.
+move=> gt0_r; rewrite floor_divz 1:expr_ge0 //.
+rewrite fromintD mulrDl /round; do 2! congr.
+by rewrite -!fromintXn 1,2:/# -exprN -exprD // addrAC /= exprN1.
+qed.
+
 (* ------------------------------------------------------------------------------------- *)
 (*  Saber Preliminaries                                                                  *)
 (* ------------------------------------------------------------------------------------- *)
@@ -81,28 +116,28 @@ lemma ge0_n: 0 <= n by smt(ge1_n).
 lemma ge1_t: 1 <= t by rewrite exprn_ege1 1:ge0_et.
 lemma ge2_2t: 2 <= 2 * t by move: (ler_pmul2l 2 _ 1 t); rewrite // ge1_t //.
 lemma ge4_p: 4 <= p by move: (ler_weexpn2l 2 _ 2 ep); rewrite //= ge2_ep /= expr2.
-lemma ge8_q: 8 <= q by move: (ler_weexpn2l 2 _ 3 eq); rewrite //= ge3_eq /= (exprS 2 2) // expr2.
+lemma ge8_q: 8 <= q by move: (ler_weexpn2l 2 _ 3 eq); rewrite //= ge3_eq /= (IntID.exprS 2 2) // expr2.
 
 lemma two_div_t: 2 %| 2 * t by apply /dvdz_mulr /dvdzz.
 
 lemma t_div_p: t %| p.
 proof.
-  rewrite /t /p; apply (dvdz_exp2l 2 et ep); split; [apply ge0_et | move=> ?].
-  by apply /(lez_trans (et + 2) et ep) /geet2_ep; rewrite (lez_addl et 2). 
+rewrite /t /p; apply (dvdz_exp2l 2 et ep); split; [apply ge0_et | move=> ?].
+by apply /(lez_trans (et + 2) et ep) /geet2_ep; rewrite (lez_addl et 2). 
 qed.
 
 lemma twot_div_p: 2 * t %| p.
 proof.
-  rewrite /t /p -exprS; [apply ge0_et | apply (dvdz_exp2l 2 (et + 1) (ep)); split; last move=> ?].
-  by apply /(lez_trans 1 0 (et + 1)) /ge1_et1.  
-  by apply /(lez_trans (et + 2) (et + 1) ep) /geet2_ep /(ler_add et et 1 2).
+rewrite /t /p -exprS; [apply ge0_et | apply (dvdz_exp2l 2 (et + 1) (ep)); split; last move=> ?].
+by apply /(lez_trans 1 0 (et + 1)) /ge1_et1.  
+by apply /(lez_trans (et + 2) (et + 1) ep) /geet2_ep /(ler_add et et 1 2).
 qed.
 
 lemma p_div_q: p %| q.
 proof. 
-  rewrite /p /q; apply (dvdz_exp2l 2 ep eq); split; [| move=> ?].
-  by apply /(lez_trans 2 0 (ep)) /ge2_ep.
-  by apply /(lez_trans (ep + 1) ep eq) /geep1_eq; rewrite (lez_addl ep 1).
+rewrite /p /q; apply (dvdz_exp2l 2 ep eq); split; [| move=> ?].
+by apply /(lez_trans 2 0 (ep)) /ge2_ep.
+by apply /(lez_trans (ep + 1) ep eq) /geep1_eq; rewrite (lez_addl ep 1).
 qed.
 
 lemma t_div_q: t %| q by apply /(dvdz_trans p t q) /p_div_q /t_div_p.
@@ -521,6 +556,8 @@ op shr (x : int, ex : int) : int = x %/ 2 ^ ex.
 op downscale (x : int, ea : int, eb : int) : int = shr x (ea - eb).
 op upscale (x : int, ea : int, eb : int) : int = shl x (ea - eb).
 
+op downscaleround (x : int, ea : int, eb : int) : int = round(x%r / (2 ^ (ea - eb))%r).
+
 (* Z Scaling Without Modulus Conversion *)
 op upscaleZq (z : Zq, ez : int) : Zq = Zq.inzmod (upscale (Zq.asint z) ez 0).
 
@@ -533,6 +570,8 @@ op scaleZp2Z2t (z : Zp) : Z2t = Z2t.inzmod (downscale (Zp.asint z) ep (et + 1)).
 op scaleZp2Z2 (z : Zp) : Z2 = Z2.inzmod (downscale (Zp.asint z) ep 1).
 op scaleZppq2Z2t (z : Zppq) : Z2t = Z2t.inzmod (downscale (Zppq.asint z) (2 * ep - eq) (et + 1)).
 
+op scaleroundZq2Zp (z : Zq) : Zp = Zp.inzmod (downscaleround (Zq.asint z) eq ep).
+  
 (* Z Upscaling *)
 op scaleZ22Zp (z : Z2) : Zp = Zp.inzmod (upscale (Z2.asint z) ep 1).
 op scaleZ22Zq (z : Z2) : Zq = Zq.inzmod (upscale (Z2.asint z) eq 1).
@@ -564,6 +603,9 @@ op scaleRp2R2 (p : Rp) : R2 =
 op scaleRppq2R2t (p : Rppq) : R2t = 
   BigR2t.XnD1CA.bigi predT (fun (i : int) => scaleZppq2Z2t p.[i] ** exp R2t.iX i) 0 n.
 
+op scaleroundRq2Rp (p : Rq) : Rp = 
+  BigRp.XnD1CA.bigi predT (fun (i : int) => scaleroundZq2Zp p.[i] ** exp Rp.iX i) 0 n.
+  
 (* Lift Upscaling to Polynomials *)
 op scaleR22Rp (p : R2) : Rp =
   BigRp.XnD1CA.bigi predT (fun i => scaleZ22Zp p.[i] ** exp Rp.iX i) 0 n.
@@ -584,6 +626,8 @@ op scaleR2t2Rp_var (p : R2t) (ep : int) : Rp =
 
 (* Lift Downscaling to Polynomial Vectors *)
 op scaleRqv2Rpv (pv : Rq_vec) : Rp_vec = offunv (fun (i : int) => scaleRq2Rp pv.[i]).
+
+op scaleroundRqv2Rpv (pv : Rq_vec) : Rp_vec = offunv (fun (i : int) => scaleroundRq2Rp pv.[i]).
 
 (* Lift Upscaling to Polynomial Vectors *)
 op scaleRpv2Rqv (pv : Rp_vec) : Rq_vec = offunv (fun i => scaleRp2Rq pv.[i]).
@@ -921,6 +965,9 @@ proof. by rewrite /scaleZq2Zp zeroE. qed.
 lemma scaleZp2Zq0 : scaleZp2Zq Zp.zero = Zq.zero.
 proof. by rewrite /scaleZp2Zq zeroE. qed.
 
+lemma scaleroundZq2Zp0 : scaleroundZq2Zp Zq.zero = Zp.zero.
+proof. by rewrite /scaleroundZq2Zp /downscaleround zeroE mul0r round0. qed.
+
 lemma upscaleZq0 (ez : int) : upscaleZq Zq.zero ez = Zq.zero.
 proof. by rewrite /upscaleZq zeroE. qed. 
 
@@ -1140,9 +1187,29 @@ move: (Z2_asint_values z1); case => -> /= @/q.
 + by rewrite expr_ge0 //= ltz_weexpn2l; smt(ge3_eq).
 qed.
 
+lemma eq_scaleZq2Zp_scaleroundZq2Zp (z : Zq) :
+  scaleZq2Zp (z + Zq.inzmod (2 ^ (eq - ep - 1))) = scaleroundZq2Zp z.
+proof.
+rewrite /scaleZq2Zp /scaleroundZq2Zp /downscale /downscaleround /shr.
+rewrite round_div_pow2; first smt(subr_ge0 geep1_eq). 
+rewrite addE inzmodK modzDmr /q /inzmod; congr.
+rewrite (modz_pow2_div _ _ (asint z + 2 ^ (eq - ep -1))). 
++ by rewrite addr_ge0 1:ge0_asint expr_ge0. 
++ by smt(geep1_eq ge2_ep).
+by rewrite (: (eq - (eq - ep)) = ep) 1:/# -/p modz_mod. 
+qed.
+
 (* Polynomial Scaling *)
+lemma scaleRq2Rp0 : scaleRq2Rp Rq.zeroXnD1 = Rp.zeroXnD1.
+proof. by rewrite polyXnD1_eqP => i rng_i; rewrite rcoeffZ_sum //= !rcoeff0 scaleZq2Zp0. qed.
+
 lemma scaleRp2Rq0 : scaleRp2Rq Rp.zeroXnD1 = Rq.zeroXnD1.
 proof. by rewrite polyXnD1_eqP => i rng_i; rewrite rcoeffZ_sum //= !rcoeff0 scaleZp2Zq0. qed.
+
+lemma scaleroundRq2Rp0 : scaleroundRq2Rp Rq.zeroXnD1 = Rp.zeroXnD1.
+proof.
+by rewrite polyXnD1_eqP => i rng_i; rewrite rcoeffZ_sum //= !rcoeff0 scaleroundZq2Zp0. 
+qed.
 
 lemma upscaleRq0 (ez : int) : upscaleRq Rq.zeroXnD1 ez = Rq.zeroXnD1.
 proof. by rewrite polyXnD1_eqP => i rng_i; rewrite rcoeffZ_sum //= !rcoeff0 upscaleZq0. qed.
@@ -1355,11 +1422,28 @@ rewrite polyXnD1_eqP => i rng_i; rewrite rcoeffZ_sum //= 2!rcoeffD.
 by rewrite rcoeffZ_sum //= rcoeffZ_sum //=  scaleZq2Z2_DM_invl.
 qed.
 
+lemma eq_scaleRq2Rp_scaleroundRq2Rp (p : Rq) :
+  scaleRq2Rp (p + h1) = scaleroundRq2Rp p.
+proof.
+rewrite polyXnD1_eqP => i rng_i. 
+by rewrite ?rcoeffZ_sum //= rcoeffD /h1 rcoeffZ_sum //= eq_scaleZq2Zp_scaleroundZq2Zp.
+qed.
+
 (* Polynomial Vector Scaling *)
 lemma scaleRpv2RqvE (pv : Rp_vec) (i : int) : (scaleRpv2Rqv pv).[i] = scaleRp2Rq pv.[i].
 proof.
 rewrite /scaleRpv2Rqv /Mat_Rq.Vector."_.[_]" offunvK /vclamp.
 by case (0 <= i && i < l) => // rng_i; rewrite getv_out // scaleRp2Rq0.
+qed.
+
+lemma eq_scaleRqv2Rpv_scaleroundRqv2Rpv (pv : Rq_vec) :
+  scaleRqv2Rpv (pv + h) = scaleroundRqv2Rpv pv.
+proof.
+rewrite /scaleRqv2Rpv /scaleroundRqv2Rpv; congr.
+rewrite fun_ext /(==) => i; rewrite offunD /h.
+case (0 <= i < l) => rng_i.
++ by rewrite offunCE // eq_scaleRq2Rp_scaleroundRq2Rp.
++ by rewrite ?getv_out // addr0 scaleroundRq2Rp0 scaleRq2Rp0.
 qed.
 
 (* Remaining Dependent Scaling Properties *)
