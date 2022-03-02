@@ -119,7 +119,7 @@ module Game0(A : Adv_INDCPA) = {
       var s, s' : Rq_vec;
       var b, b' : Rp_vec;
       var v' : Rp;
-      var cmu : R2t;
+      var chat : R2t;
 
       u <$ dbool;
 
@@ -133,9 +133,9 @@ module Game0(A : Adv_INDCPA) = {
       s' <$ dsmallRq_vec;
       b' <- scaleRqv2Rpv ((trmx _A) *^ s' + h);
       v' <- (dotp b (Rqv2Rpv s')) + (Rq2Rp h1);
-      cmu <- scaleRp2R2t (v' + (scaleR22Rp (if u then m1 else m0)));
+      chat <- scaleRp2R2t (v' + (scaleR22Rp (if u then m1 else m0)));
       
-      u' <@ A.guess((cmu, b'));
+      u' <@ A.guess((chat, b'));
 
       return (u = u');
    }
@@ -152,7 +152,7 @@ module Game1(A : Adv_INDCPA) = {
       var s, s' : Rq_vec;
       var b, b' : Rp_vec;
       var v' : Rp;
-      var cmu : R2t;
+      var chat : R2t;
 
       u <$ dbool;
 
@@ -166,9 +166,9 @@ module Game1(A : Adv_INDCPA) = {
       s' <$ dsmallRq_vec;
       b' <- scaleRqv2Rpv ((trmx _A) *^ s' + h);
       v' <- (dotp b (Rqv2Rpv s')) + (Rq2Rp h1);
-      cmu <- scaleRp2R2t (v' + (scaleR22Rp (if u then m1 else m0)));
+      chat <- scaleRp2R2t (v' + (scaleR22Rp (if u then m1 else m0)));
       
-      u' <@ A.guess((cmu, b'));
+      u' <@ A.guess((chat, b'));
 
       return (u = u');
    }
@@ -185,7 +185,7 @@ module Game2(A : Adv_INDCPA_2) = {
       var s, s' : Rq_vec;
       var b, b' : Rp_vec;
       var v' : Rp;
-      var cmu : Rppq;
+      var chat : Rppq;
 
       u <$ dbool;
 
@@ -199,9 +199,9 @@ module Game2(A : Adv_INDCPA_2) = {
       s' <$ dsmallRq_vec;
       b' <- scaleRqv2Rpv ((trmx _A) *^ s' + h);
       v' <- (dotp b (Rqv2Rpv s')) + (Rq2Rp h1);
-      cmu <- scaleRp2Rppq (v' + (scaleR22Rp (if u then m1 else m0)));
+      chat <- scaleRp2Rppq (v' + (scaleR22Rp (if u then m1 else m0)));
       
-      u' <@ A.guess((cmu, b'));
+      u' <@ A.guess((chat, b'));
 
       return (u = u');
    }
@@ -218,7 +218,7 @@ module Game2a(A : Adv_INDCPA_2) = {
       var s, s' : Rq_vec;
       var b, b' : Rp_vec;
       var v' : Rp;
-      var cmu : Rppq;
+      var chat : Rppq;
 
       u <$ dbool;
 
@@ -232,9 +232,9 @@ module Game2a(A : Adv_INDCPA_2) = {
       s' <$ dsmallRq_vec;
       b' <- scaleRqv2Rpv ((trmx _A) *^ s' + h);
       v' <- (dotp b (Rqv2Rpv s')) + (Rq2Rp h1);
-      cmu <- scaleRp2Rppq (v' + (scaleR22Rp (if u then m1 else m0)));
+      chat <- scaleRp2Rppq (v' + (scaleR22Rp (if u then m1 else m0)));
       
-      u' <@ A.guess((cmu, b'));
+      u' <@ A.guess((chat, b'));
 
       return (u = u');
    }
@@ -252,7 +252,7 @@ module Game2b(A : Adv_INDCPA_2) = {
       var bq : Rq_vec;
       var b, b' : Rp_vec;
       var v' : Rp;
-      var cmu : Rppq;
+      var chat : Rppq;
 
       u <$ dbool;
 
@@ -266,9 +266,9 @@ module Game2b(A : Adv_INDCPA_2) = {
       s' <$ dsmallRq_vec;
       b' <- scaleRqv2Rpv ((trmx _A) *^ s' + h);
       v' <- (dotp b (Rqv2Rpv s')) + (Rq2Rp h1);
-      cmu <- scaleRp2Rppq (v' + (scaleR22Rp (if u then m1 else m0)));
+      chat <- scaleRp2Rppq (v' + (scaleR22Rp (if u then m1 else m0)));
       
-      u' <@ A.guess((cmu, b'));
+      u' <@ A.guess((chat, b'));
 
       return (u = u');
    }
@@ -286,7 +286,7 @@ module Game3(A : Adv_INDCPA_34) = {
       var b : Rq_vec;
       var b' : Rp_vec;
       var v' : Rp;
-      var cmu : Rp;
+      var chat : Rp;
 
       u <$ dbool;
 
@@ -300,9 +300,9 @@ module Game3(A : Adv_INDCPA_34) = {
       s' <$ dsmallRq_vec;
       b' <- scaleRqv2Rpv ((trmx _A) *^ s' + h);
       v' <- scaleRq2Rp ((dotp b s') + h1);
-      cmu <- v' + (scaleR22Rp_var (if u then m1 else m0) (2 * ep - eq - 1));
+      chat <- v' + (scaleR22Rp_var (if u then m1 else m0) (2 * ep - eq - 1));
    
-      u' <@ A.guess((cmu, b'));
+      u' <@ A.guess((chat, b'));
 
       return (u = u');
    }
@@ -320,7 +320,7 @@ module Game4(A : Adv_INDCPA_34) = {
       var b : Rq_vec;
       var b' : Rp_vec;
       var v' : Rp;
-      var cmu : Rp;
+      var chat : Rp;
 
       u <$ dbool;
 
@@ -334,9 +334,9 @@ module Game4(A : Adv_INDCPA_34) = {
       (* Skip: s' <$ dsmallRq_vec; *)
       b' <$ dRp_vec;
       v' <$ dRp;
-      cmu <- v' + (scaleR22Rp_var (if u then m1 else m0) (2 * ep - eq - 1));
+      chat <- v' + (scaleR22Rp_var (if u then m1 else m0) (2 * ep - eq - 1));
       
-      u' <@ A.guess((cmu, b'));
+      u' <@ A.guess((chat, b'));
 
       return (u = u');
    }
@@ -351,7 +351,7 @@ module Auxiliary_Game(A : Adv_INDCPA_34) = {
       var sd : seed;
       var b : Rq_vec;
       var b' : Rp_vec;
-      var cmu : Rp;
+      var chat : Rp;
       
       sd <$ dseed;
       b <$ dRq_vec;
@@ -359,9 +359,9 @@ module Auxiliary_Game(A : Adv_INDCPA_34) = {
       (m0, m1) <@ A.choose((sd, b));
        
       b' <$ dRp_vec;
-      cmu <$ dRp;
+      chat <$ dRp;
          
-      u' <@ A.guess((cmu, b'));
+      u' <@ A.guess((chat, b'));
       
       u <$ dbool;
 
@@ -437,16 +437,16 @@ module A2(A1 : Adv_INDCPA) : Adv_INDCPA_2 = {
    proc guess(c : Rppq * Rp_vec) : bool = {
       var u' : bool;
       
-      var cmu : Rppq;
+      var chat : Rppq;
       var b' : Rp_vec;
-      var cmu' : R2t;
+      var chat' : R2t;
       
-      cmu <- c.`1;
+      chat <- c.`1;
       b' <- c.`2;
 
-      cmu' <- scaleRppq2R2t cmu; 
+      chat' <- scaleRppq2R2t chat; 
             
-      u' <@ A1.guess((cmu', b'));
+      u' <@ A1.guess((chat', b'));
 
       return u';
    }
@@ -473,15 +473,15 @@ module A3(A2 : Adv_INDCPA_2) : Adv_INDCPA_34 = {
    proc guess(c : Rp * Rp_vec) : bool = {
       var u' : bool;
       
-      var cmu : Rp;
+      var chat : Rp;
       var b' : Rp_vec;
-      var cmu' : Rppq;
+      var chat' : Rppq;
       
-      cmu <- c.`1;
+      chat <- c.`1;
       b' <- c.`2;
-      cmu' <- Rp2Rppq cmu; 
+      chat' <- Rp2Rppq chat; 
       
-      u' <@ A2.guess((cmu', b'));
+      u' <@ A2.guess((chat', b'));
 
       return u';
    }
