@@ -17,21 +17,21 @@ require (*--*) PolyReduce.
 
 lemma ltz_weexpn2l x m n: 2 <= x => 0 <= m => 0 <= n => m < n => exp x m < exp x n.
 proof.
-move => ge2_x ge0_m ge0_n gtm_n; have -> : n = (n - m) + m by ring.
-rewrite exprD_nneg ?(ltr_pmull, expr_gt0, exprn_egt1, neq_ltz); smt().
+move => ge2_x ge0_m ge0_n gtm_n; have ->: n = (n - m) + m by rewrite subrK.
+rewrite exprD_nneg ?(ltr_pmull, expr_gt0, exprn_egt1, neq_ltz) /#.
 qed.
 
 lemma ltz_expeqb x m n: 1 <= x => 0 <= m => 0 <= n => exp x m < exp x n => m < n.
 proof.
 move => ge1_x ge0_m ge0_n; rewrite &(contraLR) !ltzNge /= => lem_n. 
-by apply ler_weexpn2l; smt().
+by apply ler_weexpn2l => /#.
 qed.
 
 lemma lez_expeqb x m n: 2 <= x => 0 <= m => 0 <= n => exp x m <= exp x n => m <= n.
 proof.
 move => ge2_x ge0_m ge0_n; rewrite !lez_eqVlt; case => [eq_exp | lt_exp].
-+ left; apply (ieexprIn x); smt().
-+ right; apply (ltz_expeqb x); smt().
++ left; apply (ieexprIn x) => /#. 
++ right; apply (ltz_expeqb x) => /#.
 qed.
 
 lemma modz_pow2_mul (n p i : int) : 0 <= p <= n =>
@@ -984,12 +984,14 @@ proof.
 by rewrite /upscaleZq -inzmodD -upscale_DM addE -eq_inzmod /upscale /shl /= /q modzMml.
 qed.
 
+pragma Goals:printall.
+
 lemma scaleZp2Z2_DM (z1 z2 : Zp) : 
   2 ^ (ep - 1) %| Zp.asint z1 \/  2 ^ (ep - 1) %| Zp.asint z2 => 
   scaleZp2Z2 (z1 + z2) = scaleZp2Z2 z1 + scaleZp2Z2 z2.
 proof. 
 case => [divz1 | divz2]; rewrite /scaleZp2Z2 -inzmodD -downscale_DM ?(divz1, divz2) //;
-    rewrite addE /p /downscale /shr /inzmod modz_pow2_div; 1, 2, 4, 5: smt(Zp.ge0_asint ge2_ep);
+    rewrite addE /p /downscale /shr /inzmod modz_pow2_div; 1, 3: smt(Zp.ge0_asint ge2_ep);
     congr; by rewrite opprD addzA /= expr1 modz_mod.
 qed.
 
@@ -999,7 +1001,7 @@ lemma scaleZp2Z2t_DM (z1 z2 : Zp) :
 proof. 
 case => [divz1 | divz2]; rewrite /scaleZp2Z2t -inzmodD -downscale_DM ?(divz1, divz2) //;
     rewrite addE /p /downscale /shr /inzmod /t -exprS 1:ge0_et modz_pow2_div;
-    1, 2, 4, 5: smt(Zp.ge0_asint geet2_ep ge0_et); congr; rewrite modz_dvd_pow; smt(ge0_et).
+    1, 3: smt(Zp.ge0_asint geet2_ep ge0_et); congr; rewrite modz_dvd_pow; smt(ge0_et).
 qed.
 
 lemma scaleZq2Z2_DM (z1 z2 : Zq) : 
@@ -1007,7 +1009,7 @@ lemma scaleZq2Z2_DM (z1 z2 : Zq) :
   scaleZq2Z2 (z1 + z2) = scaleZq2Z2 z1 + scaleZq2Z2 z2.
 proof. 
 case => [divz1 | divz2]; rewrite /scaleZq2Z2 -inzmodD -downscale_DM ?(divz1, divz2) //;
-    rewrite addE /q /downscale /shr /inzmod modz_pow2_div; 1, 2, 4, 5: smt(Zq.ge0_asint ge3_eq);
+    rewrite addE /q /downscale /shr /inzmod modz_pow2_div; 1, 3: smt(Zq.ge0_asint ge3_eq);
     congr; by rewrite opprD addzA /= expr1 modz_mod.
 qed.
 
@@ -1017,20 +1019,20 @@ lemma scaleZq2Z2t_DM (z1 z2 : Zq) :
 proof. 
 case => [divz1 | divz2]; rewrite /scaleZq2Z2t -inzmodD -downscale_DM ?(divz1, divz2) //;
     rewrite addE /q /downscale /shr /inzmod /t -exprS 1:ge0_et modz_pow2_div;
-    1, 2, 4, 5: smt(Zq.ge0_asint geet2_ep geep1_eq ge0_et); congr; rewrite modz_dvd_pow; smt(ge0_et).
+    1, 3: smt(Zq.ge0_asint geet2_ep geep1_eq ge0_et); congr; rewrite modz_dvd_pow; smt(ge0_et).
 qed.
 
 lemma scaleZ2t2Zq_DM (z1 z2 : Z2t) : scaleZ2t2Zq (z1 + z2) = scaleZ2t2Zq z1 + scaleZ2t2Zq z2.
 proof.
-rewrite /scaleZ2t2Zq -inzmodD /upscale /shl -mulrDl addE -eq_inzmod /p /q /t -{1}(Ring.IntID.expr1 2)
-        -exprD_nneg 2:ge0_et // (Ring.IntID.addrC 1 et) modz_pow2_mul //.
-+ smt(ge0_et geet2_ep geep1_eq).
+rewrite /scaleZ2t2Zq -inzmodD /upscale /shl -mulrDl addE -eq_inzmod /p /q /t 
+        -{1}(Ring.IntID.expr1 2) -exprD_nneg 2:ge0_et // (Ring.IntID.addrC 1 et) modz_pow2_mul //.
+smt(ge0_et geet2_ep geep1_eq).
 qed.
 
 lemma scaleZp2Zq_DM (z1 z2 : Zp) : scaleZp2Zq (z1 + z2) = scaleZp2Zq z1 + scaleZp2Zq z2.
 proof.
 rewrite /scaleZp2Zq -inzmodD /upscale /shl -mulrDl addE -eq_inzmod /p /q modz_pow2_mul //.
-+ smt(ge2_ep geep1_eq).
+smt(ge2_ep geep1_eq).
 qed.
 
 lemma scaleZ22Zq_PN (z : Z2) : scaleZ22Zq z = scaleZ22Zq (- z).
@@ -1132,7 +1134,7 @@ qed.
 lemma scaleZp2Zq2Z2_comp (z : Zp) : scaleZp2Z2 z = scaleZq2Z2 (scaleZp2Zq z).
 proof.
 rewrite /scaleZq2Z2 /scaleZp2Zq /scaleZp2Z2 /downscale /upscale /shr /shl -eq_inzmod !inzmodK /p /q.
-rewrite modz_pow2_div 1:?(mulr_ge0, ge0_asint, expr_ge0); 1, 2: smt(geep1_eq ge3_eq).
+rewrite modz_pow2_div; first by smt(geep1_eq ge3_eq).
 have ->: 2 ^ (eq - 1) = 2 ^ (ep - 1) * 2 ^ (eq - ep).
 + by rewrite -exprD_nneg; 1, 2: smt(ge2_ep geep1_eq); congr; ring.
 by rewrite divzMpr 1:expr_gt0 2:opprD 2:addrA //= expr1 modz_mod.
@@ -1141,7 +1143,7 @@ qed.
 lemma scaleZp2Zq2Z2t_comp (z : Zp) : scaleZp2Z2t z = scaleZq2Z2t (scaleZp2Zq z).
 proof.
 rewrite /scaleZq2Z2t /scaleZp2Zq /scaleZp2Z2t /downscale /upscale /shr /shl -eq_inzmod !inzmodK /p /q.
-rewrite modz_pow2_div 1:?(mulr_ge0, ge0_asint, expr_ge0); 1, 2: smt(ge0_et geet2_ep geep1_eq).
+rewrite modz_pow2_div; first by smt(ge0_et geet2_ep geep1_eq).
 rewrite /t -{2 7}(IntID.expr1 2) -exprD_nneg 3:modz_dvd_pow; first 3 smt(ge0_et).
 do 2! congr; have ->: 2 ^ (eq - (et + 1)) = 2 ^ (ep - (et + 1)) * 2 ^ (eq - ep).
 + rewrite -exprD_nneg; 1, 2: smt(geet2_ep geep1_eq); congr; ring.
@@ -1172,8 +1174,8 @@ qed.
 
 lemma scaleZ22Zq_scaleZq2Z2_inv (z : Z2) : scaleZq2Z2 (scaleZ22Zq z) = z.
 proof. 
-rewrite /scaleZq2Z2 /scaleZ22Zq /downscale /upscale /shr /shl inzmodK /q modz_pow2_div;
-        1, 2: smt(mulr_ge0 expr_ge0 Z2.ge0_asint ge3_eq).
+rewrite /scaleZq2Z2 /scaleZ22Zq /downscale /upscale /shr /shl inzmodK /q modz_pow2_div.
++ by smt(ge3_eq).
 by rewrite mulzK 2:opprD 2:addzA /= 2:expr1 2:-inzmodK 2:!asintK // neq_ltz; right; rewrite expr_gt0.
 qed.
 
@@ -1193,8 +1195,7 @@ proof.
 rewrite /scaleZq2Zp /scaleroundZq2Zp /downscale /downscaleround /shr.
 rewrite round_div_pow2; first smt(subr_ge0 geep1_eq). 
 rewrite addE inzmodK modzDmr /q /inzmod; congr.
-rewrite (modz_pow2_div _ _ (asint z + 2 ^ (eq - ep -1))). 
-+ by rewrite addr_ge0 1:ge0_asint expr_ge0. 
+rewrite (modz_pow2_div _ _ (asint z + 2 ^ (eq - ep -1))).
 + by smt(geep1_eq ge2_ep).
 by rewrite (: (eq - (eq - ep)) = ep) 1:/# -/p modz_mod. 
 qed.
@@ -1472,8 +1473,8 @@ rewrite /Zp2Zppq /Zq2Zp /scaleZq2Zp /scaleZp2Zppq /scaleZ22Zp /scaleZ22Zp_var
         /downscale /upscale /shr /shl. 
 rewrite !Zp.inzmodK !modzDm {2}(mulzC 2) -(intmulz ep) mulr2z !opprD !addzA /= (addzC _ eq).
 rewrite -eq_inzmod /p -eq_22epeq_ppq modz_dvd_pow; 1: smt(geeq1_2ep geep1_eq).
-rewrite modz_pow2_div 1:addr_ge0 2:mulr_ge0 3:expr_ge0 ?ge0_asint //; first smt(geep1_eq geeq1_2ep).
-rewrite eq_sym modz_dvd_pow; 1:smt(geeq1_2ep geep1_eq); do 2! congr.
+rewrite modz_pow2_div; first by smt(geep1_eq geeq1_2ep).
+rewrite eq_sym modz_dvd_pow; 1: smt(geeq1_2ep geep1_eq); do 2! congr.
 rewrite divzDr; first case: (Z2.asint m = 0) => [-> /= | /neq_ltz]; first by apply dvdz0. 
 + case; first by rewrite ltzNge Z2.ge0_asint.
   move: (Z2.gtp_asint m); rewrite -2!lez_add1r -(ler_add2l (-1)) /= => le1_m ge1_m. 
