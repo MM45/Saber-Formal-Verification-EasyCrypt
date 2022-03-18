@@ -4,7 +4,7 @@ This repository accompanies the paper "Formal Verification of Saber's Public-Key
 This repository comprises EasyCrypt scripts aimed at the formal verification of the public-key encryption (PKE) scheme from the [Saber post-quantum cipher suite](https://www.esat.kuleuven.be/cosic/pqcrypto/saber/). 
 More precisely, these scripts cover the formal verification of the IND-CPA security and delta-correctness properties of Saber's PKE scheme.\
 \
-The version of EasyCrypt used to construct the scripts in this repository corresponds to the following commit (of the 1.0 branch) of the [EasyCrypt repository](https://github.com/EasyCrypt/easycrypt): `commit 3646dd8`
+The version of EasyCrypt used to construct the scripts in this repository corresponds to the following commit (of the 1.0 branch) of the [EasyCrypt repository](https://github.com/EasyCrypt/easycrypt): `commit b13fb54e49840bd81ed3d872883c212cc6bab273`
 
 ## Repository Structure and Contents
 This repository is structured as follows.
