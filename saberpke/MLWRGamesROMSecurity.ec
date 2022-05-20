@@ -212,7 +212,7 @@ module AXM(AX : Adv_XMLWR_RO) : Adv_MLWR1 = {
 (* ----------------------------------- *)
 
 (* Reduction From GMLWR_RO to MLWR *)
-lemma Equivalent_GMLWR_RO_MLWR (A <: Adv_GMLWR_RO{RO}) :
+lemma Equivalent_GMLWR_RO_MLWR (A <: Adv_GMLWR_RO{-RO}) :
   equiv[GMLWR_RO(A).main ~ MLWR( AGM(A) ).main : ={glob A, u} ==> ={res}].
 proof.
 proc; inline *.
@@ -230,7 +230,7 @@ case (u{1}).
   by do 2! congr; rewrite SmtMap.get_set_sameE oget_some. 
 qed.
 
-lemma Equal_Advantage_GMLWR_RO_MLWR &m (A <: Adv_GMLWR_RO{RO}) :
+lemma Equal_Advantage_GMLWR_RO_MLWR &m (A <: Adv_GMLWR_RO{-RO}) :
   `| Pr[GMLWR_RO(A).main(true) @ &m : res] - Pr[GMLWR_RO(A).main(false) @ &m : res] |
    =
   `| Pr[MLWR( AGM(A) ).main(true) @ &m : res] - Pr[MLWR( AGM(A) ).main(false) @ &m : res] |.
@@ -243,7 +243,7 @@ qed.
 
 
 (* Reduction From XMLWR_RO to MLWR1 *)
-lemma Equivalent_XMLWR_RO_MLWR1 (A <: Adv_XMLWR_RO{RO}) :
+lemma Equivalent_XMLWR_RO_MLWR1 (A <: Adv_XMLWR_RO{-RO}) :
   equiv[XMLWR_RO(A).main ~ MLWR1( AXM(A) ).main : ={glob A, u} ==> ={res}].
 proof.
 proc; inline *.
@@ -270,7 +270,7 @@ case (u{1}).
 qed.
 
 
-lemma Equal_Advantage_XMLWR_RO_MLWR1 &m (A <: Adv_XMLWR_RO{RO}) :
+lemma Equal_Advantage_XMLWR_RO_MLWR1 &m (A <: Adv_XMLWR_RO{-RO}) :
   `| Pr[XMLWR_RO(A).main(true) @ &m : res] - Pr[XMLWR_RO(A).main(false) @ &m : res] |
    =
   `| Pr[MLWR1( AXM(A) ).main(true) @ &m : res] - Pr[MLWR1( AXM(A) ).main(false) @ &m : res] |.
