@@ -14,6 +14,8 @@ require import SaberPKEPreliminaries.
 (*---*) import Saber_PKE.
 (*---*) import DMapRqv2Rpv.
 
+
+
 (* ----------------------------------- *)
 (*  Adversary Classes                  *)
 (* ----------------------------------- *)
@@ -31,22 +33,12 @@ module type Adv_INDCPA = {
   proc guess(c : R2t * Rp_vec) : bool
 }.
 
-module type Adv_INDCPA_2 = {
-  proc choose(pk : seed * Rp_vec) : R2 * R2  
-  proc guess(c : Rppq * Rp_vec) : bool
-}.
-
-module type Adv_INDCPA_34 = {
-  proc choose(pk : seed * Rq_vec) : R2 * R2  
-  proc guess(c : Rp * Rp_vec) : bool
-}.
 
 
 (* ----------------------------------- *)
-(*  Games                              *)
+(* MLWR-Related Games                  *)
 (* ----------------------------------- *)
 
-(* --- MLWR-Related Games --- *)
 (* GMLWR Game *)
 module GMLWR(A : Adv_GMLWR) = {
    proc main(u : bool) : bool = {
@@ -107,9 +99,28 @@ module XMLWR(A : Adv_XMLWR) = {
    }
 }.
 
+
+
+(* ----------------------------------- *)
+(* Game-Playing Proof                  *)
+(* ----------------------------------- *)
+
+section INDCPA_SaberPKE.
+(* --- Auxiliary Adversary Classes --- *)
+local module type Adv_INDCPA_2 = {
+  proc choose(pk : seed * Rp_vec) : R2 * R2  
+  proc guess(c : Rppq * Rp_vec) : bool
+}.
+
+local module type Adv_INDCPA_34 = {
+  proc choose(pk : seed * Rq_vec) : R2 * R2  
+  proc guess(c : Rp * Rp_vec) : bool
+}.
+
+
 (* --- Game Sequence --- *)
 (* Game 0 *)
-module Game0(A : Adv_INDCPA) = {
+local module Game0(A : Adv_INDCPA) = {
    proc main() : bool = {
       var u, u' : bool;
       var m0, m1 : R2;
@@ -142,7 +153,7 @@ module Game0(A : Adv_INDCPA) = {
 }.
 
 (* Game 1 *)
-module Game1(A : Adv_INDCPA) = {
+local module Game1(A : Adv_INDCPA) = {
    proc main() : bool = {
       var u, u' : bool;
       var m0, m1 : R2;
@@ -175,7 +186,7 @@ module Game1(A : Adv_INDCPA) = {
 }.
 
 (* Game 2 *)
-module Game2(A : Adv_INDCPA_2) = {
+local module Game2(A : Adv_INDCPA_2) = {
    proc main() : bool = {
       var u, u' : bool;
       var m0, m1 : R2;
@@ -208,7 +219,7 @@ module Game2(A : Adv_INDCPA_2) = {
 }.
 
 (* Auxiliary Game (Reduction 2-3): Game 2a *)
-module Game2a(A : Adv_INDCPA_2) = {
+local module Game2a(A : Adv_INDCPA_2) = {
    proc main() : bool = {
       var u, u' : bool;
       var m0, m1 : R2;
@@ -241,7 +252,7 @@ module Game2a(A : Adv_INDCPA_2) = {
 }.
 
 (* Auxiliary Game (Reduction 2-3): Game 2b *)
-module Game2b(A : Adv_INDCPA_2) = {
+local module Game2b(A : Adv_INDCPA_2) = {
    proc main() : bool = {
       var u, u' : bool;
       var m0, m1 : R2;
@@ -275,7 +286,7 @@ module Game2b(A : Adv_INDCPA_2) = {
 }.
 
 (* Game 3 *)
-module Game3(A : Adv_INDCPA_34) = {
+local module Game3(A : Adv_INDCPA_34) = {
    proc main() : bool = {
       var u, u' : bool;
       var m0, m1 : R2;
@@ -309,7 +320,7 @@ module Game3(A : Adv_INDCPA_34) = {
 }.
 
 (* Game 4 *)
-module Game4(A : Adv_INDCPA_34) = {
+local module Game4(A : Adv_INDCPA_34) = {
    proc main() : bool = {
       var u, u' : bool;
       var m0, m1 : R2;
@@ -343,7 +354,7 @@ module Game4(A : Adv_INDCPA_34) = {
 }.
 
 (* Auxiliary Game with All Random Artifacts *)
-module Auxiliary_Game(A : Adv_INDCPA_34) = {
+local module Auxiliary_Game(A : Adv_INDCPA_34) = {
    proc main() : bool = {
       var u, u' : bool;
       var m0, m1 : R2;
@@ -369,13 +380,10 @@ module Auxiliary_Game(A : Adv_INDCPA_34) = {
   }
 }.
 
-(* ----------------------------------- *)
-(*  Adversaries                        *)
-(* ----------------------------------- *)
 
-(* --- MLWR-Related Adversaries --- *)
+(* --- Reduction Adversaries --- *)
 (* Adversary B0 Against GMLWR, Constructed from Adversary A Distinguishing Between Game0 and Game1 *)
-module B0(A : Adv_INDCPA) : Adv_GMLWR = {
+local module B0(A : Adv_INDCPA) : Adv_GMLWR = {
    proc guess(sd : seed, b : Rp_vec) : bool = {
       var w, w' : bool;
       var m0, m1 : R2;
@@ -404,7 +412,7 @@ module B0(A : Adv_INDCPA) : Adv_GMLWR = {
 }.
 
 (* Adversary B1 Against XMLWR, Constructed from Adversary A Distinguishing between Game3 and Game4 *)
-module B1(A : Adv_INDCPA_34) : Adv_XMLWR = {
+local module B1(A : Adv_INDCPA_34) : Adv_XMLWR = {
    proc guess(sd : seed, b : Rp_vec, a : Rq_vec, d : Rp) : bool =  {
       var w, w' : bool;
       var m0, m1 : R2;
@@ -423,9 +431,8 @@ module B1(A : Adv_INDCPA_34) : Adv_XMLWR = {
    }
 }.
 
-(* --- Other Adversaries --- *)
 (* Adversary A2 Against Game2, Constructed from Adversary A1 Against Game1 *)
-module A2(A1 : Adv_INDCPA) : Adv_INDCPA_2 = {
+local module A2(A1 : Adv_INDCPA) : Adv_INDCPA_2 = {
    proc choose(pk : seed * Rp_vec) : R2 * R2 = {
       var m0, m1 : R2;
       
@@ -453,7 +460,7 @@ module A2(A1 : Adv_INDCPA) : Adv_INDCPA_2 = {
 }.
 
 (* Adversary A3 Against Game3, Constructed from Adversary A2 Against Game2 *)
-module A3(A2 : Adv_INDCPA_2) : Adv_INDCPA_34 = {
+local module A3(A2 : Adv_INDCPA_2) : Adv_INDCPA_34 = {
    proc choose(pk : seed * Rq_vec) : R2 * R2 = {
       var m0, m1 : R2;
       
@@ -487,213 +494,182 @@ module A3(A2 : Adv_INDCPA_2) : Adv_INDCPA_34 = {
    }
 }.
 
-(* ----------------------------------- *)
-(*  Game-Based Security Proof          *)
-(* ----------------------------------- *)
 
-section Game_Hopping.
-
-(* -- Declare Adversary Against Game0 and Game1  -- *)
-declare module Adv_01 <: Adv_INDCPA.
-
-(* Saber's INDCPA <==> Game 0 *)
-lemma Equivalence_SaberINDCPA_Game0 &m :
-  `| Pr[CPA(Saber_PKE_Scheme, Adv_01).main() @ &m : res] - 1%r / 2%r |
-  =
-  `| Pr[Game0(Adv_01).main() @ &m : res] - 1%r /2%r |.
-proof.
-have -> //: Pr[CPA(Saber_PKE_Scheme, Adv_01).main() @ &m : res] 
-            = 
-            Pr[Game0(Adv_01).main() @ &m : res].
-+ byequiv => //.
-  proc; inline *. 
-  swap {1} 7 -6.
-  call (_ : true); auto; call (_: true); auto => /> u _ sd _ s1 _ s2 _ u'.
-  by rewrite (eq_sym u u').
-qed.
-
-(* Step 1: Game0 <> Game1 -- GMLWR *)
-lemma Step_Distinguish_Game0_Game1_GMLWR &m :
-  `| Pr[Game0(Adv_01).main() @ &m : res] - Pr[Game1(Adv_01).main() @ &m : res] |
-  = 
-  `| Pr[GMLWR( B0(Adv_01) ).main(true) @ &m : res] - Pr[GMLWR( B0(Adv_01) ).main(false) @ &m : res] |. 
-proof.
-have ->: Pr[Game0(Adv_01).main() @ &m : res] =  Pr[GMLWR( B0(Adv_01) ).main(false) @ &m : res].
-+ byequiv => //.
-  proc; inline *.
-  rcondf {2} 4.
-  - by move=> &m0; auto.
-  swap {2} 7 -6; wp.
-  call (_ : true); auto; call (_: true); auto => /> u _ sd _ s _.
-  by rewrite eq_scaleRqv2Rpv_scaleroundRqv2Rpv.
-have ->: Pr[Game1(Adv_01).main() @ &m : res] =  Pr[GMLWR( B0(Adv_01) ).main(true) @ &m : res].
-+ byequiv => //.
-  proc; inline *.
-  rcondt {2} 4.
-  - by move=> &m0; auto.
-  swap {2} 7 -6; wp.
-  call (_ : true); auto; call (_: true); auto; rnd {2}; auto => /> *.
-  by apply dsmallRq_vec_ll.
-by apply distrC.
-qed.
-
-(* Step 2: Game1 -- Game2 *)
-lemma Step_Game1_Game2 &m :
-  `| Pr[Game1(Adv_01).main() @ &m : res] - 1%r / 2%r |
-  =
-  `| Pr[Game2( A2(Adv_01) ).main() @ &m : res] - 1%r / 2%r |.
-proof.
-have -> //: Pr[Game1(Adv_01).main() @ &m : res] = Pr[Game2( A2(Adv_01) ).main() @ &m : res].
-+ byequiv => //.
-  proc; inline *.
-  wp; call (_ : true); auto; call (_ : true); auto => /> u _ sd _ b _ r s _.
-  by rewrite scaleRp2Rppq2R2t_comp.  
-qed.
-
-
-(* Declare Adversary Against Game2  *)
-declare module Adv_2 <: Adv_INDCPA_2.
-
-(* Auxiliary Step (Reduction 2-3): Game2 -- Game2a *)
-lemma AuxStep_Game2_Game2a &m :
-  `| Pr[Game2(Adv_2).main() @ &m : res] - 1%r / 2%r |
-  =
-  `| Pr[Game2a(Adv_2).main() @ &m : res] - 1%r / 2%r |.
-proof.
-have -> //: Pr[Game2(Adv_2).main() @ &m : res] = Pr[Game2a(Adv_2).main() @ &m : res].
-+ byequiv => //.
-  proc; inline *.
-  auto; call(_ : true); auto; call(_ : true); auto => />.
-  by rewrite dRqv2dRpv.
-qed.
-
-(* Auxiliary Step (Reduction 2-3): Game2a -- Game2b *)
-lemma AuxStep_Game2a_Game2b &m :
-  `| Pr[Game2a(Adv_2).main() @ &m : res] - 1%r / 2%r |
-  =
-  `| Pr[Game2b(Adv_2).main() @ &m : res] - 1%r / 2%r |.
-proof.
-have -> //: Pr[Game2a(Adv_2).main() @ &m : res] = Pr[Game2b(Adv_2).main() @ &m : res].
-+ byequiv => //.
-  proc.
-  by auto; call(_ : true); auto; call(_ : true); call sample; auto.
-qed.
-
-(* Auxiliary Step (Reduction 2-3): Game2b -- Game3 *)
-lemma AuxStep_Game2b_Game3 &m :
-  `| Pr[Game2b(Adv_2).main() @ &m : res] - 1%r / 2%r |
-  =
-  `| Pr[Game3( A3(Adv_2) ).main() @ &m : res] - 1%r / 2%r |.
-proof.
-have -> //: Pr[Game2b(Adv_2).main() @ &m : res] = Pr[Game3( A3(Adv_2) ).main() @ &m : res].
-+ byequiv => //.
-  proc; inline *.
-  auto; call(_ : true); auto; call(_ : true); auto => /> u _ sd _ x _ r s _.
-  by rewrite eq_comp23; do 2! congr; rewrite -Rq2Rp_DG23.
-qed.
-
-(* Step 3: Game2 -- Game3 *)
-lemma Step_Game2_Game3 &m :
-  `| Pr[Game2(Adv_2).main() @ &m : res] - 1%r / 2%r |
-  =
-  `| Pr[Game3( A3(Adv_2) ).main() @ &m : res] - 1%r / 2%r |.
-proof.
-by rewrite (AuxStep_Game2_Game2a &m) (AuxStep_Game2a_Game2b &m) (AuxStep_Game2b_Game3 &m).
-qed.
-
-
-(* Declare (Terminating) Adversary Against Game3 and Game4 *)
-declare module Adv_34 <: Adv_INDCPA_34.
-declare axiom Adv_34_choose_ll : islossless Adv_34.choose.
-declare axiom Adv_34_guess_ll : islossless Adv_34.guess.
-
-(* Step 4: Game3 <> Game4 -- XMLWR *)
-lemma Step_Distinguish_Game3_Game4_XMLWR &m :
-  `| Pr[Game3(Adv_34).main() @ &m : res] - Pr[Game4(Adv_34).main() @ &m : res] |
-  = 
-  `| Pr[XMLWR( B1(Adv_34) ).main(true) @ &m : res] - Pr[XMLWR( B1(Adv_34) ).main(false) @ &m : res] |. 
-proof.
-have ->: Pr[Game3(Adv_34).main() @ &m : res] = Pr[XMLWR( B1(Adv_34) ).main(false) @ &m : res].
-+ byequiv => //.
-  proc; inline *.
-  rcondf {2} 4.
-  - by move => &m0; auto.
-  rcondf {2} 6.
-  - by move => &m0; auto.
-  swap {2} 11 -10; swap {1} 5 3; swap {2} 6 -2; wp.
-  sim; auto => /> *. 
-  by rewrite eq_scaleRq2Rp_scaleroundRq2Rp eq_scaleRqv2Rpv_scaleroundRqv2Rpv.
-have ->: Pr[Game4(Adv_34).main() @ &m : res] = Pr[XMLWR( B1(Adv_34) ).main(true) @ &m : res].
-+ byequiv => //.
-  proc; inline *.
-  rcondt {2} 4.
-  - by move => &m0; auto.
-  rcondt {2} 6.
-  - by move => &m0; auto.
-  swap {2} 11 -10; swap {1} 5 2; swap {2} 6 -1; wp.
-  sim; rnd {2}; auto.
-  by progress; apply dsmallRq_vec_ll.
-by apply distrC.
-qed.
-
-(* Auxiliary_Game Analysis *)
-lemma Aux_Prob_Half &m :
-  Pr[Auxiliary_Game(Adv_34).main() @ &m : res]  = 1%r / 2%r. 
-proof.
-byphoare => //.
-proc.
-rnd.
-call Adv_34_guess_ll; auto; call Adv_34_choose_ll; auto.
-by progress; [apply dseed_ll        |
-              apply dRq_vec_ll      |
-              apply dRp_vec_ll      |
-              apply Rp.dpolyXnD1_ll |
-              apply dbool1E].
-qed.
-
-(* Game4 <==> Auxiliary_Game *)
-lemma Equal_Prob_Game4_Aux &m :
-  Pr[Game4(Adv_34).main() @ &m : res] = Pr[Auxiliary_Game(Adv_34).main() @ &m : res].
-proof.
-byequiv => //. 
-proc; inline *.
-swap {2} 7 -6.
-call (_ : true); wp.
-rnd (fun (x : Rp) => x + (scaleR22Rp_var (if u{1} then m1{1} else m0{1}) (2 * ep - eq - 1)))  
-    (fun (x : Rp) => x - (scaleR22Rp_var (if u{1} then m1{1} else m0{1}) (2 * ep - eq - 1))).
-auto; call(_ : true); auto.
-progress; 1, 4: by ring.
-- by apply /rnd_funi /Rp.dpolyXnD1_funi.
-- by apply /is_fullP /Rp.dpolyXnD1_fu.  
-qed.
-
-(* Game4 Analysis *)
-lemma Game4_Prob_Half &m :
-  Pr[Game4(Adv_34).main() @ &m : res] = 1%r / 2%r. 
-proof. by rewrite (Equal_Prob_Game4_Aux &m) (Aux_Prob_Half &m). qed.
-
-end section Game_Hopping.
-
-section Security_Theorem.
-
-(* -- Declare (Terminating) Adversary Against INDCPA Game For Saber_PKE_Scheme -- *)
+(* --- Declare (Arbitrary Terminating) IND-CPA Adversary --- *)
 declare module A <: Adv_INDCPA.
 declare axiom A_choose_ll : islossless A.choose.
 declare axiom A_guess_ll : islossless A.guess.
 
+(* Saber's INDCPA <==> Game 0 *)
+local lemma Equivalence_SaberINDCPA_Game0 &m :
+  `| Pr[CPA(Saber_PKE_Scheme, A).main() @ &m : res] - 1%r / 2%r |
+  =
+  `| Pr[Game0(A).main() @ &m : res] - 1%r /2%r |.
+proof.
+do 2! congr.
+byequiv => //.
+proc; inline *. 
+swap {1} 7 -6.
+call (_ : true); auto; call (_: true); auto => /> u _ sd _ s1 _ s2 _ u'.
+by rewrite (eq_sym u u').
+qed.
+
+(* Step 1: Game0 <> Game1 -- GMLWR *)
+local lemma Step_Distinguish_Game0_Game1_GMLWR &m :
+  `| Pr[Game0(A).main() @ &m : res] - Pr[Game1(A).main() @ &m : res] |
+  = 
+  `| Pr[GMLWR( B0(A) ).main(true) @ &m : res] - Pr[GMLWR( B0(A) ).main(false) @ &m : res] |. 
+proof.
+rewrite distrC; do 2! congr; last congr.
++ byequiv => //.
+  proc; inline *.
+  rcondt {2} 4.
+  + by move=> &m0; auto.
+  swap {2} 7 -6; wp.
+  call (_ : true); auto; call (_: true); auto; rnd {2}; auto => /> *.
+  by apply dsmallRq_vec_ll.
+byequiv => //.
+proc; inline *.
+rcondf {2} 4.
+- by move=> &m0; auto.
+swap {2} 7 -6; wp.
+call (_ : true); auto; call (_: true); auto => /> *.
+by rewrite eq_scaleRqv2Rpv_scaleroundRqv2Rpv.
+qed.
+
+(* Step 2: Game1 -- Game2 *)
+local lemma Step_Game1_Game2 &m :
+  `| Pr[Game1(A).main() @ &m : res] - 1%r / 2%r |
+  =
+  `| Pr[Game2( A2(A) ).main() @ &m : res] - 1%r / 2%r |.
+proof.
+do 2! congr.
+byequiv => //.
+proc; inline *.
+wp; call (_ : true); auto; call (_ : true); auto => /> u _ sd _ b _ r s _.
+by rewrite scaleRp2Rppq2R2t_comp.  
+qed.
+
+(* Auxiliary Step (Reduction 2-3): Game2 -- Game2a *)
+local lemma AuxStep_Game2_Game2a &m :
+  `| Pr[Game2( A2(A) ).main() @ &m : res] - 1%r / 2%r |
+  =
+  `| Pr[Game2a( A2(A) ).main() @ &m : res] - 1%r / 2%r |.
+proof.
+do 2! congr.
+byequiv => //.
+proc; inline *.
+auto; call(_ : true); auto; call(_ : true); auto => />.
+by rewrite dRqv2dRpv.
+qed.
+
+(* Auxiliary Step (Reduction 2-3): Game2a -- Game2b *)
+local lemma AuxStep_Game2a_Game2b &m :
+  `| Pr[Game2a( A2(A) ).main() @ &m : res] - 1%r / 2%r |
+  =
+  `| Pr[Game2b( A2(A) ).main() @ &m : res] - 1%r / 2%r |.
+proof.
+do 2! congr.
+byequiv => //.
+proc; inline A2(A).choose A2(A).guess.
+by wp; call(_ : true); auto; call(_ : true); wp; call sample; auto.
+qed.
+
+(* Auxiliary Step (Reduction 2-3): Game2b -- Game3 *)
+local lemma AuxStep_Game2b_Game3 &m :
+  `| Pr[Game2b( A2(A) ).main() @ &m : res] - 1%r / 2%r |
+  =
+  `| Pr[Game3( A3(A2(A)) ).main() @ &m : res] - 1%r / 2%r |.
+proof.
+do 2! congr.
+byequiv => //.
+proc; inline *.
+auto; call(_ : true); auto; call(_ : true); auto => /> *.
+by rewrite eq_comp23; do 2! congr; rewrite -Rq2Rp_DG23.
+qed.
+
+(* Step 3: Game2 -- Game3 *)
+local lemma Step_Game2_Game3 &m :
+  `| Pr[Game2( A2(A) ).main() @ &m : res] - 1%r / 2%r |
+  =
+  `| Pr[Game3( A3(A2(A)) ).main() @ &m : res] - 1%r / 2%r |.
+proof.
+by rewrite (AuxStep_Game2_Game2a &m) (AuxStep_Game2a_Game2b &m) (AuxStep_Game2b_Game3 &m).
+qed.
+
+(* Step 4: Game3 <> Game4 -- XMLWR *)
+local lemma Step_Distinguish_Game3_Game4_XMLWR &m :
+  `| Pr[Game3( A3(A2(A)) ).main() @ &m : res] - Pr[Game4( A3(A2(A)) ).main() @ &m : res] |
+  = 
+  `| Pr[XMLWR( B1(A3(A2(A))) ).main(true) @ &m : res] - Pr[XMLWR( B1(A3(A2(A))) ).main(false) @ &m : res] |. 
+proof.
+rewrite distrC; do 2! congr; last congr.
++ byequiv => //.
+  proc; inline *.
+  rcondt {2} 4.
+  + by move => &m0; auto.
+  rcondt {2} 6.
+  + by move => &m0; auto.
+  swap{1} [13..14] -8; swap {2} 11 -10; swap{2} 4 -3; swap{2} 5 1.
+  wp; call (: true); wp; call (: true); auto => />.
+  by apply dsmallRq_vec_ll.
+byequiv => //.
+proc; inline *.
+rcondf {2} 4.
+- by move => &m0; auto.
+rcondf {2} 6.
+- by move => &m0; auto.
+swap{1} 13 -8; swap {2} 11 -10; swap {2} 6 -2.
+wp; call (: true); wp; call (: true); auto => /> *.
+by rewrite eq_scaleRq2Rp_scaleroundRq2Rp eq_scaleRqv2Rpv_scaleroundRqv2Rpv.
+qed.
+
+(* Auxiliary_Game Analysis *)
+local lemma Aux_Prob_Half &m :
+  Pr[Auxiliary_Game( A3(A2(A)) ).main() @ &m : res]  = 1%r / 2%r. 
+proof.
+byphoare => //.
+proc; inline *.
+rnd; wp.
+call A_guess_ll; auto; call A_choose_ll; auto => />.
+split => [| *]; first by apply dseed_ll.
+split => [| *]; first by apply dRq_vec_ll.
+split => [| *]; first by apply dRp_vec_ll.
+by split => [| *]; [apply Rp.dpolyXnD1_ll | apply dbool1E].
+qed.
+
+(* Game4 <==> Auxiliary_Game *)
+local lemma Equal_Prob_Game4_Aux &m :
+  Pr[Game4( A3(A2(A)) ).main() @ &m : res] 
+  = 
+  Pr[Auxiliary_Game( A3(A2(A)) ).main() @ &m : res].
+proof.
+byequiv => //. 
+proc; inline *.
+swap {2} 24 -23.
+wp; call (_ : true); wp.
+rnd (fun (x : Rp) => x + (scaleR22Rp_var (if u{1} then m1{1} else m0{1}) (2 * ep - eq - 1)))  
+    (fun (x : Rp) => x - (scaleR22Rp_var (if u{1} then m1{1} else m0{1}) (2 * ep - eq - 1))).
+auto; call(_ : true); auto => /> *.
+split => *; first by ring.
+split => *; first by apply /rnd_funi /Rp.dpolyXnD1_funi.
+by split => *; [apply /is_fullP /Rp.dpolyXnD1_fu | ring].
+qed.
+
+(* Game4 Analysis *)
+local lemma Game4_Prob_Half &m :
+  Pr[Game4( A3(A2(A)) ).main() @ &m : res] = 1%r / 2%r. 
+proof. by rewrite (Equal_Prob_Game4_Aux &m) (Aux_Prob_Half &m). qed.
+
 (* Intelligibility Intermediate Result *)
-lemma Difference_Game1_Game4_XMLWR &m :
+local lemma Difference_Game1_Game4_XMLWR &m :
   `| Pr[Game1(A).main() @ &m : res] - Pr[Game4( A3(A2(A)) ).main() @ &m : res] |
   =
   `| Pr[XMLWR( B1(A3(A2(A))) ).main(true) @ &m : res] - Pr[XMLWR( B1(A3(A2(A))) ).main(false) @ &m : res] |.
 proof.
 move: A_choose_ll A_guess_ll => c_ll g_ll.
-rewrite (Game4_Prob_Half (A3(A2(A))))
-        3: (Step_Game1_Game2 A)
-        3: (Step_Game2_Game3 (A2(A)))
-        3: -(Game4_Prob_Half (A3(A2(A))) _ _ &m)
-        5: &(Step_Distinguish_Game3_Game4_XMLWR (A3(A2(A)))) //;
-          by proc; inline *; wp; call (_ : true); auto.
+rewrite Game4_Prob_Half Step_Game1_Game2 Step_Game2_Game3.
+by rewrite -(Game4_Prob_Half &m) Step_Distinguish_Game3_Game4_XMLWR.
 qed.
 
 (* Final Result (Security Theorem) *)
@@ -707,8 +683,7 @@ lemma Saber_INDCPA_Security_Theorem &m :
 proof.
 exists (B0(A)) (B1(A3(A2(A)))).
 move: A_choose_ll A_guess_ll => c_ll g_ll.
-rewrite (Equivalence_SaberINDCPA_Game0 A) -(Game4_Prob_Half (A3(A2(A))) _ _ &m) //;
-          first 2 by proc; inline *; wp; call (_ : true); auto.
+rewrite Equivalence_SaberINDCPA_Game0 -(Game4_Prob_Half &m).
 have:
   `| Pr[Game0(A).main() @ &m : res] - Pr[Game1(A).main() @ &m : res] |
   +
@@ -717,11 +692,11 @@ have:
   `| Pr[GMLWR( B0(A) ).main(true) @ &m : res] - Pr[GMLWR( B0(A) ).main(false) @ &m : res] | 
   +
   `| Pr[XMLWR( B1(A3(A2(A))) ).main(true) @ &m : res] - Pr[XMLWR( B1(A3(A2(A))) ).main(false) @ &m : res] |.
-+ by apply ler_add; 
-    [rewrite (Step_Distinguish_Game0_Game1_GMLWR A) | rewrite -(Difference_Game1_Game4_XMLWR &m) ].
++ apply ler_add; first by rewrite Step_Distinguish_Game0_Game1_GMLWR. 
+  by rewrite -(Difference_Game1_Game4_XMLWR &m).
 move: (ler_dist_add (Pr[Game1(A).main() @ &m : res]) (Pr[Game0(A).main() @ &m : res])
                     (Pr[Game4( A3(A2(A)) ).main() @ &m : res])).
-by apply ler_trans.  
+by apply ler_trans.
 qed.
 
-end section Security_Theorem.
+end section INDCPA_SaberPKE.

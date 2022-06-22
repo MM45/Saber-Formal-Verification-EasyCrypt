@@ -222,6 +222,7 @@ module type Adv_Cor = {
 (* ----------------------------------- *)
 (*  Standard Correctness Definition    *)
 (* ----------------------------------- *)
+
 module Correctness_Standard (S : Scheme) = {
    proc main(m : R2) : bool = {
       var m': R2 option;
@@ -254,7 +255,7 @@ lemma eq_Pr_Correctness_Standard_Reg_Alt &m (msg : R2) :
 proof. by byequiv Equivalence_Correctness_Standard_Reg_Alt. qed.
 
 (* ----------------------------------- *)
-(*  Correctness Definition FO (Game)   *)
+(*  FO Correctness Definition (Game)   *)
 (* ----------------------------------- *)
 module Correctness_Game (S : Scheme, A : Adv_Cor) = {
    proc main() : bool = {
@@ -272,22 +273,6 @@ module Correctness_Game (S : Scheme, A : Adv_Cor) = {
       return (Some m = m');
    }
 }.
-
-(* Equivalence of Correctness Games with Regular and Alternative PKE Description *)
-lemma Equivalence_Correctness_Game_Reg_Alt (A <: Adv_Cor) :
-  equiv[Correctness_Game(Saber_PKE_Scheme, A).main ~ Correctness_Game(Saber_PKE_Scheme_Alt, A).main 
-        : ={glob A} ==> ={res}].
-proof.
-proc.
-call eqv_dec; call eqv_enc; call (_ : true); call eqv_kg.
-by auto.
-qed.
-
-lemma eq_Pr_Correctness_Game_Reg_Alt (A <: Adv_Cor) &m :
-  Pr[Correctness_Game(Saber_PKE_Scheme, A).main() @ &m : res]
-  =
-  Pr[Correctness_Game(Saber_PKE_Scheme_Alt, A).main() @ &m : res].
-proof. by byequiv (Equivalence_Correctness_Game_Reg_Alt A). qed.
 
 (* ----------------------------------- *)
 (*  Correctness Analysis               *)
@@ -458,7 +443,7 @@ axiom Equivalence_Corr_StdModel_ROM :
   equiv[Correctness_Gen_StdModel.main ~ Correctness_Gen_ROM.main : true ==> ={res}].
 
 
-(* Probabilistic Program Used to Represent Exhaustively Computed Delta Probability *)
+(* Probabilistic Program Used to Represent Exhaustively Computed Correctness Probability *)
 module Delta_Prob_PProg = {
    proc main() : bool = {
       var sd: seed;
@@ -595,11 +580,21 @@ module Correctness_Game_Error (A : Adv_Cor) = {
 
 section Equivalence_Correctness_Games_Delta_PProg.
 
-(* - Declare (Terminating) Adversary Against Correctness_Game - *)
+(* - Declare (Arbitrary, Terminating) Adversary Against FO Correctness Game - *)
 declare module A <: Adv_Cor.
-declare axiom Adv_Cor_ll: islossless A.choose.
+declare axiom A_Cor_ll: islossless A.choose.
 
-lemma Equivalence_CorrGame_Error :
+(* Equivalence of FO Correctness Games with Original and Alternative PKE Description *)
+local lemma Equivalence_Correctness_Game_Reg_Alt :
+  equiv[Correctness_Game(Saber_PKE_Scheme, A).main ~ Correctness_Game(Saber_PKE_Scheme_Alt, A).main 
+        : ={glob A} ==> ={res}].
+proof.
+proc.
+call eqv_dec; call eqv_enc; call (_ : true); call eqv_kg.
+by auto.
+qed.
+
+local lemma Equivalence_CorrGame_Error :
   equiv[Correctness_Game(Saber_PKE_Scheme_Alt, A).main ~ Correctness_Game_Error(A).main
         : ={glob A} ==> ={res}].
 proof.
@@ -621,21 +616,26 @@ rewrite eqr_opp; ring; rewrite addrC ofint0 subr_eq0; do 5! congr.
 by rewrite /error_bq addrCA addrC subrr add0r.
 qed.
 
-lemma Equivalence_CorrGameError_CorrGenStdModel :
+local lemma Equivalence_CorrGameError_CorrGenStdModel :
   equiv[Correctness_Game_Error(A).main ~ Correctness_Gen_StdModel.main : true ==> ={res}].
 proof.
 proc.
-wp; rnd; call {1} (_ : true ==> true); auto; first by apply Adv_Cor_ll => />.
+wp; rnd; call {1} (_ : true ==> true); auto; first by apply A_Cor_ll => />.
 progress.
 by rewrite eqv_verification_mm'_coeffsrngdelta. 
 qed.
 
+(* --- Final Theorems/Results --- *) 
+(* 
+  Equivalence of FO Correctness Game for Saber's Original Scheme and
+  Probabilistic Program Used to Represent Exhaustively Computed Correctness Probability 
+*)
 lemma Equivalence_CorrGame_DeltaProb :
   equiv[Correctness_Game(Saber_PKE_Scheme, A).main ~ Delta_Prob_PProg.main : true ==> ={res}].
 proof.
 transitivity Correctness_Game(Saber_PKE_Scheme_Alt, A).main 
              (={glob A} ==> ={res}) (true ==> ={res}) => //= [&1| |]; first by exists (glob A){1}.
-+ by apply (Equivalence_Correctness_Game_Reg_Alt A).
++ by apply Equivalence_Correctness_Game_Reg_Alt.
 transitivity Correctness_Game_Error(A).main (={glob A} ==> ={res}) (true ==> ={res}) 
              => //= [&1| |]; first by exists (glob A){1}.
 + by apply Equivalence_CorrGame_Error.
@@ -646,6 +646,7 @@ transitivity Correctness_Gen_ROM.main (true ==> ={res}) (true ==> ={res}) => //=
 by apply Equivalence_CorrGenRom_DeltaProb.
 qed.
 
+(* Delta-Correctness of Saber's Original Scheme *)
 lemma Delta_Correctness_Game_Original_Scheme &m :
   Pr[Correctness_Game(Saber_PKE_Scheme, A).main() @ &m : res] = 1%r - delta_prob.
 proof.
@@ -657,7 +658,7 @@ have ->:
 by apply delta_correctness.
 qed.
 
-(* --- Equivalence of Correctness Definitions for Saber's Original Scheme --- *)
+(* Equivalence of Correctness Definitions for Saber's Original Scheme *)
 lemma Equivalence_Corr_Std_Game_Original_Scheme :
   equiv[Correctness_Standard(Saber_PKE_Scheme).main ~ Correctness_Game(Saber_PKE_Scheme, A).main
         : true ==> ={res}].
