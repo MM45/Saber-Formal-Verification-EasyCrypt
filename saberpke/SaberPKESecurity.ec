@@ -46,19 +46,16 @@ module GMLWR(A : Adv_GMLWR) = {
       var sd : seed;
       var _A : Rq_mat;
       var s : Rq_vec;
-      var b : Rp_vec;
+      var b0, b1 : Rp_vec;
 
       sd <$ dseed;
       _A <- gen sd;
       s <$ dsmallRq_vec;
       
-      if (u) {
-         b <$ dRp_vec;
-      } else {
-         b <- scaleroundRqv2Rpv (_A *^ s);
-      }
+      b0 <- scaleroundRqv2Rpv (_A *^ s);
+      b1 <$ dRp_vec;
       
-      u' <@ A.guess(sd, b);
+      u' <@ A.guess(sd, if u then b1 else b0);
       
       return u';
    }
@@ -71,29 +68,23 @@ module XMLWR(A : Adv_XMLWR) = {
       var sd : seed;
       var _A : Rq_mat;
       var s : Rq_vec;
-      var b : Rp_vec;
+      var b0, b1 : Rp_vec;
       var a : Rq_vec;
-      var d : Rp;
+      var d0, d1 : Rp;
 
       sd <$ dseed;
       _A <- gen sd;
       s <$ dsmallRq_vec;
       
-      if (u) {
-         b <$ dRp_vec;
-      } else {
-         b <- scaleroundRqv2Rpv ((trmx _A) *^ s);
-      }
+      b0 <- scaleroundRqv2Rpv ((trmx _A) *^ s);
+      b1 <$ dRp_vec;
       
       a <$ dRq_vec;
 
-      if (u) {
-         d <$ dRp;
-      } else {
-         d <- scaleroundRq2Rp (dotp a s);
-      }
+      d0 <- scaleroundRq2Rp (dotp a s);
+      d1 <$ dRp;
     
-      u' <@ A.guess(sd, b, a, d);
+      u' <@ A.guess(sd, if u then b1 else b0, a, if u then d1 else d0);
       
       return u';
    }
@@ -518,23 +509,19 @@ qed.
 local lemma Step_Distinguish_Game0_Game1_GMLWR &m :
   `| Pr[Game0(A).main() @ &m : res] - Pr[Game1(A).main() @ &m : res] |
   = 
-  `| Pr[GMLWR( B0(A) ).main(true) @ &m : res] - Pr[GMLWR( B0(A) ).main(false) @ &m : res] |. 
+  `| Pr[GMLWR( B0(A) ).main(false) @ &m : res] - Pr[GMLWR( B0(A) ).main(true) @ &m : res] |. 
 proof.
-rewrite distrC; do 2! congr; last congr.
+do 2! congr; last congr.
 + byequiv => //.
   proc; inline *.
-  rcondt {2} 4.
-  + by move=> &m0; auto.
-  swap {2} 7 -6; wp.
-  call (_ : true); auto; call (_: true); auto; rnd {2}; auto => /> *.
-  by apply dsmallRq_vec_ll.
+  swap{2} 8 -7; wp.
+  call (_ : true); auto; call (_: true); wp; rnd{2}; auto => /> *.
+  by rewrite dRp_vec_ll eq_scaleRqv2Rpv_scaleroundRqv2Rpv.
 byequiv => //.
 proc; inline *.
-rcondf {2} 4.
-- by move=> &m0; auto.
-swap {2} 7 -6; wp.
-call (_ : true); auto; call (_: true); auto => /> *.
-by rewrite eq_scaleRqv2Rpv_scaleroundRqv2Rpv.
+swap{2} 8 -7; wp.
+call (_ : true); auto; call (_: true); auto; rnd{2}; auto => /> *.
+by apply dsmallRq_vec_ll.
 qed.
 
 (* Step 2: Game1 -- Game2 *)
@@ -601,27 +588,22 @@ qed.
 local lemma Step_Distinguish_Game3_Game4_XMLWR &m :
   `| Pr[Game3( A3(A2(A)) ).main() @ &m : res] - Pr[Game4( A3(A2(A)) ).main() @ &m : res] |
   = 
-  `| Pr[XMLWR( B1(A3(A2(A))) ).main(true) @ &m : res] - Pr[XMLWR( B1(A3(A2(A))) ).main(false) @ &m : res] |. 
+  `| Pr[XMLWR( B1(A3(A2(A))) ).main(false) @ &m : res] - Pr[XMLWR( B1(A3(A2(A))) ).main(true) @ &m : res] |. 
 proof.
-rewrite distrC; do 2! congr; last congr.
+do 2! congr; last congr.
 + byequiv => //.
   proc; inline *.
-  rcondt {2} 4.
-  + by move => &m0; auto.
-  rcondt {2} 6.
-  + by move => &m0; auto.
-  swap{1} [13..14] -8; swap {2} 11 -10; swap{2} 4 -3; swap{2} 5 1.
-  wp; call (: true); wp; call (: true); auto => />.
-  by apply dsmallRq_vec_ll.
+  swap{1} 13 -9; swap {2} 13 -12; swap{2} 6 1.
+  wp; call(: true); wp; call (: true). 
+  wp; rnd{2}; wp; rnd{2}; auto => /> *.
+  rewrite dRp_vec_ll /dRp dpolyXnD1_ll /=.
+  by rewrite eq_scaleRq2Rp_scaleroundRq2Rp eq_scaleRqv2Rpv_scaleroundRqv2Rpv.
 byequiv => //.
 proc; inline *.
-rcondf {2} 4.
-- by move => &m0; auto.
-rcondf {2} 6.
-- by move => &m0; auto.
-swap{1} 13 -8; swap {2} 11 -10; swap {2} 6 -2.
-wp; call (: true); wp; call (: true); auto => /> *.
-by rewrite eq_scaleRq2Rp_scaleroundRq2Rp eq_scaleRqv2Rpv_scaleroundRqv2Rpv.
+swap{1} [13..14] -8; swap{2} 13 -12; swap{2} 8 1; swap{2} 5 3; swap{2} 6 -1.
+wp; call(: true); wp; call(: true).
+auto; rnd{2}; auto => /> *.
+by apply dsmallRq_vec_ll.
 qed.
 
 (* Auxiliary_Game Analysis *)
@@ -665,7 +647,7 @@ proof. by rewrite (Equal_Prob_Game4_Aux &m) (Aux_Prob_Half &m). qed.
 local lemma Difference_Game1_Game4_XMLWR &m :
   `| Pr[Game1(A).main() @ &m : res] - Pr[Game4( A3(A2(A)) ).main() @ &m : res] |
   =
-  `| Pr[XMLWR( B1(A3(A2(A))) ).main(true) @ &m : res] - Pr[XMLWR( B1(A3(A2(A))) ).main(false) @ &m : res] |.
+  `| Pr[XMLWR( B1(A3(A2(A))) ).main(false) @ &m : res] - Pr[XMLWR( B1(A3(A2(A))) ).main(true) @ &m : res] |.
 proof.
 move: A_choose_ll A_guess_ll => c_ll g_ll.
 rewrite Game4_Prob_Half Step_Game1_Game2 Step_Game2_Game3.
@@ -677,9 +659,9 @@ lemma Saber_INDCPA_Security_Theorem &m :
   exists (BG <: Adv_GMLWR) (BX <: Adv_XMLWR),
   `| Pr[CPA(Saber_PKE_Scheme, A).main() @ &m : res] - 1%r / 2%r |
   <=
-  `| Pr[GMLWR(BG).main(true) @ &m : res] - Pr[GMLWR(BG).main(false) @ &m : res] | 
+  `| Pr[GMLWR(BG).main(false) @ &m : res] - Pr[GMLWR(BG).main(true) @ &m : res] | 
   +
-  `| Pr[XMLWR(BX).main(true) @ &m : res] - Pr[XMLWR(BX).main(false) @ &m : res] |. 
+  `| Pr[XMLWR(BX).main(false) @ &m : res] - Pr[XMLWR(BX).main(true) @ &m : res] |. 
 proof.
 exists (B0(A)) (B1(A3(A2(A)))).
 move: A_choose_ll A_guess_ll => c_ll g_ll.
@@ -689,9 +671,9 @@ have:
   +
   `| Pr[Game1(A).main() @ &m : res] - Pr[Game4( A3(A2(A)) ).main() @ &m : res] |
   <=
-  `| Pr[GMLWR( B0(A) ).main(true) @ &m : res] - Pr[GMLWR( B0(A) ).main(false) @ &m : res] | 
+  `| Pr[GMLWR( B0(A) ).main(false) @ &m : res] - Pr[GMLWR( B0(A) ).main(true) @ &m : res] | 
   +
-  `| Pr[XMLWR( B1(A3(A2(A))) ).main(true) @ &m : res] - Pr[XMLWR( B1(A3(A2(A))) ).main(false) @ &m : res] |.
+  `| Pr[XMLWR( B1(A3(A2(A))) ).main(false) @ &m : res] - Pr[XMLWR( B1(A3(A2(A))) ).main(true) @ &m : res] |.
 + apply ler_add; first by rewrite Step_Distinguish_Game0_Game1_GMLWR. 
   by rewrite -(Difference_Game1_Game4_XMLWR &m).
 move: (ler_dist_add (Pr[Game1(A).main() @ &m : res]) (Pr[Game0(A).main() @ &m : res])

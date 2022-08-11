@@ -49,18 +49,15 @@ module MLWR(A : Adv_MLWR) = {
        var u' : bool;
        var _A : Rq_mat;
        var s : Rq_vec;
-       var b : Rp_vec;
+       var b0, b1 : Rp_vec;
 
        _A <$ dRq_mat;
        s <$ dsmallRq_vec;
        
-       if (u) {
-          b <$ dRp_vec; 
-       } else {
-          b <- scaleroundRqv2Rpv (_A *^ s);
-       }
+       b0 <- scaleroundRqv2Rpv (_A *^ s);
+       b1 <$ dRp_vec;
        
-       u' <@ A.guess(_A, b);
+       u' <@ A.guess(_A, if u then b1 else b0);
 
        return u';
     }
@@ -73,23 +70,21 @@ module MLWR1(A : Adv_MLWR1) = {
        var _A : Rq_mat;
        var a : Rq_vec;
        var s : Rq_vec;
-       var b : Rp_vec;
-       var d : Rp;
+       var b0, b1 : Rp_vec;
+       var d0, d1 : Rp;
 
        _A <$ dRq_mat; (* l samples *)
        a <$ dRq_vec; (* single sample *)
       
        s <$ dsmallRq_vec;
        
-       if (u) {
-          b <$ dRp_vec;
-          d <$ dRp;
-       } else {
-          b <- scaleroundRqv2Rpv (_A *^ s);
-          d <- scaleroundRq2Rp (dotp a s);
-       }
+       b0 <- scaleroundRqv2Rpv (_A *^ s);
+       b1 <$ dRp_vec;
        
-       u' <@ A.guess(_A, a, b, d);
+       d0 <- scaleroundRq2Rp (dotp a s);
+       d1 <$ dRp;
+       
+       u' <@ A.guess(_A, a, if u then b1 else b0, if u then d1 else d0);
 
        return u';
     }
@@ -104,7 +99,7 @@ module GMLWR_RO(A : Adv_GMLWR_RO) = {
       var sd : seed;
       var _A : Rq_mat;
       var s : Rq_vec;
-      var b : Rp_vec;
+      var b0, b1 : Rp_vec;
 
       RO.init();
 
@@ -112,13 +107,10 @@ module GMLWR_RO(A : Adv_GMLWR_RO) = {
       _A <@ RO.get(sd);
       s <$ dsmallRq_vec;
       
-      if (u) {
-         b <$ dRp_vec;
-      } else {
-         b <- scaleroundRqv2Rpv (_A *^ s);
-      }
+      b0 <- scaleroundRqv2Rpv (_A *^ s);
+      b1 <$ dRp_vec;
       
-      u' <@ A.guess(sd, b);
+      u' <@ A.guess(sd, if u then b1 else b0);
       
       return u';
    }
@@ -133,9 +125,9 @@ module XMLWR_RO(A : Adv_XMLWR_RO) = {
       var sd : seed;
       var _A : Rq_mat;
       var s : Rq_vec;
-      var b : Rp_vec;
+      var b0, b1 : Rp_vec;
       var a : Rq_vec;
-      var d : Rp;
+      var d0, d1 : Rp;
 
       RO.init();
 
@@ -143,21 +135,15 @@ module XMLWR_RO(A : Adv_XMLWR_RO) = {
       _A <@ RO.get(sd);
       s <$ dsmallRq_vec;
       
-      if (u) {
-         b <$ dRp_vec;
-      } else {
-         b <- scaleroundRqv2Rpv ((trmx _A) *^ s);
-      }
+      b0 <- scaleroundRqv2Rpv ((trmx _A) *^ s);
+      b1 <$ dRp_vec;
       
       a <$ dRq_vec;
 
-      if (u) {
-         d <$ dRp;
-      } else {
-         d <- scaleroundRq2Rp (dotp a s);
-      }
+      d0 <- scaleroundRq2Rp (dotp a s);
+      d1 <$ dRp;
     
-      u' <@ A.guess(sd, b, a, d);
+      u' <@ A.guess(sd, if u then b1 else b0, a, if u then d1 else d0);
       
       return u';
    }
@@ -216,29 +202,18 @@ lemma Equivalent_GMLWR_RO_MLWR (A <: Adv_GMLWR_RO{-RO}) :
   equiv[GMLWR_RO(A).main ~ MLWR( AGM(A) ).main : ={glob A, u} ==> ={res}].
 proof.
 proc; inline *.
-case (u{1}).
-+ conseq (_ : ={glob A} /\ u{1} /\ u{2} ==> _) => //.
-  rcondt {1} 8; 2: rcondt {2} 3; first 2 by auto.
-  rcondt {1} 5; first by auto; progress; apply SmtMap.mem_empty.
-  swap {1} [7..8] -2; swap {1} [4..6] -2.
-  by wp; call (_ : ={RO.m}); 1: proc; auto.
-+ conseq (_ :  ={glob A} /\ !u{1} /\ !u{2} ==> _) => //. 
-  rcondf {1} 8; 2: rcondf {2} 3; first 2 by auto.
-  rcondt {1} 5; first by auto; progress; apply SmtMap.mem_empty.
-  swap {1} 4 -3; swap {1} 7 -5. 
-  wp; call (_ : ={RO.m}); 1: proc; auto; progress.
-  by do 2! congr; rewrite SmtMap.get_set_sameE oget_some. 
+rcondt{1} 5; first by auto => /> *; rewrite SmtMap.mem_empty.
+wp; call(: ={RO.m}); first by proc; auto. 
+swap{2} 8 -7; auto => /> &2 *.
+by case (u{2}) => // _; rewrite SmtMap.get_set_sameE oget_some. 
 qed.
 
 lemma Equal_Advantage_GMLWR_RO_MLWR &m (A <: Adv_GMLWR_RO{-RO}) :
-  `| Pr[GMLWR_RO(A).main(true) @ &m : res] - Pr[GMLWR_RO(A).main(false) @ &m : res] |
+  `| Pr[GMLWR_RO(A).main(false) @ &m : res] - Pr[GMLWR_RO(A).main(true) @ &m : res] |
    =
-  `| Pr[MLWR( AGM(A) ).main(true) @ &m : res] - Pr[MLWR( AGM(A) ).main(false) @ &m : res] |.
+  `| Pr[MLWR( AGM(A) ).main(false) @ &m : res] - Pr[MLWR( AGM(A) ).main(true) @ &m : res] |.
 proof.
-have ->: Pr[GMLWR_RO(A).main(true) @ &m : res] = Pr[MLWR( AGM(A) ).main(true) @ &m : res].
-+ by byequiv (Equivalent_GMLWR_RO_MLWR A).
-have -> //: Pr[GMLWR_RO(A).main(false) @ &m : res] = Pr[MLWR( AGM(A) ).main(false) @ &m : res].
-+ by byequiv (Equivalent_GMLWR_RO_MLWR A).
+by do 2! congr; 2: congr; byequiv (Equivalent_GMLWR_RO_MLWR A).
 qed.
 
 
@@ -247,36 +222,24 @@ lemma Equivalent_XMLWR_RO_MLWR1 (A <: Adv_XMLWR_RO{-RO}) :
   equiv[XMLWR_RO(A).main ~ MLWR1( AXM(A) ).main : ={glob A, u} ==> ={res}].
 proof.
 proc; inline *.
-case (u{1}).
-+ conseq (_ : ={glob A} /\ u{1} /\ u{2} ==> _) => //.
-  rcondt {1} 8; 2: rcondt {1} 10; 3: rcondt {2} 4; first 3 auto.
-  rcondt {1} 5; first by auto; progress; apply SmtMap.mem_empty.
-  swap {1} [7..10] -2; swap {1} [4..8] - 3; swap {1} 4 -2.
-  wp; call (_ : ={RO.m}); first by proc; auto. 
-  wp; rnd; wp; do 4! rnd; rnd (fun (m : Rq_mat) => trmx m). 
-  skip; progress; 1, 4, 5: by rewrite trmxK.
-  - by apply /rnd_funi /is_full_funiform /dRq_mat_uni /dRq_mat_fu.
-  - by apply /is_fullP /dRq_mat_fu.
-+ conseq (_ :  ={glob A} /\ !u{1} /\ !u{2} ==> _) => //. 
-  rcondf {1} 8; 2: rcondf {1} 10; 3: rcondf {2} 4; first 3 by auto.
-  rcondt {1} 5; first by auto; progress; apply SmtMap.mem_empty.
-  swap {1} 9 -2; swap {1} [7..8] -2; swap {1} [4..6] -2.
-  wp; call (_ : ={RO.m}); first by proc; auto.  
-  wp; rnd; wp; do 2! rnd; rnd (fun (m : Rq_mat) => trmx m). 
-  auto; progress; 1, 4, 6: by rewrite trmxK.
-  - by apply /rnd_funi /is_full_funiform /dRq_mat_uni /dRq_mat_fu.
-  - by apply /is_fullP /dRq_mat_fu.
-  - by do 3! congr; rewrite SmtMap.get_set_sameE oget_some.
+rcondt{1} 5; first by auto => /> *; rewrite SmtMap.mem_empty.
+swap{1} 1 3; swap{1} 2 2; swap{2} 2 3; swap{2} 13 -12.
+wp; call(: ={RO.m}); first by proc; auto.
+conseq />. 
+seq 2 2 : (#pre /\ ={sd} /\ r{1} = trmx _A{2}). 
++ rnd (fun (m : Rq_mat) => trmx m); auto => /> *. 
+  split => *; first by rewrite trmxK.
+  split => *; first by apply /rnd_funi /is_full_funiform /dRq_mat_uni /dRq_mat_fu.
+  by split => *; [apply /is_fullP /dRq_mat_fu | rewrite trmxK].
+auto => /> &2 *.
+by case (u{2}) => // _; rewrite SmtMap.get_set_sameE oget_some trmxK.
 qed.
 
 
 lemma Equal_Advantage_XMLWR_RO_MLWR1 &m (A <: Adv_XMLWR_RO{-RO}) :
-  `| Pr[XMLWR_RO(A).main(true) @ &m : res] - Pr[XMLWR_RO(A).main(false) @ &m : res] |
+  `| Pr[XMLWR_RO(A).main(false) @ &m : res] - Pr[XMLWR_RO(A).main(true) @ &m : res] |
    =
-  `| Pr[MLWR1( AXM(A) ).main(true) @ &m : res] - Pr[MLWR1( AXM(A) ).main(false) @ &m : res] |.
+  `| Pr[MLWR1( AXM(A) ).main(false) @ &m : res] - Pr[MLWR1( AXM(A) ).main(true) @ &m : res] |.
 proof.
-have ->: Pr[XMLWR_RO(A).main(true) @ &m : res] = Pr[MLWR1( AXM(A) ).main(true) @ &m : res].
-+ by byequiv (Equivalent_XMLWR_RO_MLWR1 A).
-have -> //:  Pr[XMLWR_RO(A).main(false) @ &m : res] = Pr[MLWR1( AXM(A) ).main(false) @ &m : res].
-+ by byequiv (Equivalent_XMLWR_RO_MLWR1 A).
+by do 2! congr; 2: congr; byequiv (Equivalent_XMLWR_RO_MLWR1 A).
 qed.
