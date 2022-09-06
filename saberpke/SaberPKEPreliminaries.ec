@@ -255,21 +255,19 @@ clone Matrix as Mat_Rq with
     op ZR.exp    <- Rq.ComRing.exp,
     op ZR.lreg   <- Rq.ComRing.lreg
   
-  proof ge0_size, ZR.*.
-  
-  realize ge0_size by apply (lez_trans 1 _ _ _ ge1_l).
-  realize ZR.addrA by exact Rq.ComRing.addrA.
-  realize ZR.addrC by exact Rq.ComRing.addrC. 
-  realize ZR.add0r by exact Rq.ComRing.add0r.
-  realize ZR.addNr by exact Rq.ComRing.addNr.
-  realize ZR.oner_neq0 by exact Rq.ComRing.oner_neq0.
-  realize ZR.mulrA by exact Rq.ComRing.mulrA.
-  realize ZR.mulrC by exact Rq.ComRing.mulrC.
-  realize ZR.mul1r by exact Rq.ComRing.mul1r.
-  realize ZR.mulrDl by exact Rq.ComRing.mulrDl.
-  realize ZR.mulVr by exact Rq.ComRing.mulVr.
-  realize ZR.unitP by exact Rq.ComRing.unitP.
-  realize ZR.unitout by exact Rq.ComRing.unitout.
+  proof ge0_size by apply (lez_trans 1 _ _ _ ge1_l)
+  proof ZR.addrA by exact Rq.ComRing.addrA
+  proof ZR.addrC by exact Rq.ComRing.addrC 
+  proof ZR.add0r by exact Rq.ComRing.add0r
+  proof ZR.addNr by exact Rq.ComRing.addNr
+  proof ZR.oner_neq0 by exact Rq.ComRing.oner_neq0
+  proof ZR.mulrA by exact Rq.ComRing.mulrA
+  proof ZR.mulrC by exact Rq.ComRing.mulrC
+  proof ZR.mul1r by exact Rq.ComRing.mul1r
+  proof ZR.mulrDl by exact Rq.ComRing.mulrDl
+  proof ZR.mulVr by exact Rq.ComRing.mulVr
+  proof ZR.unitP by exact Rq.ComRing.unitP
+  proof ZR.unitout by exact Rq.ComRing.unitout.
     
 type Rq_vec = Mat_Rq.vector.
 type Rq_mat = Mat_Rq.Matrix.matrix.
@@ -310,22 +308,20 @@ clone Matrix as Mat_Rp with
     op ZR.ofint  <- Rp.ComRing.ofint,
     op ZR.exp    <- Rp.ComRing.exp,
     op ZR.lreg   <- Rp.ComRing.lreg
-
-  proof ge0_size, ZR.*.
   
-  realize ge0_size by apply (lez_trans 1 _ _ _ ge1_l).
-  realize ZR.addrA by exact Rp.ComRing.addrA.
-  realize ZR.addrC by exact Rp.ComRing.addrC. 
-  realize ZR.add0r by exact Rp.ComRing.add0r.
-  realize ZR.addNr by exact Rp.ComRing.addNr.
-  realize ZR.oner_neq0 by exact Rp.ComRing.oner_neq0.
-  realize ZR.mulrA by exact Rp.ComRing.mulrA.
-  realize ZR.mulrC by exact Rp.ComRing.mulrC.
-  realize ZR.mul1r by exact Rp.ComRing.mul1r.
-  realize ZR.mulrDl by exact Rp.ComRing.mulrDl.
-  realize ZR.mulVr by exact Rp.ComRing.mulVr.
-  realize ZR.unitP by exact Rp.ComRing.unitP.
-  realize ZR.unitout by exact Rp.ComRing.unitout.
+  proof ge0_size by apply (lez_trans 1 _ _ _ ge1_l)
+  proof ZR.addrA by exact Rp.ComRing.addrA
+  proof ZR.addrC by exact Rp.ComRing.addrC 
+  proof ZR.add0r by exact Rp.ComRing.add0r
+  proof ZR.addNr by exact Rp.ComRing.addNr
+  proof ZR.oner_neq0 by exact Rp.ComRing.oner_neq0
+  proof ZR.mulrA by exact Rp.ComRing.mulrA
+  proof ZR.mulrC by exact Rp.ComRing.mulrC
+  proof ZR.mul1r by exact Rp.ComRing.mul1r
+  proof ZR.mulrDl by exact Rp.ComRing.mulrDl
+  proof ZR.mulVr by exact Rp.ComRing.mulVr
+  proof ZR.unitP by exact Rp.ComRing.unitP
+  proof ZR.unitout by exact Rp.ComRing.unitout.
 
 type Rp_vec = Mat_Rp.vector.
 
