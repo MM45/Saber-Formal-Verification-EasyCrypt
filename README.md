@@ -1,5 +1,5 @@
 # Formal Verification of Saber's Public-Key Encryption Scheme in EasyCrypt
-This repository accompanies the paper "Formal Verification of Saber's Public-Key Encryption Scheme in EasyCrypt", authored by Andreas Hülsing, Matthias Meijers, and Pierre-Yves Strub.\
+This repository accompanies the paper "Formal Verification of Saber's Public-Key Encryption Scheme in EasyCrypt", authored by Andreas Hülsing, Matthias Meijers, and Pierre-Yves Strub. The original (proceeding's) version of the paper can be found [here](https://doi.org/10.1007/978-3-031-15802-5_22); the extended and updated version of the paper can be found [here](https://eprint.iacr.org/2022/351).\
 \
 This repository comprises EasyCrypt scripts aimed at the formal verification of the public-key encryption (PKE) scheme from the [Saber post-quantum cipher suite](https://www.esat.kuleuven.be/cosic/pqcrypto/saber/). 
 More precisely, these scripts cover the formal verification of the IND-CPA security and delta-correctness properties of Saber's PKE scheme.\
