@@ -3,7 +3,7 @@
 (* ----------------------------------- *)
 
 (* --- Built-in --- *)
-require import AllCore Distr ZModP IntDiv StdOrder List.
+require import AllCore Distr ZModP IntDiv StdOrder List SmtMap.
 (*---*) import IntOrder.
 require (*--*) ROM.
 
@@ -22,16 +22,21 @@ require import SaberPKEPreliminaries.
 (*  ROM                                *)
 (* ----------------------------------- *)
 clone import ROM as RO with
-  type in_t  <- seed,
-  type out_t <- Rq_mat,
-    op dout  <- (fun (sd : seed) => dRq_mat).
+  type in_t  <= seed,
+  type out_t <= Rq_mat,
+    op dout  <= (fun (sd : seed) => dRq_mat).
+
+
+clone import PKE_ROM as Saber_PKE_ROM with
+  theory RO <- RO.
 
 import Lazy.
+
+module Gen = LRO.
 
 (* ----------------------------------- *)
 (*  General Properties                 *)
 (* ----------------------------------- *)
-
 (* --- Convenient Equalities --- *)
 lemma eq_q2_2eq1 : q %/ 2 = 2 ^ (eq - 1).
 proof.
@@ -214,14 +219,15 @@ qed.
 (* ----------------------------------- *)
 (*  Adversary Prototypes               *)
 (* ----------------------------------- *)
-
-module type Adv_Cor = {
+module type Adv_Cor_ROM (RO : POracle) = {
    proc choose(pk : seed * Rp_vec, sk : Rq_vec) : R2
 }.
 
 (* ----------------------------------- *)
 (*  Standard Correctness Definition    *)
 (* ----------------------------------- *)
+(*
+In standard model:
 
 module Correctness_Standard (S : Scheme) = {
    proc main(m : R2) : bool = {
@@ -237,26 +243,32 @@ module Correctness_Standard (S : Scheme) = {
       return (Some m = m');
    }
 }.
+*)
 
-(* Equivalence of Standard Correctness Definition with Regular and Alternative PKE Description *)
-lemma Equivalence_Correctness_Standard_Reg_Alt :
-  equiv[Correctness_Standard(Saber_PKE_Scheme).main ~ Correctness_Standard(Saber_PKE_Scheme_Alt).main 
-        : ={m} ==> ={res}].
-proof.
-proc.
-call eqv_dec; call eqv_enc; call eqv_kg.
-by auto.
-qed.
+module Correctness_Standard_ROM (S : SchemeRO) (RO : Oracle) = {
+   proc main(m : R2) : bool = {
+      var m': R2 option;
+      var c: R2t * Rp_vec;
+      var pk: seed * Rp_vec;
+      var sk: Rq_vec;
+      
+      RO.init();
+      
+      (pk, sk) <@ S(RO).kg();
+      c <@ S(RO).enc(pk, m);
+      m' <@ S(RO).dec(sk, c);
 
-lemma eq_Pr_Correctness_Standard_Reg_Alt &m (msg : R2) :
-  Pr[Correctness_Standard(Saber_PKE_Scheme).main(msg) @ &m : res]
-  =
-  Pr[Correctness_Standard(Saber_PKE_Scheme_Alt).main(msg) @ &m : res].
-proof. by byequiv Equivalence_Correctness_Standard_Reg_Alt. qed.
+      return (Some m = m');
+   }
+}.
+
 
 (* ----------------------------------- *)
 (*  FO Correctness Definition (Game)   *)
 (* ----------------------------------- *)
+(*
+In standard model:
+
 module Correctness_Game (S : Scheme, A : Adv_Cor) = {
    proc main() : bool = {
       var m: R2;
@@ -273,11 +285,192 @@ module Correctness_Game (S : Scheme, A : Adv_Cor) = {
       return (Some m = m');
    }
 }.
+*)
+
+module Correctness_Game_ROM (S : SchemeRO, A : Adv_Cor_ROM, RO : Oracle) = {
+   proc main() : bool = {
+      var m: R2;
+      var m': R2 option;
+      var c: R2t * Rp_vec;
+      var pk: seed * Rp_vec;
+      var sk: Rq_vec;
+      
+      RO.init();
+      
+      (pk, sk) <@ S(RO).kg();
+      m <@ A(RO).choose(pk, sk);
+      c <@ S(RO).enc(pk, m);
+      m' <@ S(RO).dec(sk, c);
+
+      return (Some m = m');
+   }
+}.
+
+
+
+(* ----------------------------------- *)
+(*  Scheme Specifications (ROM)        *)
+(* ----------------------------------- *)
+(* Original Specification *)
+module (Saber_PKE_Scheme_ROM : SchemeRO) (Gen : POracle) = {
+   proc kg() : (seed * Rp_vec) * Rq_vec = {
+      var sd: seed;
+      var _A: Rq_mat;
+      var s: Rq_vec;
+      var b: Rp_vec;
+      
+      sd <$ dseed;
+      _A <@ Gen.o(sd);
+      s <$ dsmallRq_vec;
+      b <- scaleRqv2Rpv (_A *^ s + h);
+      
+      return ((sd, b), s);
+   }
+
+   proc enc(pk: seed * Rp_vec, m: R2) : R2t * Rp_vec = {
+      var sd: seed;
+      var _A: Rq_mat;
+      var s': Rq_vec;
+      var b, b': Rp_vec;
+      var v': Rp;
+      var cm: R2t;
+      
+      sd <- pk.`1;
+      b <- pk.`2;
+      _A <@ Gen.o(sd);
+      s' <$ dsmallRq_vec;
+      b' <- scaleRqv2Rpv ((trmx _A) *^ s' + h);
+      v' <- (dotp b (Rqv2Rpv s')) + (Rq2Rp h1);
+      cm <- scaleRp2R2t (v' + (scaleR22Rp m));
+      
+      return (cm, b');
+   }
+
+   proc dec(sk: Rq_vec, c: R2t * Rp_vec) : R2 option = {
+      var c_dec: R2t * Rp_vec;
+      var cm: R2t;
+      var b': Rp_vec;
+      var v: Rp;
+      var s: Rq_vec;
+      var m': R2;
+      
+      s <- sk;
+      cm <- c.`1;
+      b' <- c.`2;
+      v <- (dotp b' (Rqv2Rpv s)) + (Rq2Rp h1);
+      m' <- scaleRp2R2 (v  - (scaleR2t2Rp cm) + (Rq2Rp h2));
+      
+      return Some m';
+   }
+}.
+
+(* Alternative Specification (Equivalent to Original, but More Useful in Correctness Analysis) *)
+module (Saber_PKE_Scheme_Alt_ROM : SchemeRO) (Gen : POracle) = {
+   proc kg() : (seed * Rp_vec) * Rq_vec = {
+      var sd: seed;
+      var _A: Rq_mat;
+      var s: Rq_vec;
+      var b: Rp_vec;
+      
+      sd <$ dseed;
+      _A <@ Gen.o(sd);
+      s <$ dsmallRq_vec;
+      b <- scaleRqv2Rpv (_A *^ s + h);
+      
+      return ((sd, b), s);
+   }
+
+   proc enc(pk: seed * Rp_vec, m: R2) : R2t * Rp_vec = {
+      var sd: seed;
+      var _A: Rq_mat;
+      var s': Rq_vec;
+      var b, b': Rp_vec;
+      var bq: Rq_vec;
+      var v': Rq;
+      var cm: R2t;
+      
+      sd <- pk.`1;
+      b <- pk.`2;
+      _A <@ Gen.o(sd);
+      s' <$ dsmallRq_vec;
+      b' <- scaleRqv2Rpv ((trmx _A) *^ s' + h);
+      bq <- scaleRpv2Rqv b;
+      v' <- (dotp bq s') + (upscaleRq h1 (eq - ep));
+      cm <- scaleRq2R2t (v' + (scaleR22Rq m));
+      
+      return (cm, b');
+   }
+
+    proc dec(sk: Rq_vec, c: R2t * Rp_vec) : R2 option = {
+      var c_dec: R2t * Rp_vec;
+      var cm: R2t;
+      var cmq: Rq;
+      var b': Rp_vec;
+      var bq': Rq_vec;
+      var v: Rq;
+      var s: Rq_vec;
+      var m': R2;
+
+      s <- sk;
+      cm <- c.`1;
+      cmq <- scaleR2t2Rq cm;
+      b' <- c.`2;
+      bq' <- scaleRpv2Rqv b';
+      
+      v <- (dotp bq' s) + (upscaleRq h1 (eq - ep));
+      m' <- scaleRq2R2 (v - cmq + (upscaleRq h2 (eq - ep)));
+      
+      return Some m';
+   }
+}.
+
+
+(* --- Equivalence of Schemes --- *)
+(* - Equivalence of Key Generation - *)
+equiv eqv_kg (RO <: POracle) : 
+  Saber_PKE_Scheme_ROM(RO).kg ~ Saber_PKE_Scheme_Alt_ROM(RO).kg : ={glob RO} ==> ={glob RO, res}.
+proof. 
+proc.
+by wp; rnd; call(: true); rnd; skip.
+qed.
+
+(* - Equivalence of Encryption - *)
+equiv eqv_enc (RO <: POracle): 
+  Saber_PKE_Scheme_ROM(RO).enc ~ Saber_PKE_Scheme_Alt_ROM(RO).enc : ={glob RO, pk, m} ==> ={glob RO, res}.
+proof.
+proc.
+wp; rnd; call (: true); wp; skip => /> *.
+by apply eq_comp_enc_altenc.
+qed.
+
+(* - Equivalence of Decryption - *)
+equiv eqv_dec (RO <: POracle): 
+  Saber_PKE_Scheme_ROM(RO).dec ~ Saber_PKE_Scheme_Alt_ROM(RO).dec : ={sk, c} ==> ={res}.
+proof.
+proc.
+wp; skip => /> ?.
+by apply eq_comp_dec_altdec.
+qed.
+
+(* Equivalence of Standard Correctness Definition with Regular and Alternative PKE Description *)
+equiv Equivalence_Correctness_Standard_Reg_Alt :
+  Correctness_Standard_ROM(Saber_PKE_Scheme_ROM, Gen).main ~ Correctness_Standard_ROM(Saber_PKE_Scheme_Alt_ROM, Gen).main : ={m} ==> ={res}.
+proof.
+proc; inline{1} 1; inline{2} 1.
+call (eqv_dec Gen); call (eqv_enc Gen); call (eqv_kg Gen).
+by wp; skip.
+qed.
+
+lemma eq_Pr_Correctness_Standard_Reg_Alt &m (msg : R2) :
+  Pr[ Correctness_Standard_ROM(Saber_PKE_Scheme_ROM, Gen).main(msg) @ &m : res]
+  =
+  Pr[Correctness_Standard_ROM(Saber_PKE_Scheme_Alt_ROM, Gen).main(msg) @ &m : res].
+proof. by byequiv Equivalence_Correctness_Standard_Reg_Alt. qed.
+
 
 (* ----------------------------------- *)
 (*  Correctness Analysis               *)
 (* ----------------------------------- *)
-
 (* --- Errors and Expressions --- *)
 op errorZq (z1 z2 : Zq) : Zq = z1 - z2.
 op errorRq (p1 p2 : Rq) : Rq = p1 - p2.
@@ -404,45 +597,6 @@ split => [eqm_merr | coeffs_corr].
 + by rewrite &(addrI (- m)) addrC subrr addrCA addrA subrr add0r -coeffs_corr; congr; ring.
 qed.
 
-(* Probabilistic Program For Correctness with Regular gen Function *)
-module Correctness_Gen_StdModel = {
-   proc main() : bool = {
-      var sd: seed;
-      var _A : Rq_mat;
-      var s, s': Rq_vec;
-
-      sd <$ dseed;
-      _A <- gen sd;
-      s <$ dsmallRq_vec;
-      s' <$ dsmallRq_vec;
-
-      return coeffs_in_correctness_rng (delta_error _A s s');
-   }
-}.
-
-(* Probabilistic Program For Correctness Where gen is a Random Oracle *)
-module Correctness_Gen_ROM = {
-   proc main() : bool = {
-      var sd: seed;
-      var _A : Rq_mat;
-      var s, s': Rq_vec;
-      
-      LRO.init();
-
-      sd <$ dseed;
-      _A <@ LRO.o(sd);
-      s <$ dsmallRq_vec;
-      s' <$ dsmallRq_vec;
-
-      return coeffs_in_correctness_rng (delta_error _A s s');
-   }
-}.
-
-(* Assume Equivalence Between Correctness Programs in Standard Model and ROM *)
-axiom Equivalence_Corr_StdModel_ROM :
-  equiv[Correctness_Gen_StdModel.main ~ Correctness_Gen_ROM.main : true ==> ={res}].
-
-
 (* Probabilistic Program Used to Represent Exhaustively Computed Correctness Probability *)
 module Delta_Prob_PProg = {
    proc main() : bool = {
@@ -467,18 +621,8 @@ proc.
 by auto.
 qed.
 
-(* Equivalence Between Correctness Programs ROM and Delta-Prob Program *)
-lemma Equivalence_CorrGenRom_DeltaProb :
-  equiv[Correctness_Gen_ROM.main ~ Delta_Prob_PProg.main : true ==> ={res}].
-proof.
-proc; inline *.
-auto; progress.
-+ by do 2! congr; rewrite SmtMap.get_set_sameE oget_some. 
-+ by rewrite SmtMap.mem_empty in H2.
-qed.
-
 (* Define Delta Bound and Delta-Correctness *)
-op delta_prob : real.
+op delta_prob : { real | 0%r <= delta_prob <= 1%r } as rng_deltaprob.
 
 axiom delta_correctness &m : 
   Pr[Delta_Prob_PProg.main() @ &m : res] = 1%r - delta_prob.
@@ -486,14 +630,16 @@ axiom delta_correctness &m :
 
 (* --- Proof of Equivalence of Standard Correctness for Original Scheme and Delta-Prob Program --- *)
 (* - Intermediate Game, Standard Correctness in Terms of Error - *)
-module Correctness_Standard_Error = {
+module Correctness_Standard_Error_Gen = {
    proc main(m : R2) : bool = {
       var sd: seed;
       var _A: Rq_mat;
       var s, s': Rq_vec;
+      
+      Gen.init();
      
       sd <$ dseed;
-      _A <- gen sd;
+      _A <@ Gen.o(sd);
       s <$ dsmallRq_vec;
       s' <$ dsmallRq_vec;
 
@@ -501,129 +647,147 @@ module Correctness_Standard_Error = {
    }
 }.
 
-lemma Equivalence_CorrStd_Error :
-  equiv[Correctness_Standard(Saber_PKE_Scheme_Alt).main ~ Correctness_Standard_Error.main
-        : ={m} ==> ={res}].
+equiv Equivalence_CorrStd_Error :
+  Correctness_Standard_ROM(Saber_PKE_Scheme_Alt_ROM, Gen).main ~ Correctness_Standard_Error_Gen.main
+        : ={m} ==> ={res}.
 proof.
 proc; inline *.
-auto => /> &m sd _ s _ s' _.
-have ?: 
-  trmx (gen sd) *^ s' + error_bq' (gen sd) s'   
+wp; rnd.
+wp; rnd{1}.
+wp; rnd; wp; rnd; wp; rnd; wp; skip => /> &2 sd sdin r rin.
+split=> [sdnin s sin| ]; 2: by rewrite SmtMap.mem_empty.
+split=> [| _ r' rpin]; 1: by apply dRq_mat_ll.
+split=> [| sdinm s' spin]; 1: by rewrite SmtMap.mem_set negb_or. 
+pose sc := scaleRq2R2 _; pose mp := m'_expression _ _ _ _.
+suff -> //: sc = mp; rewrite /sc /mp.
+have eqsc:
+ forall (m : matrix), 
+  (trmx m) *^ s' + error_bq' m s'   
   = 
-  scaleRpv2Rqv (scaleRqv2Rpv (trmx (gen sd) *^ s' + h)).
-+ by rewrite /error_bq' /errorRqv addrCA addrC subrr add0r.
+  scaleRpv2Rqv (scaleRqv2Rpv (trmx m *^ s' + h)).
++ by move=> m; rewrite /error_bq' /errorRqv addrCA addrC subrr add0r.
 rewrite /m'_expression /m'_expression_Rq /v_expression /cmq_expression /error_cmq 
-        /v'_expression /errorRq /= eq_iff. 
-split => [{1}-> | resR_dec].
-+ do 4! congr => [/#|].
-  ring; rewrite addrC ofint0 subr_eq0; do 5! congr; rewrite /error_bq /errorRqv.
-  by rewrite eq_sym addrCA addrC subrr add0r.
-rewrite {1}resR_dec; do 3! congr => [/#|].
-rewrite eqr_opp; ring; rewrite addrC ofint0 subr_eq0; do 5! congr. 
-by rewrite /error_bq addrCA addrC subrr add0r.
+        /v'_expression /errorRq /=.
+do 4! congr; 1: by rewrite eqsc.
+ring; rewrite addrC ofint0 subr_eq0; do 5! congr; rewrite /error_bq /errorRqv. 
+by pose sc2 := scaleRpv2Rqv _; rewrite addrCA Vector.ZModule.addrC -subr_eq subrr subrr.
 qed.
 
-lemma Equivalence_CorrStdError_CorrGenStdModel :
-  equiv[Correctness_Standard_Error.main ~ Correctness_Gen_StdModel.main : true ==> ={res}].
+equiv Equivalence_CorrStd_DeltaProb :
+  Correctness_Standard_ROM(Saber_PKE_Scheme_ROM, Gen).main ~ Delta_Prob_PProg.main : true ==> ={res}.
 proof.
-proc.
-auto => /> &m sd _ s _ s' _.
-by rewrite eqv_verification_mm'_coeffsrngdelta. 
-qed.
-
-lemma Equivalence_CorrStd_DeltaProb :
-  equiv[Correctness_Standard(Saber_PKE_Scheme).main ~ Delta_Prob_PProg.main : true ==> ={res}].
-proof.
-transitivity Correctness_Standard(Saber_PKE_Scheme_Alt).main 
-             (={m} ==> ={res}) (true ==> ={res}) => //= [&1| |]; first by exists m{1}.
+transitivity Correctness_Standard_ROM(Saber_PKE_Scheme_Alt_ROM, Gen).main 
+             (={m} ==> ={res}) (true ==> ={res}) => //= [&1| |].
++ by exists m{1}.
 + by apply Equivalence_Correctness_Standard_Reg_Alt.
-transitivity Correctness_Standard_Error.main (={m} ==> ={res}) (true ==> ={res}) 
-             => //= [&1| |]; first by exists m{1}.
+transitivity Correctness_Standard_Error_Gen.main 
+             (={m} ==> ={res}) (true ==> ={res}) => //= [&1| |].
++ by exists m{1}.
 + by apply Equivalence_CorrStd_Error.
-transitivity Correctness_Gen_StdModel.main (true ==> ={res}) (true ==> ={res}) => //=.
-+ by apply Equivalence_CorrStdError_CorrGenStdModel.
-transitivity Correctness_Gen_ROM.main (true ==> ={res}) (true ==> ={res}) => //=.
-+ by apply Equivalence_Corr_StdModel_ROM.
-by apply Equivalence_CorrGenRom_DeltaProb.
+proc; inline *.
+rnd; rnd.
+wp; rnd.
+wp; rnd{1}.
+wp; skip => /> &1 sd sdin r rin.
+split => [sdninm s sin s' spin|]; 2: by rewrite SmtMap.mem_empty.
+by rewrite eqv_verification_mm'_coeffsrngdelta SmtMap.get_set_sameE oget_some.
 qed.
 
 lemma Delta_Correctness_Standard_Original_Scheme &m (msg : R2) :
-  Pr[Correctness_Standard(Saber_PKE_Scheme).main(msg) @ &m : res] = 1%r - delta_prob.
+  Pr[Correctness_Standard_ROM(Saber_PKE_Scheme_ROM, Gen).main(msg) @ &m : res] = 1%r - delta_prob.
 proof.
 have ->:
-  Pr[Correctness_Standard(Saber_PKE_Scheme).main(msg) @ &m : res]
+  Pr[Correctness_Standard_ROM(Saber_PKE_Scheme_ROM, Gen).main(msg) @ &m : res]
   =
-  Pr[ Delta_Prob_PProg.main() @ &m : res].
+  Pr[Delta_Prob_PProg.main() @ &m : res].
 + by byequiv Equivalence_CorrStd_DeltaProb.
 by apply delta_correctness.
 qed.
 
 
 (* --- Proof of Equivalence of Correctness Game for Original Scheme and Delta-Prob Program --- *)
+section Equivalence_Correctness_Games_Delta_PProg.
+
+(* - Declare (Arbitrary, Terminating) Adversary Against FO Correctness Game - *)
+declare module A <: Adv_Cor_ROM{-Gen}.
+declare axiom A_Cor_ll (RO <: POracle{-A}) : 
+  islossless RO.o => islossless A(RO).choose.
+
 (* - Intermediate Game, Correctness Game in Terms of Error - *)
-module Correctness_Game_Error (A : Adv_Cor) = {
+local module Correctness_Game_Error_Gen = {
    proc main() : bool = {
       var sd: seed;
       var _A: Rq_mat;
       var s, s': Rq_vec;
       var m: R2;
       
+      Gen.init();
+      
       sd <$ dseed;
-      _A <- gen sd;
+      _A <@ Gen.o(sd);
       s <$ dsmallRq_vec;
-      m <@ A.choose((sd, scaleRqv2Rpv (_A *^ s + h)), s);      
+      m <@ A(Gen).choose((sd, scaleRqv2Rpv (_A *^ s + h)), s);      
       s' <$ dsmallRq_vec;
      
       return (m = m'_expression _A s s' m);
    }
 }.
 
-section Equivalence_Correctness_Games_Delta_PProg.
-
-(* - Declare (Arbitrary, Terminating) Adversary Against FO Correctness Game - *)
-declare module A <: Adv_Cor.
-declare axiom A_Cor_ll: islossless A.choose.
-
 (* Equivalence of FO Correctness Games with Original and Alternative PKE Description *)
 local lemma Equivalence_Correctness_Game_Reg_Alt :
-  equiv[Correctness_Game(Saber_PKE_Scheme, A).main ~ Correctness_Game(Saber_PKE_Scheme_Alt, A).main 
+  equiv[Correctness_Game_ROM(Saber_PKE_Scheme_ROM, A, Gen).main ~ Correctness_Game_ROM(Saber_PKE_Scheme_Alt_ROM, A, Gen).main 
         : ={glob A} ==> ={res}].
 proof.
-proc.
-call eqv_dec; call eqv_enc; call (_ : true); call eqv_kg.
-by auto.
+proc; inline{1} 1; inline{2} 1.
+call (eqv_dec Gen); call (eqv_enc Gen).
+call (: ={Gen.m}); 1: by proc; auto.
+call (eqv_kg Gen).
+by wp; skip.
 qed.
 
 local lemma Equivalence_CorrGame_Error :
-  equiv[Correctness_Game(Saber_PKE_Scheme_Alt, A).main ~ Correctness_Game_Error(A).main
+  equiv[Correctness_Game_ROM(Saber_PKE_Scheme_Alt_ROM, A, Gen).main ~ Correctness_Game_Error_Gen.main
         : ={glob A} ==> ={res}].
 proof.
 proc; inline *.
-auto; call (_ : true); auto => /> sd _ s _ r s' _.
-have ?: 
-  trmx (gen sd) *^ s' + error_bq' (gen sd) s'   
+seq 9 7 : (   ={glob A, LRO.m, _A} 
+           /\ pk{1} = (sd{2}, scaleRqv2Rpv (_A{2} *^ s{2} + h))  
+           /\ sk{1} = s{2}
+           /\ pk{1}.`1 \in LRO.m{1} 
+           /\ LRO.m{1}.[pk{1}.`1] = Some _A{1}).
++ rcondt{1} 5; first by auto; smt(SmtMap.mem_empty).
+  rcondt{2} 5; first by auto; smt(SmtMap.mem_empty).
+  wp; rnd; wp; rnd; wp; rnd; wp; skip => /> *.
+  by rewrite mem_set get_set_sameE.
+wp; rnd; wp.
+rnd{1}. wp.
+exists* pk{1}, _A{1}; elim* => pkt _At.
+call (: ={LRO.m} /\ pkt.`1 \in LRO.m{1} /\ LRO.m{1}.[pkt.`1] = Some _At).
+proc.
+wp. rnd.
+skip => />.
+progress.
+rewrite mem_set /#.
+rewrite get_setE.
+by have ->: pkt.`1 <> x{2} by smt().
+skip=> /> &2 sdinm eqlrma msg fm sdin eqfma.
+split => [| _ r rin s' spin]; 1: by apply dRq_mat_ll.
+pose sc := scaleRq2R2 _; pose mp := m'_expression _ _ _ _.
+suff -> //: sc = mp; rewrite /sc /mp.
+have eqsc:
+ forall (m : matrix), 
+  (trmx m) *^ s' + error_bq' m s'   
   = 
-  scaleRpv2Rqv (scaleRqv2Rpv (trmx (gen sd) *^ s' + h)).
-+ by rewrite /error_bq' /errorRqv addrCA addrC subrr add0r.
+  scaleRpv2Rqv (scaleRqv2Rpv (trmx m *^ s' + h)).
++ by move=> m; rewrite /error_bq' /errorRqv addrCA addrC subrr add0r.
 rewrite /m'_expression /m'_expression_Rq /v_expression /cmq_expression /error_cmq 
-        /v'_expression /errorRq /= eq_iff. 
-split => [{1}-> | resR_dec].
-+ do 4! congr => [/#|].
-  ring; rewrite addrC ofint0 subr_eq0; do 5! congr; rewrite /error_bq /errorRqv.
-  by rewrite eq_sym addrCA addrC subrr add0r.
-rewrite {1}resR_dec; do 3! congr => [/#|].
-rewrite eqr_opp; ring; rewrite addrC ofint0 subr_eq0; do 5! congr. 
-by rewrite /error_bq addrCA addrC subrr add0r.
+        /v'_expression /errorRq /=.
+do 4! congr; 1: by rewrite eqfma oget_some eqsc.
+ring; rewrite addrC ofint0 subr_eq0; do 5! congr; rewrite /error_bq /errorRqv. 
+by pose sc2 := scaleRpv2Rqv _; rewrite addrCA Vector.ZModule.addrC -subr_eq subrr subrr.
 qed.
 
-local lemma Equivalence_CorrGameError_CorrGenStdModel :
-  equiv[Correctness_Game_Error(A).main ~ Correctness_Gen_StdModel.main : true ==> ={res}].
-proof.
-proc.
-wp; rnd; call {1} (_ : true ==> true); auto; first by apply A_Cor_ll => />.
-progress.
-by rewrite eqv_verification_mm'_coeffsrngdelta. 
-qed.
+
 
 (* --- Final Theorems/Results --- *) 
 (* 
@@ -631,27 +795,30 @@ qed.
   Probabilistic Program Used to Represent Exhaustively Computed Correctness Probability 
 *)
 lemma Equivalence_CorrGame_DeltaProb :
-  equiv[Correctness_Game(Saber_PKE_Scheme, A).main ~ Delta_Prob_PProg.main : true ==> ={res}].
+  equiv[Correctness_Game_ROM(Saber_PKE_Scheme_ROM, A, Gen).main ~ Delta_Prob_PProg.main : true ==> ={res}].
 proof.
-transitivity Correctness_Game(Saber_PKE_Scheme_Alt, A).main 
+transitivity Correctness_Game_ROM(Saber_PKE_Scheme_Alt_ROM, A, Gen).main 
              (={glob A} ==> ={res}) (true ==> ={res}) => //= [&1| |]; first by exists (glob A){1}.
 + by apply Equivalence_Correctness_Game_Reg_Alt.
-transitivity Correctness_Game_Error(A).main (={glob A} ==> ={res}) (true ==> ={res}) 
+transitivity Correctness_Game_Error_Gen.main (={glob A} ==> ={res}) (true ==> ={res}) 
              => //= [&1| |]; first by exists (glob A){1}.
 + by apply Equivalence_CorrGame_Error.
-transitivity Correctness_Gen_StdModel.main (true ==> ={res}) (true ==> ={res}) => //=.
-+ by apply Equivalence_CorrGameError_CorrGenStdModel.
-transitivity Correctness_Gen_ROM.main (true ==> ={res}) (true ==> ={res}) => //=.
-+ by apply Equivalence_Corr_StdModel_ROM.
-by apply Equivalence_CorrGenRom_DeltaProb.
+proc; inline *.
+wp; rnd; call{1} (A_Cor_ll Gen).
++ proc.
+  wp; rnd; skip => />.
+  by apply dRq_mat_ll.
+rcondt{1} 5; first by auto; smt(mem_empty).
+rnd; wp; rnd; wp; rnd{1}; wp; skip => /> *.
+by rewrite eqv_verification_mm'_coeffsrngdelta SmtMap.get_set_sameE oget_some.
 qed.
 
 (* Delta-Correctness of Saber's Original Scheme *)
 lemma Delta_Correctness_Game_Original_Scheme &m :
-  Pr[Correctness_Game(Saber_PKE_Scheme, A).main() @ &m : res] = 1%r - delta_prob.
+  Pr[Correctness_Game_ROM(Saber_PKE_Scheme_ROM, A, Gen).main() @ &m : res] = 1%r - delta_prob.
 proof.
 have ->:
-  Pr[Correctness_Game(Saber_PKE_Scheme, A).main() @ &m : res]
+  Pr[Correctness_Game_ROM(Saber_PKE_Scheme_ROM, A, Gen).main() @ &m : res]
   =
   Pr[Delta_Prob_PProg.main() @ &m : res].
 + by byequiv Equivalence_CorrGame_DeltaProb.
@@ -660,7 +827,7 @@ qed.
 
 (* Equivalence of Correctness Definitions for Saber's Original Scheme *)
 lemma Equivalence_Corr_Std_Game_Original_Scheme :
-  equiv[Correctness_Standard(Saber_PKE_Scheme).main ~ Correctness_Game(Saber_PKE_Scheme, A).main
+  equiv[Correctness_Standard_ROM(Saber_PKE_Scheme_ROM, Gen).main ~ Correctness_Game_ROM(Saber_PKE_Scheme_ROM, A, Gen).main
         : true ==> ={res}].
 proof.
 transitivity Delta_Prob_PProg.main (true ==> ={res}) (true ==> ={res}) => //=.

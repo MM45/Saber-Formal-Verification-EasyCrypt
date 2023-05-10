@@ -206,7 +206,7 @@ clone import PolyReduce.PolyReduceZp as Rmod with
   type Zp <- Zmod.zmod,
     op p  <- Zmod.p,
     op n  <- n,
-theory Zp <= Zmod 
+theory Zp <- Zmod 
 
   proof gt0_n by smt(ge1_n)
   proof ge2_p by apply/Zmod.ge2_p
@@ -220,24 +220,24 @@ theory Zp <= Zmod
 
   rename [theory] "Zp" as "Zrmod".
 
-clear [Rmod.Zrmod.* Rmod.Zrmod.DZmodP.* Rmod.Zrmod.DZmodP.Support.*].
-clear [Rmod.Zrmod.ZModule.* Rmod.Zrmod.ComRing.* Rmod.Zrmod.ZModpRing.*].
-clear [Rmod.Zrmod.ZModpRing.AddMonoid.* Rmod.Zrmod.ZModpRing.MulMonoid.*].
+clear [Rmod.Zrmod.* Rmod.Zrmod.DZmodP.*].
 end PolyZ.
 
 (* -- Rq = Z/qZ[X] / (X^n + 1) -- *)
 type Zq, Rq.
 
+
 clone include PolyZ with
   type Zmod.zmod     <- Zq,
   type Rmod.polyXnD1 <- Rq,
     op Zmod.p        <- q
-
+        
   proof Zmod.ge2_p by smt(ge8_q)
-
+  
   rename [theory] "Zmod" as "Zq"
   rename [theory] "Rmod" as "Rq"
   rename [theory] "BigXnD1" as "BigRq".
+
 
 clone Matrix as Mat_Rq with 
     op size      <- l,
@@ -268,7 +268,7 @@ clone Matrix as Mat_Rq with
   proof ZR.mulVr by exact Rq.ComRing.mulVr
   proof ZR.unitP by exact Rq.ComRing.unitP
   proof ZR.unitout by exact Rq.ComRing.unitout.
-    
+
 type Rq_vec = Mat_Rq.vector.
 type Rq_mat = Mat_Rq.Matrix.matrix.
 
@@ -984,7 +984,6 @@ proof.
 by rewrite /upscaleZq -inzmodD -upscale_DM addE -eq_inzmod /upscale /shl /= /q modzMml.
 qed.
 
-pragma Goals:printall.
 
 lemma scaleZp2Z2_DM (z1 z2 : Zp) : 
   2 ^ (ep - 1) %| Zp.asint z1 \/  2 ^ (ep - 1) %| Zp.asint z2 => 
@@ -1559,7 +1558,6 @@ clone import PKE as Saber_PKE with
   type plaintext <- R2,
   type ciphertext <- R2t * Rp_vec.
 
-
 (* --- Actual --- *)
 module Saber_PKE_Scheme : Scheme = {
    proc kg() : (seed * Rp_vec) * Rq_vec = {
@@ -1612,85 +1610,3 @@ module Saber_PKE_Scheme : Scheme = {
       return Some m';
    }
 }.
-
-(* --- Actual (Alternative Description) --- *)
-module Saber_PKE_Scheme_Alt : Scheme = {
-   proc kg() : (seed * Rp_vec) * Rq_vec = {
-      var sd: seed;
-      var _A: Rq_mat;
-      var s: Rq_vec;
-      var b: Rp_vec;
-      
-      sd <$ dseed;
-      _A <- gen sd;
-      s <$ dsmallRq_vec;
-      b <- scaleRqv2Rpv (_A *^ s + h);
-      
-      return ((sd, b), s);
-   }
-
-   proc enc(pk: seed * Rp_vec, m: R2) : R2t * Rp_vec = {
-      var sd: seed;
-      var _A: Rq_mat;
-      var s': Rq_vec;
-      var b, b': Rp_vec;
-      var bq: Rq_vec;
-      var v': Rq;
-      var cm: R2t;
-      
-      sd <- pk.`1;
-      b <- pk.`2;
-      _A <- gen sd;
-      s' <$ dsmallRq_vec;
-      b' <- scaleRqv2Rpv ((trmx _A) *^ s' + h);
-      bq <- scaleRpv2Rqv b;
-      v' <- (dotp bq s') + (upscaleRq h1 (eq - ep));
-      cm <- scaleRq2R2t (v' + (scaleR22Rq m));
-      
-      return (cm, b');
-   }
-
-    proc dec(sk: Rq_vec, c: R2t * Rp_vec) : R2 option = {
-      var c_dec: R2t * Rp_vec;
-      var cm: R2t;
-      var cmq: Rq;
-      var b': Rp_vec;
-      var bq': Rq_vec;
-      var v: Rq;
-      var s: Rq_vec;
-      var m': R2;
-
-      s <- sk;
-      cm <- c.`1;
-      cmq <- scaleR2t2Rq cm;
-      b' <- c.`2;
-      bq' <- scaleRpv2Rqv b';
-      
-      v <- (dotp bq' s) + (upscaleRq h1 (eq - ep));
-      m' <- scaleRq2R2 (v - cmq + (upscaleRq h2 (eq - ep)));
-      
-      return Some m';
-   }
-}.
-
-
-(* --- Equivalence of Schemes --- *)
-(* - Equivalence of Key Generation - *)
-lemma eqv_kg: equiv[Saber_PKE_Scheme.kg ~ Saber_PKE_Scheme_Alt.kg : true ==> ={res}].
-proof. by proc; auto. qed.
-
-(* - Equivalence of Encryption - *)
-lemma eqv_enc: equiv[Saber_PKE_Scheme.enc ~ Saber_PKE_Scheme_Alt.enc : ={pk, m} ==> ={res}].
-proof.
-proc.
-auto => /> *. 
-by apply eq_comp_enc_altenc.
-qed.
-
-(* - Equivalence of Decryption - *)
-lemma eqv_dec: equiv[Saber_PKE_Scheme.dec ~ Saber_PKE_Scheme_Alt.dec : ={sk, c} ==> ={res}].
-proof.
-proc.
-auto => /> ?. 
-by apply eq_comp_dec_altdec.
-qed.

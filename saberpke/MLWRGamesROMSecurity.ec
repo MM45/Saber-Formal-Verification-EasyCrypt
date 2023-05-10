@@ -20,6 +20,8 @@ clone import FullRO as PRO with
   type out_t <- Rq_mat,
     op dout  <- (fun (sd : seed) => dRq_mat).
 
+module Gen = RO.
+
 (* ----------------------------------- *)
 (*  Adversary Classes                  *)
 (* ----------------------------------- *)
@@ -104,7 +106,7 @@ module GMLWR_RO(A : Adv_GMLWR_RO) = {
       RO.init();
 
       sd <$ dseed;
-      _A <@ RO.get(sd);
+      _A <@ Gen.get(sd);
       s <$ dsmallRq_vec;
       
       b0 <- scaleroundRqv2Rpv (_A *^ s);
@@ -132,7 +134,7 @@ module XMLWR_RO(A : Adv_XMLWR_RO) = {
       RO.init();
 
       sd <$ dseed;
-      _A <@ RO.get(sd);
+      _A <@ Gen.get(sd);
       s <$ dsmallRq_vec;
       
       b0 <- scaleroundRqv2Rpv ((trmx _A) *^ s);

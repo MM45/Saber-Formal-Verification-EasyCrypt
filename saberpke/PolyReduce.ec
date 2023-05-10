@@ -8,8 +8,12 @@ require import Ring StdOrder IntDiv ZModP Ideal Poly.
 
 (* ==================================================================== *)
 abstract theory PolyReduce.
+
 clone import PolyComRing as BasePoly
-  remove abbrev (+) remove abbrev ( * ) remove abbrev [-].
+  remove abbrev ( + )
+  remove abbrev ( * )
+  remove abbrev [ - ].
+
 (*-*) import Coeff PolyComRing BigPoly BigCf.
 
 (* -------------------------------------------------------------------- *)
@@ -17,7 +21,7 @@ clone import IdealComRing as PIdeal with
   type t               <- BasePoly.poly,
     op IComRing.zeror  <- BasePoly.poly0,
     op IComRing.oner   <- BasePoly.poly1,
-    op IComRing.( + )  <- BasePoly.PolyComRing.( + ),
+    op IComRing.( + )  <- BasePoly.PolyComRing.(+),
     op IComRing.([-])  <- BasePoly.PolyComRing.([-]),
     op IComRing.( * )  <- BasePoly.PolyComRing.( * ),
     op IComRing.invr   <- BasePoly.PolyComRing.invr,
@@ -73,8 +77,13 @@ hint exact : idI.
 type polyXnD1.
 
 clone include RingQuotient
-  with type qT <- polyXnD1, op p <- I
-
+  with type qT <- polyXnD1, 
+  op p <- I,
+  
+  op ComRing.(+) <- (+),
+  op ComRing.( * ) <- ( * ),
+  op ComRing.([-]) <- [-]
+  
   proof IdealAxioms.*
 
   rename [op] "zeror" as "zeroXnD1"
@@ -203,7 +212,7 @@ rewrite !scalepE &(eqvMl) &(eqv_trans q).
   - by rewrite mulr_ge0 // divz_ge0.
   - by rewrite modz_ge0 gtr_eqF.
 apply/eqvMr; rewrite -polyCX ?divz_ge0 // (IntID.mulrC _ n).
-by rewrite exprM eqvX polyCN eqv_Xn.
+by rewrite exprM eqvX 1:divz_ge0 // polyCN eqv_Xn.
 qed.
 
 (* -------------------------------------------------------------------- *)
