@@ -74,10 +74,8 @@ lemma idI : ideal I by apply: ideal_idgen.
 hint exact : idI.
 
 (* -------------------------------------------------------------------- *)
-type polyXnD1.
 
-clone include RingQuotient
-  with type qT <- polyXnD1, 
+clone include RingQuotient with
   op p <- I,
   
   op ComRing.(+) <- (+),
@@ -101,6 +99,9 @@ rewrite degM_proper; 1: by rewrite lc_polyXnDC // mulr1 lc_eq0.
 rewrite deg_polyXnDC // -!addrA /= gtr_eqF //.
 by rewrite (_ : 1 = 1 + 0) 1:// ler_lt_add // deg_ge1.
 qed.
+
+type polyXnD1 = qT.
+
 
 (* -------------------------------------------------------------------- *)
 clone BigComRing as BigXnD1 with
@@ -497,14 +498,14 @@ end PolyReduce.
 
 (* ==================================================================== *)
 abstract theory PolyReduceZp.
-type Zp.
 
 op p : { int | 2 <= p } as ge2_p.
 
 clone import ZModRing as Zp with
-    type  zmod  <- Zp,
     op    p     <- p
     proof ge2_p by exact/ge2_p.
+
+type Zp = zmod.
 
 clone include PolyReduce with
     type BasePoly.coeff        <- Zp,

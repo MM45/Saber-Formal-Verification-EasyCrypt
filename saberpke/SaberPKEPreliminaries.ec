@@ -224,12 +224,9 @@ clear [Rmod.Zrmod.* Rmod.Zrmod.DZmodP.*].
 end PolyZ.
 
 (* -- Rq = Z/qZ[X] / (X^n + 1) -- *)
-type Zq, Rq.
 
 
 clone include PolyZ with
-  type Zmod.zmod     <- Zq,
-  type Rmod.polyXnD1 <- Rq,
     op Zmod.p        <- q
         
   proof Zmod.ge2_p by smt(ge8_q)
@@ -238,6 +235,8 @@ clone include PolyZ with
   rename [theory] "Rmod" as "Rq"
   rename [theory] "BigXnD1" as "BigRq".
 
+type Zq = Zq.zmod.
+type Rq = Rq.polyXnD1.
 
 clone Matrix as Mat_Rq with 
     op size      <- l,
@@ -280,11 +279,7 @@ op dRq_mat : Rq_mat distr = Mat_Rq.Matrix.dmatrix dRq.
 op dsmallRq_vec : Rq_vec distr = Mat_Rq.Matrix.dvector dsmallRq.
 
 (* -- Rp = Z/pZ[X] / (X^n + 1) -- *)
-type Zp, Rp.
-
 clone include PolyZ with
-   type Zmod.zmod     <- Zp,
-   type Rmod.polyXnD1 <- Rp,
      op Zmod.p        <- p
 
   proof Zmod.ge2_p by smt(ge4_p)
@@ -292,6 +287,9 @@ clone include PolyZ with
   rename [theory] "Zmod" as "Zp"
   rename [theory] "Rmod" as "Rp"
   rename [theory] "BigXnD1" as "BigRp".
+
+type Zp = Zp.zmod.
+type Rp = Rp.polyXnD1.
 
 clone Matrix as Mat_Rp with 
   op size      <- l,
@@ -329,11 +327,8 @@ op dRp : Rp distr = Rp.dpolyXnD1.
 op dRp_vec : Rp_vec distr = Mat_Rp.Matrix.dvector dRp.
 
 (* -- Rppq = Z/ppqZ [X] / (X^n + 1) -- *)
-type Zppq, Rppq.
 
 clone include PolyZ with
-  type Zmod.zmod     <- Zppq,
-  type Rmod.polyXnD1 <- Rppq,
     op Zmod.p        <- (p * p) %/ q
 
   proof Zmod.ge2_p by apply/ge2_ppq
@@ -342,12 +337,12 @@ clone include PolyZ with
   rename [theory] "Rmod" as "Rppq"
   rename [theory] "BigXnD1" as "BigRppq".
 
+type Zppq = Zppq.zmod.
+type Rppq = Rppq.polyXnD1.
+
 (* -- R2t = Z/2tZ [X] / (X^n + 1)  -- *)
-type Z2t, R2t.
 
 clone include PolyZ with
-  type Zmod.zmod     <- Z2t,
-  type Rmod.polyXnD1 <- R2t,
     op Zmod.p        <- 2 * t
 
   proof Zmod.ge2_p by apply/ge2_2t
@@ -356,12 +351,12 @@ clone include PolyZ with
   rename [theory] "Rmod" as "R2t"
   rename [theory] "BigXnD1" as "BigR2t".
 
+type Z2t = Z2t.zmod.
+type R2t = R2t.polyXnD1.
+
 (* -- R2 = Z/2Z [X] / (X^n + 1) -- *)
-type Z2, R2.
 
 clone include PolyZ with
-  type Zmod.zmod     <- Z2,
-  type Rmod.polyXnD1 <- R2,
     op Zmod.p        <- 2
 
   proof Zmod.ge2_p by done
@@ -369,6 +364,9 @@ clone include PolyZ with
   rename [theory] "Zmod" as "Z2"
   rename [theory] "Rmod" as "R2"
   rename [theory] "BigXnD1" as "BigR2".
+
+type Z2 = Z2.zmod.
+type R2 = R2.polyXnD1.
 
 (* - Properties - *)
 (* Vector Distribution Has Same Properties as the Distribution of the Vector's Elements *)
